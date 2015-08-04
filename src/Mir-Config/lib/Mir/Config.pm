@@ -56,6 +56,12 @@ use MongoDB                 ();
 
 our $VERSION = '0.1';
 
+my $prefix = config->{prefix};
+if ( $prefix ) {
+    debug "NOTE: Using prefix $prefix...";
+    prefix $prefix;
+}
+
 get '/' => sub {
     template 'index';
 };
@@ -90,7 +96,6 @@ Recupera il documento con Mongo ID passato dalla sezione passata
 
 #=============================================================
 get '/id/:section/:id' => sub {
-    $DB::single=1;
     debug "/id...";
     my $section = params->{section};
     debug "Section: $section";

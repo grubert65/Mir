@@ -5,7 +5,9 @@
 # Your application's name
 appname: "Mir::Config"
 
-foo: 'bar'
+
+# use this to set an application-wide path prefix
+prefix: '/foo'
 
 # The default layout to use for your application (located in
 # views/layouts/main.tt)

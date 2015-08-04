@@ -6,7 +6,7 @@ In this sense the component is neutral with respect the data handled.
 
 Any request made to the config server should follow the following schema:
 
-[GET/PUT/POST/DELETE] http://<server>:<port>/<app>/SCO/<version>/<collection>/[<section>]/<resource>
+[GET/PUT/POST/DELETE] http://<server>:<port>/<app>/<version>/<collection>/[<section>]/<resource>
 
 
 INSTALLATION
