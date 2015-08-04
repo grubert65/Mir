@@ -8,7 +8,7 @@
 #                               --db <database> 
 #                               --collection <collection> 
 #                               --doc <doc> 
-#                               [--append] 
+#                               --import-file <file path>
 #                               [--find]
 #
 #  DESCRIPTION: an helper script to handle MIR stores on MongoDB
@@ -86,13 +86,27 @@ if ( defined $filename ) {
     }
 
     $id = insert( $doc );
-    print "Doc $id added!\n";
     
 }
 
 sub insert {
     my $doc = shift;
     my $obj = decode_json( $doc );
+    my $id;
+    if (ref $obj eq 'ARRAY') {
+        foreach ( @$obj ) {
+            $id = insert_obj( $_ );
+            print "Doc $id added!\n";
+        }
+
+    } else {
+        $id = insert_obj( $obj );
+        print "Doc $id added!\n";
+    }
+}
+
+sub insert_obj {
+    my $obj = shift;
     print "Going to insert doc:\n";
     p $obj; print "\n";
     my $id = $ch->insert( $obj ) or die "Error inserting doc $doc\n";
