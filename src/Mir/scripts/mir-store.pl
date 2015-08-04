@@ -28,6 +28,7 @@ use warnings;
 use MongoDB;
 use Getopt::Long;
 use Data::Printer;
+use JSON;
 
 my $host        = 'localhost';
 my $port        = 27017;
@@ -35,9 +36,10 @@ my $db          = 'MIR-CONFIG';
 my $collection  = 'mir-system';
 my $append      = 0;
 my $find        = 0;
-my $doc         = '';
+my $doc;
+my $filename;
 
-die "Usage: $@ --host <host> --port <port> --db <database> --collection <collection> --doc <doc> [--append] [--find]\n"
+die "Usage: $@ --host <host> --port <port> --db <database> --collection <collection> --doc <json> [--append] [--find]\n"
  unless @ARGV;
 
 GetOptions(
@@ -46,6 +48,7 @@ GetOptions(
     "db=s"          => \$db,
     "collection=s"  => \$collection,
     "doc=s"         => \$doc,
+    "import-file=s" => \$filename,
     "append"        => \$append,
     "find"          => \$find,
 ) or die ("Error in command line arguments\n");
@@ -66,6 +69,32 @@ if ( $find ) {
     }
 }
 
-#my $id         = $collection->insert({ some => 'data' });
-#my $data       = $collection->find_one({ _id => $id });
+my $id;
 
+if ( defined $doc ) {
+    $id = insert( $doc );
+    print "Doc $id added!\n";
+}
+
+if ( defined $filename ) {
+    {
+        local $/;
+        die "File $filename seems not existing..." unless -f $filename;
+        open ( my $fh, "<", $filename ) or die "Error opening $filename";
+        $doc = <$fh>;
+        close $fh;
+    }
+
+    $id = insert( $doc );
+    print "Doc $id added!\n";
+    
+}
+
+sub insert {
+    my $doc = shift;
+    my $obj = decode_json( $doc );
+    print "Going to insert doc:\n";
+    p $obj; print "\n";
+    my $id = $ch->insert( $obj ) or die "Error inserting doc $doc\n";
+    return $id;
+}
