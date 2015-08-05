@@ -34,12 +34,11 @@ my $host        = 'localhost';
 my $port        = 27017;
 my $db          = 'MIR-CONFIG';
 my $collection  = 'mir-system';
-my $append      = 0;
 my $find        = 0;
 my $doc;
 my $filename;
 
-die "Usage: $@ --host <host> --port <port> --db <database> --collection <collection> --doc <json> [--append] [--find]\n"
+die "Usage: $@ --host <host> --port <port> --db <database> --collection <collection> --doc <json> --import-file <file path> [--find]\n"
  unless @ARGV;
 
 GetOptions(
@@ -49,7 +48,6 @@ GetOptions(
     "collection=s"  => \$collection,
     "doc=s"         => \$doc,
     "import-file=s" => \$filename,
-    "append"        => \$append,
     "find"          => \$find,
 ) or die ("Error in command line arguments\n");
 
