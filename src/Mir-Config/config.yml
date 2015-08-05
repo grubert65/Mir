@@ -7,7 +7,7 @@ appname: "Mir::Config"
 
 
 # use this to set an application-wide path prefix
-prefix: '/foo'
+#prefix: '/mir'
 
 # The default layout to use for your application (located in
 # views/layouts/main.tt)
@@ -37,6 +37,9 @@ template: "simple"
 logger: 'console'
 #layout: 'main'
 engines:
+    serializer:
+        JSON:
+            allow_blessed: 1
     logger:
         File:
             log_dir: "/home/grubert/projects/Mir/Logs"

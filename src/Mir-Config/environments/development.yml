@@ -25,8 +25,9 @@ startup_info: 1
 store:
     host:       'localhost'
     port:       '27017'
-    database:   'rbs-sco'
+    database:   'MIR'
+# This section provides a look-up table for the MongoDB collections to use.
     sections:
-        net:    'net'
-        sensor: 'sensor'
-        system: 'system'
+#        net:    'net'
+#        sensor: 'sensor'
+        config: 'config'

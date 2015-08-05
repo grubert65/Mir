@@ -3,8 +3,8 @@ package Mir::Config;
 
 =head1 NAME
 
-Mir::Config - Mir server per la gestione della configurazione dei
-componenti Mir
+Mir::Config - a small server to serve generic configuration sections
+for the Mir system.
 
 =head1 VERSION
 
@@ -12,24 +12,20 @@ componenti Mir
 
 =head1 DESCRIPTION
 
-Il componente permette di centralizzare la configurazione del sistema 
-e dei singoli componenti del sistema. 
-La configurazione e' organizzata in sezioni.
-
-l'accesso ai parametri di configurazione e' via chiamate REST.
-
-Routes:
-Le route sono automaticamente definite impostando le risorse gestite via REST
+Provides a REST interface to configuration sections. it is fairly
+generic, handling configuration sections (handled as Mongo collections)
+transparently.
 
 Inoltre sono definite le seguenti route:
+The routes defined are:
 
-    GET /version                => riporta json {"version":"x.xx"} (versione corrente del componente)
-    GET /v1/<section>           => ritorna json profilo intera sezione
-    GET /v1/system/<component>  => riporta json profilo componente
+  GET /<app>/version                             :returns a json string as {"version":"x.xx"} (current component version)
+TODO  GET /<app>/<v>/<section>/[<item>]/[<resource>] :returns the given item resource belonging to the section or the
+                                                  entire section if no item specified
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
-La configurazione di default e' in config.yml
+As any Dancer2 app configuration in config.yml and environment defaults to development
 
 =head1 AUTHOR
 
@@ -53,12 +49,34 @@ use Dancer2;
 use Dancer2::Plugin::REST   ();
 use Dancer2::Plugin::Ajax   ();
 use MongoDB                 ();
+use Data::Dumper            qw( Dumper );
 
-our $VERSION = '0.1';
+use vars qw( 
+    $VERSION
+    $client
+    $database
+    $cursor
+);
 
+$VERSION = '0.1';
+
+# TODO : defaults needed as in test env config is not loaded (why ?)...
+my $host   = config->{store}->{host}     || 'localhost';
+my $port   = config->{store}->{port}     || 27017;
+my $db     = config->{store}->{database} || 'MIR';
+
+debug "Host:     $host";
+debug "Port:     $port";
+debug "Database: $db";
+
+$client = MongoDB::MongoClient->new(host => $host, port => $port);
+$database = $client->get_database( $db );
+
+# the prefix cmd can be used to set the /<app>/ prefix
+# to any query.
 my $prefix = config->{prefix};
-if ( $prefix ) {
-    debug "NOTE: Using prefix $prefix...";
+if ( defined $prefix ) {
+    debug "NOTE: USING PREFIX $prefix";
     prefix $prefix;
 }
 
@@ -72,6 +90,43 @@ get '/version' => sub {
 
 get '/appname' => sub {
     return { appname => config->{appname} };
+};
+
+get '/:collection/:tag?/:resource?' => sub {
+    my $collection = params->{collection};
+    $DB::single=1;
+    die "Error: no section $collection configured" unless $collection;
+    debug "Section: $collection";
+    my $ch = $database->get_collection( $collection );
+
+    my $tag      = params->{tag};
+    my $resource = params->{resource};
+    if ( defined $resource ) {
+        debug "Getting resource $resource...";
+        $ch->query->fields({ $resource => 1 });
+    }
+    my $data;
+    if ( defined $tag ) {
+        debug "Getting profile for tag $tag...";
+        $cursor = $ch->find({ "tag" => $tag });
+        if ( $cursor->count() ) {
+            $data = $cursor->next();
+        }
+    } else {
+        debug "Getting all profiles...";
+        $cursor = $ch->find();
+        if ( $cursor->count() ) {
+            $data = [ $cursor->all() ];
+        }
+    }
+
+    if ( defined $data ) {
+        debug "Data:";
+        debug Dumper ( $data );
+    } else {
+        debug "No data retrieved";
+    }
+    return $data;
 };
 
 #=============================================================
@@ -103,13 +158,6 @@ get '/id/:section/:id' => sub {
     $id = param('id') if ( defined param('id') );
     my $collection = config->{store}->{sections}->{ $section }
         or die "Error: no section $section configured";
-    my $host    = config->{store}->{host};
-    my $port    = config->{store}->{port};
-    my $db      = config->{store}->{database};
-    debug "HOST: $host, PORT: $port, DB: $db";
-    debug "Collection: $collection";
-    my $client     = MongoDB::MongoClient->new(host => $host, port => $port);
-    my $database   = $client->get_database( $db );
     my $ch = $database->get_collection( $collection );
     my $data;
     if ( defined $id ) {
@@ -153,13 +201,6 @@ get '/key/:section/:key/:value' => sub {
     my $collection = config->{store}->{sections}->{ $section }
         or die "Error: no section $section configured";
 
-    my $host   = config->{store}->{host};
-    my $port   = config->{store}->{port};
-    my $db     = config->{store}->{database}
-        or die ("Database not set");
-
-    my $client = MongoDB::MongoClient->new(host => $host, port => $port);
-    my $database = $client->get_database( $db );
     my $ch = $database->get_collection( $collection );
     my $data;
     $data = $ch->find_one({ $key => $value });
