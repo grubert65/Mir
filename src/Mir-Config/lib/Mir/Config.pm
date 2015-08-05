@@ -46,8 +46,6 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 #========================================================================
 use Dancer2;
-use Dancer2::Plugin::REST   ();
-use Dancer2::Plugin::Ajax   ();
 use MongoDB                 ();
 use Data::Dumper            qw( Dumper );
 
@@ -92,23 +90,53 @@ get '/appname' => sub {
     return { appname => config->{appname} };
 };
 
+get '/profile/:collection' => sub {
+    my $collection = params->{collection};
+    debug "Collection: $collection";
+    $cursor = eval{ $database->get_collection( param('collection') )->find(); };
+    if ( $@ ) {
+        error "Error getting entire profile for collection $collection";
+        status 500;
+    }
+    my $data;
+    if ( $cursor->count() ) {
+        $data = [ $cursor->all() ];
+    }
+    debug "Profile for section $collection:";
+    debug Dumper $data;
+    return $data;
+};
+
+#=============================================================
+
+=head2 GET /:collection/:tag?/:resource?
+
+=head3 INPUT
+
+=head3 OUTPUT
+
+=head3 DESCRIPTION
+
+=cut
+
+#=============================================================
 get '/:collection/:tag?/:resource?' => sub {
     my $collection = params->{collection};
-    $DB::single=1;
     die "Error: no section $collection configured" unless $collection;
+    $collection = config->{store}->{sections}->{ $collection } || $collection;
     debug "Section: $collection";
     my $ch = $database->get_collection( $collection );
 
     my $tag      = params->{tag};
-    my $resource = params->{resource};
-    if ( defined $resource ) {
-        debug "Getting resource $resource...";
-        $ch->query->fields({ $resource => 1 });
-    }
+    my $resource = params->{resource}; debug "Resource:$resource" if ( defined $resource );
     my $data;
     if ( defined $tag ) {
         debug "Getting profile for tag $tag...";
-        $cursor = $ch->find({ "tag" => $tag });
+        if (defined $resource) {
+            $cursor = $ch->find({ "tag" => $tag })->fields({ $resource => 1 });
+        } else {
+            $cursor = $ch->find({ "tag" => $tag });
+        }
         if ( $cursor->count() ) {
             $data = $cursor->next();
         }
@@ -121,11 +149,16 @@ get '/:collection/:tag?/:resource?' => sub {
     }
 
     if ( defined $data ) {
+        if ( exists $data->{_id} && ref ( $data->{_id} ) ) {
+            $data->{_id} = $data->{_id}->{value};
+        }
         debug "Data:";
         debug Dumper ( $data );
     } else {
         debug "No data retrieved";
+        $data = { status => 500, error => "No data retrieved" };
     }
+
     return $data;
 };
 
@@ -206,6 +239,12 @@ get '/key/:section/:key/:value' => sub {
     $data = $ch->find_one({ $key => $value });
 
     return $data;
+};
+
+# default route handler...
+any qr{.*} => sub {
+    status 'not_found';
+    return { status => '404', path => request->path };
 };
 
 true;

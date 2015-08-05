@@ -5,7 +5,6 @@
 # Your application's name
 appname: "Mir::Config"
 
-
 # use this to set an application-wide path prefix
 #prefix: '/mir'
 
@@ -52,4 +51,4 @@ plugins:
 # From now on, all hash ref or array ref returned by a route will be
 # serialized to the format you chose, and all data received
 # from POST or PUT requests will be automatically deserialized...
-serializer: "JSON"
+serializer: 'JSON'
