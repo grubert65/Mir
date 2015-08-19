@@ -50,8 +50,8 @@ Perhaps a little code snippet.
 
 =cut
 
-has 'host'       => ( is => 'rw', isa => 'Str', required => 1 );
-has 'port'       => ( is => 'rw', isa => 'Str', required => 1 );
+has 'host'       => ( is => 'rw', isa => 'Str', default => sub { 'localhost' } );
+has 'port'       => ( is => 'rw', isa => 'Str', default => sub { 5000 } );
 has 'prefix'     => ( is => 'rw', isa => 'Str', default => sub { '/' } );
 has 'query_path' => ( is => 'rw', isa => 'Str' );
 has 'ua' => (
@@ -77,6 +77,9 @@ sub BUILD {
     my $self = shift;
     die "...mmm...it seems that we cannot reach internet..." 
         unless ( ( $self->{host} eq 'localhost' ) || $self->ua->is_online );
+
+    $self->log->debug("Connecting to server:".$self->host);
+    $self->log->debug("Connecting to port:  ".$self->port);
 
     $self->query_path('http://'.$self->host.':'.$self->port);
     my $res = $self->ua->get($self->{query_path}.$self->{prefix}."version");

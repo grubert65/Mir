@@ -68,8 +68,7 @@ sub get_page {
     my $res = $self->mech->get( $url );
     return undef unless ( $res->is_success );
 
-    $self->tb->parse( $self->mech->content );
-    $self->tb->eof();
+    $self->tb->parse_content( $self->mech->content );
 
     return $res;
 }

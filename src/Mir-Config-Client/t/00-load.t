@@ -16,8 +16,8 @@ diag "Connecting to Mir::Config...";
 diag "host: localhost";
 diag "port: 5000";
 ok(my $o=Mir::Config::Client->new( 
-        host    => 'localhost',
-        port    => 5000,
+#        host    => 'localhost',
+#        port    => 5000,
         ), 'new' );
 ok(my $component_profile = $o->get_item( 
         section => 'system',
