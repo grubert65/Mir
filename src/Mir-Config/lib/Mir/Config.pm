@@ -46,6 +46,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 #========================================================================
 use Dancer2;
+use TryCatch;
 use MongoDB                 ();
 use Data::Dumper            qw( Dumper );
 
@@ -78,8 +79,36 @@ if ( defined $prefix ) {
     prefix $prefix;
 }
 
+#=============================================================
+
+=head2 /
+
+=head3 DESCRIPTION
+
+Returns a json-encoded string with all collections documents.
+
+=cut
+
+#=============================================================
 get '/' => sub {
-    template 'index';
+
+    my $data = {};
+
+    try {
+        my @collections = $database->collection_names;
+        foreach my $collection ( @collections ) {
+            my $cursor = $database->get_collection( $collection )->find();
+            if ( $cursor->count() ) {
+                $data->{ $collection } = [ $cursor->all() ];
+            }
+        }
+    } catch {
+        error "Error getting config database content";
+    }
+
+    debug "Complete Config database:";
+    debug Dumper $data;
+    return $data;
 };
 
 get '/version' => sub {
