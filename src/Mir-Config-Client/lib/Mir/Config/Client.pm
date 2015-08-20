@@ -1,10 +1,12 @@
 package Mir::Config::Client;
+use feature "switch";
 use Moose;
 use namespace::autoclean;
 use LWP::UserAgent;
 use Log::Log4perl;
 use JSON qw( decode_json );
 use Data::Dumper qw( Dumper );
+use TryCatch;
 
 =head1 NAME
 
@@ -45,6 +47,9 @@ Perhaps a little code snippet.
         resource => $resource 
     );
 
+    # ...or get any...
+    my $hash = $c->get_any( section => $section )
+        or die "Section $section does not exists...";
 
 =head1 METHODS
 
@@ -65,6 +70,7 @@ has 'ua' => (
         return $ua; 
     },
 );
+
 has 'log' => (is => 'ro',
     isa => 'Log::Log4perl::Logger',
     lazy => 1,
@@ -79,7 +85,7 @@ sub BUILD {
         unless ( ( $self->{host} eq 'localhost' ) || $self->ua->is_online );
 
     $self->log->debug("Connecting to server:".$self->host);
-    $self->log->debug("Connecting to port:  ".$self->port);
+    $self->log->debug("Connecting to port  :".$self->port);
 
     $self->query_path('http://'.$self->host.':'.$self->port);
     my $res = $self->ua->get($self->{query_path}.$self->{prefix}."version");
@@ -148,8 +154,6 @@ Retrieves the resource of the item for the section passed.
 #=============================================================
 sub get_resource {
     my ( $self, %params ) = @_;
-    $DB::single=1;
-    $DB::single=1;
     foreach ( qw(
         section
         item
@@ -172,6 +176,65 @@ sub get_resource {
     $self->log->debug( Dumper $h );
     return $h->{ $params{resource} };
 }
+
+#=============================================================
+
+=head2 get_any
+
+=head3 INPUT
+
+An hash with any of the following keys:
+- section
+- item (need section defined)
+- resource (need both preceeding defined)
+
+=head3 OUTPUT
+
+An hashref or undef in case of errors.
+
+=head3 DESCRIPTION
+
+Given the input filter, provides back the configuration hash
+that match the filter otherwise undef.
+
+=cut
+
+#=============================================================
+sub get_any {
+    my ( $self, $params ) = @_;
+
+    my $h;
+    my $res;
+    my $query;
+
+    try {
+        $query = $self->query_path.$self->prefix;
+
+        foreach ( qw(
+            section
+            item
+            resource
+        )) {
+            $query .= $self->prefix.$params->{$_} if ( defined $params->{$_} );
+        }
+
+        $self->log->debug( "Query string: $query" );
+        $res = eval { $self->ua->get( $query ); };
+        $h = decode_json( $res->content );
+
+    } catch ( $e ) {
+
+        $self->log->error( 
+            "Error retrieving query $query:".
+            $res->status_line );
+
+        return undef;
+    }
+
+    return $h;
+}
+
+
 
 =head1 AUTHOR
 
