@@ -22,6 +22,7 @@ use warnings;
 use utf8;
 use Queue::Q::ReliableFIFO::Redis   ();
 use Log::Log4perl                   qw( :easy );
+use YAML                            qw( Load );
 
 my $log = Log::Log4perl->get_logger( __PACKAGE__ );
 my $config;
