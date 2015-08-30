@@ -1,0 +1,16 @@
+[{
+  "tag":"ACQ",
+  "fetchers":[{
+    "campaign":"weather",
+    "ns":"WU",
+    "period":60
+  },{
+    "campaign":"weather",
+    "ns":"Netatmo",
+    "period":1
+  }]
+},{
+    "tag":"SCO",
+    "host":"localhost",
+    "port":5000
+}]
