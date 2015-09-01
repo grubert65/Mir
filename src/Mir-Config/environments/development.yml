@@ -30,4 +30,4 @@ store:
     sections:
 #        net:    'net'
 #        sensor: 'sensor'
-        system: 'config'
+        system: 'system'

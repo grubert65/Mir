@@ -12,62 +12,25 @@ mir-acq-scheduler.pl - Schedules ACQ processors configured in Mir::Config.
 
 =head1 USAGE
 
-perl mir-acq-scheduler.pl
+  perl mir-acq-scheduler.pl \
+     --campaign <campaign tag> \
+     --processors <max number of processors to fork> \
+     --fetcher <fetcher namespace relative to Mir::Acq::Fetcher> \ # not mandatory
+     --params <json-encoded string to be passed to any fetcher> \  # not mandatory
+     --config-file <YAML-encoded file if config params (updates default ones)> # not mandatory
 
 =head1 OPTIONS
 
 =head1 DESCRIPTION
 
-Workflow:
+The official Mir ACQ scheduler. This script should be
+scheduled via cron, and configured via input params.
 
-get list of fetchers from Mir::Config (using Mir::Config::Client...)
-get mins since epoch
-for each fetcher profile {
-    if (not defined queue->{profile.campaign} ) {
-    create queue for campaign
-    }
-    if (( $mins_since_epoch % profile.period ) == 0 ) {
-        queue->{profile.campaign}.enqueue(profile.ns, profile.params);
-    }
-}
-
-=head1 DEPENDENCIES
-
-A list of all the other modules that this module relies upon, including any
-restrictions on versions, and an indication whether these required modules are
-part of the standard Perl distribution, part of the module's distribution,
-or must be installed separately.
-
-
-=head1 INCOMPATIBILITIES
-
-A list of any modules that this module cannot be used in conjunction with.
-This may be due to name conflicts in the interface, or competition for
-system or program resources, or due to internal limitations of Perl
-(for example, many modules that use source code filters are mutually
-incompatible).
-
-
-=head1 BUGS AND LIMITATIONS
-
-A list of known problems with the module, together with some indication
-whether they are likely to be fixed in an upcoming release.
-
-Also a list of restrictions on the features the module does provide:
-data types that cannot be handled, performance issues and the circumstances
-in which they may arise, practical limitations on the size of data sets,
-special cases that are not (yet) handled, etc.
-
-The initial template usually just has:
-
-There are no known bugs in this module.
-Please report problems to <Maintainer name(s)>  (<contact address>)
-Patches are welcome.
+See L<Mir::Acq::Scheduler> for help.
 
 =head1 AUTHOR
 
-Marco Masetti ( <marco.masetti@softeco.it>
-
+Marco Masetti ( <marco.masetti@softeco.it> )
 
 =head1 LICENCE AND COPYRIGHT
 
@@ -85,17 +48,12 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =cut
 
-use strict;
-use warnings;
-use Queue::Q::ReliableFIFO::Redis   ();
-use DateTime                        ();
-use YAML                            qw( Load );
-use Mir::Config::Client             ();
+use Moose;
+use namespace::clean;
 use Log::Log4perl                   qw( :easy );
+use Mir::Acq::Scheduler ();
 
 my $config;
-my $queues = {};
-my $ptable = {};
 
 {
     local $/;
@@ -106,12 +64,29 @@ my $ptable = {};
 Log::Log4perl->easy_init( $DEBUG );
 
 my $log = Log::Log4perl->get_logger( __PACKAGE__ );
+my $acq = Mir::Acq::Scheduler->new( $config );
 
 #--------------------------------------------------------------------------------
-# Get mins from the epoch
+# parse input params
 #--------------------------------------------------------------------------------
-my $mins_since_epoch = int ( DateTime->now()->epoch() / 60 );
+$scheduler->parse_input_params();
 
+#--------------------------------------------------------------------------------
+# get and enqueue all fetchers of the campaign
+# (if a campaign tag has been configured...)
+#--------------------------------------------------------------------------------
+$scheduler->enqueue_fetchers_of_campaign();
+
+#--------------------------------------------------------------------------------
+# run all processors !!!
+#--------------------------------------------------------------------------------
+$scheduler->fork_processors();
+
+exit(0); # end of the story...
+
+
+
+TODO ----- CODICE VECCHIO DA RECUPERARE IN Mir::Acq::Scheduler...
 #--------------------------------------------------------------------------------
 # get list of fetchers from Mir::Config (using Mir::Config::Client...)
 #--------------------------------------------------------------------------------
@@ -141,5 +116,5 @@ foreach my $profile ( @$fetchers ) {
 
 __DATA__
 QUEUE:
-    server: 'localhost'
-    port: 6379
+    queue_server: 'localhost'
+    queue_port: 6379
