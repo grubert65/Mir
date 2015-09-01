@@ -73,9 +73,20 @@ my $queues = {};
 
 my $log = Log::Log4perl->get_logger( __PACKAGE__ );
 
-has 'queue_server'  => ( is => 'rw', default => 'localhost' );
-has 'queue_port'    => ( is => 'rw', default => 6379 );
+has 'queue_server'  => ( is => 'rw', default => 'localhost', trigger => \&_set_queue );
+has 'queue_port'    => ( is => 'rw', default => 6379, trigger => \&_set_queue );
+has 'campaign'      => ( is => 'rw', isa => 'Str', trigger => \&_set_queue );
 has 'processors'    => ( is => 'rw', default => 1 );
+has 'queue'         => ( is => 'ro', isa => 'Queue::Q::ReliableFIFO'); # TODO the queue class is not right...
+
+sub _set_queue {
+    my ( $self, $v ) = @_;
+        $self->queue( Queue::Q::ReliableFIFO::Redis->new(
+            server     => $self->queue_server,
+            port       => $self->queue_port,
+            queue_name => $self->campaign
+        ) or die "Error creating a queue for campaign $campaign_tag\n";
+}
 
 #=============================================================
 
