@@ -1,0 +1,60 @@
+REM  *****  BASIC  *****
+
+REM ---------------- Convert MS Word documents to text ----------------
+sub ConvertToTxt(cFilePath, cDestFile)
+Dim Url as String
+Url = convertToUrl(cFilePath)
+Dim Doc
+Doc = starDeskTop.loadComponentFromUrl (Url, "_blank", 0, Array())
+
+dim document   as object
+dim dispatcher as object
+rem ----------------------------------------------------------------------
+rem get access to the document
+document   = ThisComponent.CurrentController.Frame
+dispatcher = createUnoService("com.sun.star.frame.DispatchHelper")
+
+rem ----------------------------------------------------------------------
+rem dispatcher.executeDispatch(document, ".uno:Open", "", 0, Array())
+
+rem ----------------------------------------------------------------------
+dim args2(2) as new com.sun.star.beans.PropertyValue
+args2(0).Name = "URL"
+args2(0).Value = "file://" + cDestFile
+args2(1).Name = "FilterName"
+args2(1).Value = "Text"
+args2(2).Name = "SelectionOnly"
+args2(2).Value = true
+
+dispatcher.executeDispatch(document, ".uno:SaveAs", "", 0, args2())
+
+Doc.Close (True)
+
+end sub
+
+REM ---------------- Convert MS Word documents to PDF ----------------
+Sub ConvertWordToPDF(cFilePath, cDestFile)
+   cURL = ConvertToURL(cFilePath)
+   
+   ' Open original document
+   oDoc = StarDesktop.loadComponentFromURL(cURL, "_blank", 0, Array(MakePropertyValue("Hidden", True), ))
+   
+   cURL = ConvertToURL(cDestFile)
+   
+   ' Save the PDF
+   oDoc.storeToURL(cURL, Array(MakePropertyValue("FilterName", "writer_pdf_Export"), ))
+   
+   oDoc.close(True)
+   
+End Sub
+
+Function MakePropertyValue( Optional cName As String, Optional uValue ) As com.sun.star.beans.PropertyValue
+   Dim oPropertyValue As New com.sun.star.beans.PropertyValue
+   If Not IsMissing( cName ) Then
+      oPropertyValue.Name = cName
+   EndIf
+   If Not IsMissing( uValue ) Then
+      oPropertyValue.Value = uValue
+   EndIf
+   MakePropertyValue() = oPropertyValue
+End Function
