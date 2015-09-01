@@ -16,7 +16,7 @@
       {"label":"Cronaca","url":"http://www.repubblica.it/rss/cronaca/rss2.0.xml"},
       {"label":"Cronaca","url":"http://www.corriere.it/rss/cronache.xml"},
       {"label":"Economia","url":"http://www.iltempo.it/rss/economia.xml"},
-      {"label":"Economia","url":"http://www.ansa.it/web/notizie/rubriche/economia/economia_rss.xml"}
+      {"label":"Economia","url":"http://www.ansa.it/web/notizie/rubriche/economia/economia_rss.xml"},
       {"label":"Economia","url":"http://www.repubblica.it/rss/economia/rss2.0.xml"},
       {"label":"Economia","url":"http://www.corriere.it/rss/economia.xml"},
       {"label":"Economia","url":"http://www.lastampa.it/redazione/cmssezioni/economia/rss_economia.xml"},
@@ -145,7 +145,7 @@
       {"label":"Perl","url":"https://jobs.perl.org/rss/standard.rs"},
       {"label":"Perl","url":"https://jobs.perl.org/rss/by_country.rss?country=United Kingdom"},
       {"label":"Perl","url":"https://jobs.perl.org/rss/by_country.rss?country=Italy"},
-      {"label":"Perl","url":"http://perlgems.blogspot.com/feeds/posts/default"},
+      {"label":"Perl","url":"http://perlgems.blogspot.com/feeds/posts/default"}
     ]
   }]
 },{

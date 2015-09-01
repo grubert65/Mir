@@ -134,13 +134,17 @@ Returns the number of enqueued items.
 sub enqueue_fetchers_of_campaign {
     my $self = shift;
 
-    my $c = Mir::Config::Client->new() or die "No Mir::Config server found...";
+    my $c = Mir::Config::Client->new(
+        $self->{config_server},
+        $self->{config_port}
+    ) or die "No Mir::Config server found...";
 
     my $fetchers = $c->get_resource( 
         section  => 'system',
         item     => 'ACQ',
         resource => 'fetchers'
     );
+
 
 
 }
