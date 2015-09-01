@@ -75,6 +75,8 @@ my $log = Log::Log4perl->get_logger( __PACKAGE__ );
 
 has 'queue_server'  => ( is => 'rw', default => 'localhost', trigger => \&_set_queue );
 has 'queue_port'    => ( is => 'rw', default => 6379, trigger => \&_set_queue );
+has 'config_server' => ( is => 'rw', default => 'localhost' );
+has 'config_port'   => ( is => 'rw', default => 5000 );
 has 'campaign'      => ( is => 'rw', isa => 'Str', trigger => \&_set_queue );
 has 'processors'    => ( is => 'rw', default => 1 );
 has 'queue'         => ( is => 'ro', isa => 'Queue::Q::ReliableFIFO'); # TODO the queue class is not right...
@@ -131,6 +133,15 @@ Returns the number of enqueued items.
 #=============================================================
 sub enqueue_fetchers_of_campaign {
     my $self = shift;
+
+    my $c = Mir::Config::Client->new() or die "No Mir::Config server found...";
+
+    my $fetchers = $c->get_resource( 
+        section  => 'system',
+        item     => 'ACQ',
+        resource => 'fetchers'
+    );
+
 
 }
 
