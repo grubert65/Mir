@@ -24,15 +24,13 @@ Mir::Acq::Scheduler - base class that implements an acq scheduler
     $scheduler->parse_input_params();
 
     # get and enqueue all fetchers of the campaign
+    # or the ones passed in input
     $scheduler->enqueue_fetchers_of_campaign();
 
     # fork the number of processors passed
-    # if some fetchers have been configured, fork 
-    # a processor for fetcher and pass fetcher namespace
-    # to processor
     # wait for all processors death...
-    # the single processor, if no fetcher has been passed,
-    # gets the first fetcher from the queue and executes it
+    # the single processor gets the first fetcher 
+    # from the queue and executes it
     # otherwise exit
     $scheduler->fork_processors();
 
@@ -66,7 +64,6 @@ use Moose;
 use namespace::clean;
 
 use Queue::Q::ReliableFIFO::Redis   ();
-use YAML                            qw( Load );
 use Mir::Config::Client             ();
 use Log::Log4perl;
 use Getopt::Long                    qw( GetOptions );
@@ -74,17 +71,11 @@ use Getopt::Long                    qw( GetOptions );
 my $config;
 my $queues = {};
 
-{
-    local $/;
-    my $data = <DATA>;
-    $config = Load( $data );
-}
-
 my $log = Log::Log4perl->get_logger( __PACKAGE__ );
 
-
-
-
+has 'queue_server'  => ( is => 'rw', default => 'localhost' );
+has 'queue_port'    => ( is => 'rw', default => 6379 );
+has 'processors'    => ( is => 'rw', default => 1 );
 
 #=============================================================
 
@@ -104,7 +95,6 @@ sub parse_input_params {
 
 }
 
-
 #=============================================================
 
 =head2 enqueue_fetchers_of_campaign
@@ -113,11 +103,17 @@ sub parse_input_params {
 
 =head3 OUTPUT
 
-1/undef in case of errors
+the number of items added in queue/undef in case of errors
+dies in case of errors.
 
 =head3 DESCRIPTION
 
-Get and enqueue all fetchers of the campaign
+gets the list of the fetchers configured for the campaign and 
+enqueue them in the queue for the campaign.
+If a fetcher has the "split" config attribute set, then a set
+of fetchers is added in the queue, one for each configured param
+item.
+Returns the number of enqueued items.
 
 =cut
 
@@ -135,18 +131,21 @@ sub enqueue_fetchers_of_campaign {
 
 =head3 OUTPUT
 
+The number of processors forked or undef in case of error.
+
 =head3 DESCRIPTION
 
-Fork the number of processors passed
-if some fetchers have been configured, fork 
-a processor for each fetcher and pass fetcher namespace
-to processor
+Fork the number of processors passed (or the default one)
 
-The single processor, if no fetcher has been passed,
-gets the first fetcher from the queue and executes it
-otherwise exit
+The single processor gets the first fetcher from the queue 
+and executes it otherwise exit.
 
-wait for all processors death...
+Wait for all processors death...
+
+Dies in case of errors.
+
+Returns the number of processors forked or undef
+in case of errors.
 
 =cut
 
