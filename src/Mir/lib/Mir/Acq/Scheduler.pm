@@ -77,17 +77,31 @@ has 'queue_server'  => ( is => 'rw', default => 'localhost', trigger => \&_set_q
 has 'queue_port'    => ( is => 'rw', default => 6379, trigger => \&_set_queue );
 has 'config_server' => ( is => 'rw', default => 'localhost' );
 has 'config_port'   => ( is => 'rw', default => 5000 );
-has 'campaign'      => ( is => 'rw', isa => 'Str', trigger => \&_set_queue );
+has 'log'           => ( 
+    is      => 'ro', 
+    isa     => 'Log::Log4perl::Logger',
+    default => sub { return Log::Log4perl->get_logger( __PACKAGE__ ) } 
+);
+
+has 'campaigns'     => ( is => 'rw', isa => 'ArrayRef', trigger => \&_set_queue );
+has 'fetchers'      => ( is => 'rw', isa => 'ArrayRef' );
 has 'processors'    => ( is => 'rw', default => 1 );
-has 'queue'         => ( is => 'ro', isa => 'Queue::Q::ReliableFIFO'); # TODO the queue class is not right...
+has 'params'        => ( is => 'rw', isa => 'Str' );
+has 'queues'        => ( is => 'ro', isa => 'HashRef' );
 
 sub _set_queue {
-    my ( $self, $v ) = @_;
-        $self->queue( Queue::Q::ReliableFIFO::Redis->new(
-            server     => $self->queue_server,
-            port       => $self->queue_port,
-            queue_name => $self->campaign
-        ) or die "Error creating a queue for campaign $campaign_tag\n";
+    my ( $self, $campaigns ) = @_;
+    foreach my $campaign ( @$campaigns ) {
+        if ( not defined $self->{queues}->{$campaign} ) {
+            $self->{queues}->{$campaign} = Queue::Q::ReliableFIFO::Redis->new(
+                server     => $self->queue_server,
+                port       => $self->queue_port,
+                queue_name => $campaign,
+            ) or die "Error creating a queue for campaign $campaign\n";
+    
+            $self->log->debug("Created queue for campaign $campaign");
+        }
+    }
 }
 
 #=============================================================
@@ -106,6 +120,28 @@ sub _set_queue {
 sub parse_input_params {
     my $self = shift;
 
+    my @campaigns;
+    my @fetchers;
+    my $processors;
+    my $params;
+    my $config_file;
+
+    GetOptions ("campaign=s"        => \@campaigns,
+                "fetcher=s"         => \@fetchers,
+                "processors=i"      => \$processors,
+                "params=s"          => \$params,
+                "config-file=s"     => \$config_file
+    ) or die("Error in command line arguments\n");
+
+    return undef unless ( @campaigns || @fetchers );
+
+    $self->campaigns ( \@campaigns  );
+    $self->fetchers  ( \@fetchers   );
+    $self->processors( $processors )    if ( defined $processors );
+    $self->params( $params )            if ( defined $params );
+    $self->config_file( $config_file )  if ( defined $config_file );
+
+    return 1;
 }
 
 #=============================================================
@@ -134,6 +170,7 @@ Returns the number of enqueued items.
 sub enqueue_fetchers_of_campaign {
     my $self = shift;
 
+    my @items;
     my $c = Mir::Config::Client->new(
         $self->{config_server},
         $self->{config_port}
@@ -145,8 +182,30 @@ sub enqueue_fetchers_of_campaign {
         resource => 'fetchers'
     );
 
-
-
+    foreach my $fetcher ( @{ $fetchers->{fetchers} } ) {
+        foreach my $campaign ( @{ $self->campaigns } ) {
+            if ( $fetcher->{campaign} eq $campaign ) {
+                if ( defined $fetcher->{split} ) {
+                    die "No params section confired for fetcher" 
+                        unless ( defined $fetcher->{params} );
+                    foreach ( @{ $fetcher->{params} } ) {
+                        push @items, { 
+                            campaign    => $fetcher->{campaign},
+                            ns          => $fetcher->{ns},
+                            %$_
+                        };
+                    }
+                } else {
+                    push @items, $fetcher;
+                }
+            } 
+            foreach my $item ( @items ) {
+                $self->log->debug( "Adding fetcher $item->{ns} to campaign $item->{campaign}" );
+                $self->queue->enqueue_item( $item );
+            }
+        }
+    }
+    return scalar @items;
 }
 
 #=============================================================
@@ -179,3 +238,5 @@ in case of errors.
 sub fork_processors {
     my $self = shift;
 }
+
+1;
