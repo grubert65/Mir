@@ -175,7 +175,7 @@ sub enqueue_fetchers_of_campaign {
         resource => 'fetchers'
     );
 
-    foreach my $fetcher ( @{ $fetchers->{fetchers} } ) {
+    foreach my $fetcher ( @$fetchers ) {
         foreach my $campaign ( @{ $self->campaigns } ) {
             if ( $fetcher->{campaign} eq $campaign ) {
                 if ( defined $fetcher->{split} ) {
@@ -192,11 +192,12 @@ sub enqueue_fetchers_of_campaign {
                     push @items, $fetcher;
                 }
             } 
-            foreach my $item ( @items ) {
-                $self->log->debug( "Adding fetcher $item->{ns} to campaign $item->{campaign}" );
-                $self->queue->enqueue_item( $item );
-            }
         }
+    }
+
+    foreach my $item ( @items ) {
+        $self->log->debug( "Adding fetcher $item->{ns} to campaign $item->{campaign}" );
+        $self->{queues}->{$item->{campaign}}->enqueue_item( $item );
     }
     return scalar @items;
 }
