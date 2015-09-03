@@ -27,13 +27,6 @@ Mir::Acq::Scheduler - base class that implements an acq scheduler
     # or the ones passed in input
     $scheduler->enqueue_fetchers_of_campaign();
 
-    # fork the number of processors passed
-    # wait for all processors death...
-    # the single processor gets the first fetcher 
-    # from the queue and executes it
-    # otherwise exit
-    $scheduler->fork_processors();
-
 =head1 DESCRIPTION
 
 This class exports all methods usefull to implement an ACQ scheduler
@@ -206,37 +199,6 @@ sub enqueue_fetchers_of_campaign {
         }
     }
     return scalar @items;
-}
-
-#=============================================================
-
-=head2 fork_processors
-
-=head3 INPUT
-
-=head3 OUTPUT
-
-The number of processors forked or undef in case of error.
-
-=head3 DESCRIPTION
-
-Fork the number of processors passed (or the default one)
-
-The single processor gets the first fetcher from the queue 
-and executes it otherwise exit.
-
-Wait for all processors death...
-
-Dies in case of errors.
-
-Returns the number of processors forked or undef
-in case of errors.
-
-=cut
-
-#=============================================================
-sub fork_processors {
-    my $self = shift;
 }
 
 1;
