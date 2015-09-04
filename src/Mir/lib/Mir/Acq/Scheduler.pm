@@ -62,7 +62,6 @@ use Log::Log4perl;
 use Getopt::Long                    qw( GetOptions );
 
 my $config;
-my $queues = {};
 
 my $log = Log::Log4perl->get_logger( __PACKAGE__ );
 
@@ -78,7 +77,6 @@ has 'log'           => (
 
 has 'campaigns'     => ( is => 'rw', isa => 'ArrayRef', trigger => \&_set_queue );
 has 'fetchers'      => ( is => 'rw', isa => 'ArrayRef' );
-has 'processors'    => ( is => 'rw', default => 1 );
 has 'params'        => ( is => 'rw', isa => 'Str' );
 has 'queues'        => ( is => 'ro', isa => 'HashRef' );
 
@@ -115,22 +113,19 @@ sub parse_input_params {
 
     my @campaigns;
     my @fetchers;
-    my $processors;
     my $params;
     my $config_file;
 
     GetOptions ("campaign=s"        => \@campaigns,
                 "fetcher=s"         => \@fetchers,
-                "processors=i"      => \$processors,
                 "params=s"          => \$params,
                 "config-file=s"     => \$config_file
     ) or die("Error in command line arguments\n");
 
-    return undef unless ( @campaigns || @fetchers );
+    die "At least a campaign or a fetcher has to be configured\n" unless ( @campaigns || @fetchers );
 
     $self->campaigns ( \@campaigns  );
     $self->fetchers  ( \@fetchers   );
-    $self->processors( $processors )    if ( defined $processors );
     $self->params( $params )            if ( defined $params );
     $self->config_file( $config_file )  if ( defined $config_file );
 
