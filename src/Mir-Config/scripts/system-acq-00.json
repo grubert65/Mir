@@ -2,12 +2,10 @@
   "tag":"ACQ",
   "fetchers":[{
     "campaign":"weather",
-    "ns":"WU",
-    "period":60
+    "ns":"WU"
   },{
     "campaign":"weather",
-    "ns":"Netatmo",
-    "period":1
+    "ns":"Netatmo"
   },{
     "campaign":"news",
     "ns":"RssReader",

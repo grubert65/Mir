@@ -32,7 +32,7 @@ my $q = Queue::Q::ReliableFIFO::Redis->new(
 
 $q->consume( \&handle_items, "drop", { 
         Chunk       => 3, 
-        Pause       => 20,
+        Pause       => 2,
         ProcessAll  => 1,
     } );
 
