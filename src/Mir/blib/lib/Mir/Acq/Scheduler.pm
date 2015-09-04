@@ -27,6 +27,13 @@ Mir::Acq::Scheduler - base class that implements an acq scheduler
     # or the ones passed in input
     $scheduler->enqueue_fetchers_of_campaign();
 
+    # fork the number of processors passed
+    # wait for all processors death...
+    # the single processor gets the first fetcher 
+    # from the queue and executes it
+    # otherwise exit
+    $scheduler->fork_processors();
+
 =head1 DESCRIPTION
 
 This class exports all methods usefull to implement an ACQ scheduler
@@ -163,7 +170,7 @@ sub parse_input_params {
             return undef;
         }
         try {
-            # Overwrite class attributes, if defined within file
+            # If file can be loaded overwrite class attributes
             my $config = LoadFile($self->{config_file});
             my %attrs = map{_get_attr_name($_->name) => $_->get_write_method} __PACKAGE__->meta->get_all_attributes;
             for my $config_param (keys %$config) {
@@ -218,7 +225,7 @@ sub enqueue_fetchers_of_campaign {
         resource => 'fetchers'
     );
 
-    foreach my $fetcher ( @$fetchers ) {
+    foreach my $fetcher ( @{ $fetchers->{fetchers} } ) {
         foreach my $campaign ( @{ $self->campaigns } ) {
             if ( $fetcher->{campaign} eq $campaign ) {
                 if ( defined $fetcher->{split} ) {
@@ -235,14 +242,44 @@ sub enqueue_fetchers_of_campaign {
                     push @items, $fetcher;
                 }
             } 
+            foreach my $item ( @items ) {
+                $self->log->debug( "Adding fetcher $item->{ns} to campaign $item->{campaign}" );
+                $self->queue->enqueue_item( $item );
+            }
         }
     }
-
-    foreach my $item ( @items ) {
-        $self->log->debug( "Adding fetcher $item->{ns} to campaign $item->{campaign}" );
-        $self->{queues}->{$item->{campaign}}->enqueue_item( $item );
-    }
     return scalar @items;
+}
+
+#=============================================================
+
+=head2 fork_processors
+
+=head3 INPUT
+
+=head3 OUTPUT
+
+The number of processors forked or undef in case of error.
+
+=head3 DESCRIPTION
+
+Fork the number of processors passed (or the default one)
+
+The single processor gets the first fetcher from the queue 
+and executes it otherwise exit.
+
+Wait for all processors death...
+
+Dies in case of errors.
+
+Returns the number of processors forked or undef
+in case of errors.
+
+=cut
+
+#=============================================================
+sub fork_processors {
+    my $self = shift;
 }
 
 # Check class attribute name and check its correspondence with

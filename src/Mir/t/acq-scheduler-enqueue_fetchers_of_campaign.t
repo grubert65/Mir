@@ -10,17 +10,12 @@ use_ok('Mir::Acq::Scheduler');
 ok(my $o=Mir::Acq::Scheduler->new, 'new');
 
 @ARGV = qw(
-    '--campaign'
-    'weather'
-    '--processors'
-    '3'
+    --campaign
+    weather
 );
 
 ok( $o->parse_input_params(), 'parse input params' );
-is( $o->enqueue_fetchers_of_campaign(), 3, 'enqueue_fetchers_of_campaign');
-
-@ARGV = ( '--fetcher' => 'WU' );
-ok( $o->parse_input_params(), 'parse input params' );
-is( $o->enqueue_fetchers_of_campaign(), 1, 'enqueue_fetchers_of_campaign');
+ok( my $num_items = $o->enqueue_fetchers_of_campaign(), 'enqueue_fetchers_of_campaign');
+diag "Queued $num_items items...";
 
 done_testing;

@@ -12,10 +12,15 @@ lib/Mir/Store.pm
 Makefile.PL
 MANIFEST			This list of files
 README
+scripts/.todo
 scripts/mir-acq-processor.pl
+scripts/mir-acq-queues.pl
 scripts/mir-acq-scheduler.pl
 scripts/mir-acq.pl
 scripts/mir-store.pl
+scripts/queue-consumer-test.pl
+scripts/queue-producer-test.pl
+scripts/test.json
 t/00-load.t
 t/01-fetch.t
 t/02-doc.t
