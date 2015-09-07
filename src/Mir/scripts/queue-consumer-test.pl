@@ -10,6 +10,8 @@ use JSON qw(encode_json decode_json);
 use feature "state";
 
 my $campaign;
+my $chunk   = 3;
+my $pause   = 2;
 my $server  = 'localhost';
 my $port    = 6379;
 my $fetcher;
@@ -19,7 +21,17 @@ GetOptions(
     "campaign=s"    => \$campaign,
     "server=s"      => \$server,
     "port=i"        => \$port,
-) or die "Usage: $0 --campaign <campaign_tag> [ --server <queue server IP> ] [ --port <queue port number>]\n";
+    "chunk=s"       => \$chunk,
+    "pause=s"       => \$pause,
+) or die <<EOT;
+
+    Usage: $0 --campaign <campaign_tag> 
+            [ --server <queue server IP> ] (default localhost)
+            [ --port <queue port number> ] (defautl 6379)
+            [ --chunk <number of chunks> ] (default 3)
+            [ --pause <seconds of pause> ] (default 2)
+
+EOT
 
 die "At least the campaign needs to be passed\n"
     unless ( defined $campaign );
@@ -29,6 +41,8 @@ my $q = Queue::Q::ReliableFIFO::Redis->new(
     port       => $port,
     queue_name => $campaign,
 ) or die "Error creating a queue for campaign $campaign\n";
+
+print "Consuming items from queue $campaign....\n";
 
 $q->consume( \&handle_items, "drop", { 
         Chunk       => 3, 
