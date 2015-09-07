@@ -37,13 +37,11 @@ is( $o->parse_input_params(), undef, 'Can accept only valid JSON string, when pa
 @ARGV = (
     '--fetcher'     => 'Instagram',
     '--params'      => '{ "coords":"xx.yy xx.yy"}',
-    '--processors'  => 5,
     '--config'      => 'config/config.yml',
 );
 ok( $o->parse_input_params(), 'Load a config file this time...');
 is( $o->{campaigns}->[0], 'news', 'got right campaign...');
 is( $o->{fetchers}->[1], 'WU', 'got right fetcher...');
-is( $o->{processors}, 7, 'got right number of processors...');
 is( $o->{params}, '{ "coords":"ww.zz zz.ww"}', 'got right params string...');
 is( $o->{config_file}, 'config/config.yml', 'got right config_file...');
 
