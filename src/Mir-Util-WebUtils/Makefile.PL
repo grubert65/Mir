@@ -18,6 +18,10 @@ WriteMakefile(
         'Test::More' => 0,
     },
     PREREQ_PM => {
+        'Cache::FileCache'      => 0,
+        'PDF::Create'           => 0,
+        'Search::Xapian'        => 0,
+        'LWP::Protocol::https'  => 0
         #'ABC'              => 1.6,
         #'Foo::Bar::Module' => 5.0401,
     },
