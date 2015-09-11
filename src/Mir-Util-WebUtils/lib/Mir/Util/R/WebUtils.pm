@@ -6,7 +6,7 @@ use warnings;
 
 =head1 NAME
 
-Mir::Util::WebUtils - The great new Mir::Util::WebUtils!
+Mir::Util::R::WebUtils - base role to handle web pages.
 
 =head1 VERSION
 
@@ -19,19 +19,21 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
+This is the base role for handling and navigating web pages.
+It provides all methods needed to navigate the DOM, plus some general 
+utilities to read/write a cache, to check file types and to perform 
+useful operations (check dates, handle items in an array, etc).
+Note that this role does not retrieve page content from web, it 
+must be set using SetPageContent method. 
 
-Perhaps a little code snippet.
-
-    use Mir::Util::WebUtils;
-
-    my $foo = Mir::Util::WebUtils->new();
+    package My::Web::Class;
+    use Moose;
+    with 'Mir::Util::R::WebUtils';
     ...
 
 =head1 EXPORT
 
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
+Nothing to export
 
 =head1 AUTHOR
 
@@ -125,8 +127,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 use Moose::Role;
 
 use Log::Log4perl                           ();
-use WWW::Mechanize                          ();
-use HTTP::Cookies                           ();
 use Time::HiRes                             qw(gettimeofday);
 use HTML::TreeBuilder                       ();
 use HTML::Parser                            ();
@@ -135,11 +135,8 @@ use Archive::Extract                        ();
 use File::Basename                          qw( dirname basename fileparse );
 use Data::Dumper                            qw(Dumper);
 use PDF::Create                             ();
-use PDF::API2                               ();
-use CAM::PDF                                ();
 use File::Type                              ();
 use File::Path                              qw( rmtree );
-use Search::Xapian                          ':all';
 use HTML::Entities                          qw( decode_entities );
 use Mir::Util::DocHandler::pdf              ();
 
@@ -188,30 +185,6 @@ sub BUILD {
 
 #=============================================================
 
-=head1 SetTimeout
-
-=head2 INPUT
-    $timeout:       desired timeout (seconds)       
-
-=head2 OUTPUT
-
-=head2 DESCRIPTION
-
-    Sets WWW::Mechanize object timeout to desired value
-
-=cut
-
-#=============================================================
-sub SetTimeout
-{
-    my ($self, $timeout) = @_;
-
-    return 0;
-}
-
-
-#=============================================================
-
 =head1 GenerateUUID
 
 =head2 INPUT
@@ -229,539 +202,6 @@ sub GenerateUUID
 {
     my ($seconds, $microseconds) = gettimeofday;
     return "$seconds".'_'."$microseconds";
-}
-
-#=============================================================
-
-=head1 GetMaxTextChunk
-
-=head2 INPUT
-    $start_node:    node where text is supposed to be (not
-                    mandatory)
-    $search_terms:  search terms, used to refine text extraction
-                    (not mandatory)
-    $language:      doc language (mandatory if $search_terms
-                    is defined)
-
-=head2 OUTPUT
-    $text:           biggest chunk of text from page
-
-=head2 DESCRIPTION
-
-    Extracts biggest chunk of text from page
-
-=cut
-
-#=============================================================
-sub GetMaxTextChunk
-{
-    my ($self, $start_node, $search_terms, $language) = @_;
-
-    my $mech = $self->{ MECH };
-    return 0 unless $mech;
-
-    # Check $start_node format
-    if ((defined $start_node) && (ref($start_node) ne 'HASH')) {
-        $self->log->error('Start node must be a referenc to an hash');
-        return undef;
-    }
-
-    my $xapian_db;
-    if (defined $search_terms) {
-        if (not defined $language) {
-            $self->log->error("Language must be provided in order to perform text search");
-            return undef;
-        }
-        rmtree('/tmp/text_search') if not stat('/tmp/text_search');
-        mkdir('/tmp/text_search');
-        eval {
-            $xapian_db = Search::Xapian::WritableDatabase->new( '/tmp/text_search', DB_CREATE_OR_OVERWRITE );
-        };
-        if ($@) {
-            $self->log->error("Cannot create Xapian text search index");
-            return undef;
-        }
-    }
-
-    # Find document encoding
-    my $encoding;
-    my $meta_nodes = $self->SelectNode('meta');
-    foreach my $meta_node (@$meta_nodes) {
-        if ($meta_node->as_HTML =~ /charset=(.*?)["|\s]/) {
-            $encoding = $1;
-            last;
-        }
-    }
-
-    # Create document tree
-    my $tree = HTML::TreeBuilder->new; 
-    $tree->parse_content($self->{'MECH'}->content());
-    $self->{ ROOT_NODE } = $tree;
-    if ((defined $start_node) && (defined $start_node->{'tag'})) {
-        $tree = $self->SelectNode($start_node->{'tag'}, $start_node->{'id'});
-        $tree = $tree->[0] if (ref $tree) eq 'ARRAY';
-    }
-    if (not defined $tree) {
-        $self->log->error("Cannot select node ".$start_node->{'tag'}."-".$start_node->{'id'});
-        return undef;
-    }
-    
-    # Find text
-    my $max_length = 0;
-    my $longest = undef;
-
-    my $texts = {};
-    my $counter = 'x0000';
-    $tree->traverse(
-        [
-            sub {
-                my $node = $_[0];
-                $counter++;
-                if (not defined $_[3]) {
-                    $node->attr('id', $counter) unless defined $node->attr('id');
-                } else {
-                    if (is_text($_[3]->tag)) {
-                        $texts->{$_[3]->parent->attr('id')} .= " $node";
-                        if (length($texts->{$_[3]->parent->attr('id')}) > $max_length) {
-                            $max_length = length($texts->{$_[3]->parent->attr('id')});
-                            $longest = $_[3]->parent->attr('id');
-                        }
-                    }
-                }
-            
-                return HTML::Element::OK; 
-            },
-            undef
-        ],
-    );
-
-    if (defined $search_terms) {
-        $max_length = 0;
-        # Index texts 
-        my $stemmer = new Search::Xapian::Stem($language);
-        my $analyzer = Search::Xapian::TermGenerator->new();
-        foreach my $text_key (keys %$texts) {
-            my $doc = Search::Xapian::Document->new();
-            $analyzer->set_stemmer($stemmer);
-            $analyzer->set_document($doc);
-            $doc->add_value( 1, $text_key );
-            $doc->add_value( 2, Search::Xapian::sortable_serialise(length($texts->{$text_key})) );
-            $analyzer->index_text($texts->{$text_key});
-            $xapian_db->add_document($doc);
-        }
-    
-        # Query index...
-        my @terms;
-        while ($search_terms =~ /(\w+)/g) {
-            push @terms, "Z".$stemmer->stem_word($1);
-        }
-        my $query = Search::Xapian::Query->new(OP_OR, @terms);
-        my $enq = $xapian_db->enquire();
-        $enq->set_query($query);
-        my @matches = $enq->matches( 0, $xapian_db->get_doccount() );
-        rmtree('/tmp/text_search') if stat('/tmp/text_search');
-        if (scalar @matches > 0) {
-            my $doc = $matches[0]->get_document();
-            my $text_key = $doc->get_value(1);
-            return $texts->{$text_key};
-        }
-    }
-
-    if (defined $longest) {
-        return decode_entities($texts->{$longest});
-    } else {
-        return undef;
-    }
-}
-
-#=============================================================
-
-=head1 SetPageContent
-
-=head2 INPUT
-    $page_html:       page source
-
-=head2 OUTPUT
-
-=head2 DESCRIPTION
-
-    Stores provided page content in object
-
-=cut
-
-#=============================================================
-sub SetPageContent
-{
-    my ($self, $page_html) = @_;
-
-    my $mech = $self->{ MECH };
-    return 0 unless $mech;
-
-    $self->{ CURRENT_PAGE } = $mech->content();
-
-    # Select root node
-    my $root_node = HTML::TreeBuilder->new; 
-    $root_node->parse($self->{ CURRENT_PAGE });
-    $self->{ ROOT_NODE } = $root_node;
-
-    return 1;
-}
-
-#=============================================================
-
-=head1 GetPageContent
-
-=head2 INPUT
-
-=head2 OUTPUT
-    $page_html:       page source
-
-=head2 DESCRIPTION
-
-    Stores provided page content in object
-
-=cut
-
-#=============================================================
-sub GetPageContent
-{
-    my ($self) = @_;
-
-    my $mech = $self->{ MECH };
-    return 0 unless $mech;
-
-    return $self->{ CURRENT_PAGE };
-}
-
-#=============================================================
-
-=head1 PageContentChanged
-
-=head2 INPUT
-
-=head2 OUTPUT
-
-=head2 DESCRIPTION
-
-    Checks if page content has changed
-
-=cut
-
-#=============================================================
-sub PageContentChanged
-{
-    my ($self) = @_;
-
-    my $mech = $self->{ MECH };
-    return 0 unless $mech;
-
-    if ($mech->content ne $self->{ CURRENT_PAGE }) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
-
-#=============================================================
-
-=head1 ResetPageContent
-
-=head2 INPUT
-
-=head2 OUTPUT
-
-=head2 DESCRIPTION
-
-    Stores current page content in object
-
-=cut
-
-#=============================================================
-sub ResetPageContent
-{
-    my ($self) = @_;
-
-    my $mech = $self->{ MECH };
-    return 0 unless $mech;
-
-    $self->{ CURRENT_PAGE } = $mech->content();
-
-    # Select root node
-    my $root_node = HTML::TreeBuilder->new; 
-    $root_node->parse($self->{ CURRENT_PAGE });
-    $self->{ ROOT_NODE } = $root_node;
-
-    return 1;
-}
-
-#=============================================================
-
-=head1 Back
-
-=head2 INPUT
-
-=head2 OUTPUT
-
-=head2 DESCRIPTION
-
-    Go back to previous page
-
-=cut
-
-#=============================================================
-sub Back
-{
-    my ($self) = @_;
-
-    my $mech = $self->{ MECH };
-    return 0 unless $mech;
-
-    return $mech->back();
-}
-
-#=============================================================
-
-=head1 GotoPage
-
-=head2 INPUT
-    $url:       target url
-
-=head2 OUTPUT
-
-=head2 DESCRIPTION
-
-    Gets URL. In case of a timeout, it tries 3 times before
-    returning an error
-
-=cut
-
-#=============================================================
-sub GotoPage
-{
-    my ($self, $url) = @_;
-    return unless $url;
-
-    my $mech = $self->{ MECH };
-    return unless $mech;
-
-    my $go = 1;
-    my $try_number = 1;
-
-    $self->log->info("Getting url $url...") if (defined $self->log);
-
-    # Try to load page for three times, then give up
-    while ($go) {
-        my $response = $mech->get( $url );
-        if ( (not $mech->success()) || ($response->code !~ /2\d{2}/) ) {
-            $self->log->info ( "ERROR getting URL $url, received code ".$response->code.
-                        " - try number $try_number") if (defined $self->log);
-            $try_number++;
-            $go = 0 if $try_number > 3;
-        } else {
-            $go = 0;
-        }
-    }
-    if ($try_number > 3) {
-        $self->log->info ( "ERROR getting URL $url - exceeded max number of tries ") if (defined $self->log);
-        return 0;
-    }
-
-    # Store current page in object
-    delete $self->{ CURRENT_PAGE };
-    $self->{ CURRENT_PAGE } = $mech->content();
-    # Select root node
-    my $root_node = HTML::TreeBuilder->new; 
-    $root_node->parse($self->{ CURRENT_PAGE });
-    $self->{ ROOT_NODE } = $root_node;
-
-    return 1
-}
-
-#=============================================================
-
-=head1 FollowLink
-
-=head2 INPUT
-    $pattern:  pattern matching desired link
-    $field:    field to search for pattern (LINK_NAME or 
-               LINK_URL)
-
-=head2 OUTPUT
-
-=head2 DESCRIPTION
-
-    Follows specified link
-
-=cut
-
-#=============================================================
-sub FollowLink
-{
-    my ($self, $pattern, $field) = @_;
-
-    return 0;
-}
-
-#=============================================================
-
-=head1 SelectFormByName
-
-=head2 INPUT
-    $name:  the form's name
-
-=head2 OUTPUT
-    $form:  HTML::Form object
-
-=head2 DESCRIPTION
-
-    Gets desired form
-
-=cut
-
-#=============================================================
-sub SelectFormByName
-{
-    my ($self, $name) = @_;
-
-    return 0;
-}
-
-#=============================================================
-
-=head1 SelectFormByNumber
-
-=head2 INPUT
-    $number:  the form's number
-
-=head2 OUTPUT
-    $form:  HTML::Form object
-
-=head2 DESCRIPTION
-
-    Gets number-th form
-
-=cut
-
-#=============================================================
-sub SelectFormByNumber
-{
-    my ($self, $number) = @_;
-
-    return 0;
-}
-
-#=============================================================
-
-=head1 FillForm
-
-=head2 INPUT
-    $form:   the form
-    $field:  the fields's name
-    $value:  new field's value
-
-=head2 OUTPUT
-
-=head2 DESCRIPTION
-
-    Fills desired field with given value
-
-=cut
-
-#=============================================================
-sub FillForm
-{
-    my ($self, $form, $field, $value) = @_;
-    
-    return 0;
-}
-
-#=============================================================
-
-=head1 SubmitForm
-
-=head2 INPUT
-    $form:   the form
-
-=head2 OUTPUT
-
-=head2 DESCRIPTION
-
-    Submits form
-
-=cut
-
-#=============================================================
-sub SubmitForm
-{
-    my ($self, $form) = @_;
-    
-    return 0;
-}
-
-#=============================================================
-
-=head1 SubmitPage
-
-=head2 INPUT
-
-=head2 OUTPUT
-
-=head2 DESCRIPTION
-
-    Submits page
-
-=cut
-
-#=============================================================
-sub SubmitPage
-{
-    my $self = shift;
-
-    return 0;
-}
-
-#=============================================================
-
-=head1 ReloadPage
-
-=head2 INPUT
-
-=head2 OUTPUT
-
-=head2 DESCRIPTION
-
-    Reloads current page
-
-=cut
-
-#=============================================================
-sub ReloadPage
-{
-    my $self = shift;
-
-    my $mech = $self->{ MECH };
-    return unless $mech;
-
-    my $go = 1;
-    my $try_number = 1;
-
-    # Try to submit page for three times, then give up
-    while ($go) {
-        my $response = $mech->reload();
-        if ( (not $mech->success()) ||  ($response->code !~ /2\d{2}/) ) {
-            $self->log->error("ERROR reloading page") if (defined $self->log);
-            $try_number++;  
-            $go = 0 if $try_number > 3;
-        } else {
-            $go = 0;
-        }
-    }
-    if ($try_number > 3) {
-        $self->log->info ( "ERROR reloading page - exceeded max number of tries ") if (defined $self->log);
-        return 0;
-    }
-
-    return 1;
 }
 
 #=============================================================
@@ -843,6 +283,36 @@ sub GetItemIndex
 
     return undef unless $found;
     return $index;
+}
+
+#=============================================================
+
+=head1 SetPageContent
+
+=head2 INPUT
+    $page_html:       page source
+
+=head2 OUTPUT
+
+=head2 DESCRIPTION
+
+    Stores provided page content in object
+
+=cut
+
+#=============================================================
+sub SetPageContent
+{
+    my ($self, $page_html) = @_;
+
+    $self->{ CURRENT_PAGE } = $page_html;
+
+    # Select root node
+    my $root_node = HTML::TreeBuilder->new; 
+    $root_node->parse($self->{ CURRENT_PAGE });
+    $self->{ ROOT_NODE } = $root_node;
+
+    return 1;
 }
 
 #=============================================================
@@ -1299,175 +769,6 @@ sub SelectParent
 
 #=============================================================
 
-=head1 DownloadLink
-
-=head2 INPUT
-    $link :             link to be downloaded
-    $type:              (not mandatory) file extension. If
-                        not given, system will try to determine
-                        it from its link
-    $encoding:          file encoding (not mandatory)
-
-=head2 OUTPUT
-    $files:             reference of an array of hashes,
-                        contanining file path and description
-    $code:              HTTP code received
-
-=head2 DESCRIPTION
-
-    Downloads provided link
-
-=cut
-
-#=============================================================
-sub DownloadLink
-{
-    my ($self, $link, $type, $encoding) = @_;
-
-    my $mech = $self->{ MECH };
-    return unless $mech;
-
-    return (undef, undef);
-}
-
-#=============================================================
-
-=head1 SaveContentToDisc
-
-=head2 INPUT
-    $file_patterns :    array of file search patterns (regex)
-    $file_name:         file base name (without extension)
-    $type:              file extension
-    $encoding:          file encoding (not mandatory)
-
-=head2 OUTPUT
-    $file:              hash contanining file path and 
-                        description
-
-=head2 DESCRIPTION
-
-    Downloads desired files
-
-=cut
-
-#=============================================================
-sub SaveContentToDisc
-{
-    my ($self, $file_name, $type, $encoding) = @_;
-
-    my $mech = $self->{'MECH'};
-    return unless $mech;
-
-    my $basedir = $self->TEMP_DIR;
-    my $file_entry = {};
-    $file_name = GenerateUUID() if not defined $file_name;
-    my $file_path = $basedir."/".$file_name.$type;
-
-    open DOCUMENT, "> $file_path";
-    if (defined $encoding) {
-        binmode DOCUMENT, ":encoding($encoding)";
-    }
-    print DOCUMENT $mech->content();
-    close DOCUMENT;
-
-    $file_entry->{'path'} = $file_path;
-    $file_entry->{'url'} = $mech->uri()->as_string();
-
-    return $file_entry;
-}
-#=============================================================
-
-=head1 GetFiles
-
-=head2 INPUT
-    $file_patterns :    array of file search patterns (regex)
-    $host:              base web address (if needed)
-    $type:              (not mandatory) file extension. If
-                        not given, system will try to determine
-                        it from its link
-    $encoding:          file encoding (not mandatory)
-
-=head2 OUTPUT
-    $file:              hash contanining file path and 
-                        description
-
-=head2 DESCRIPTION
-
-    Downloads desired files
-
-=cut
-
-#=============================================================
-sub GetFiles
-{
-    my ($self, $file_patterns, $host, $type, $encoding) = @_;
-
-    my $mech = $self->{ MECH };
-    return unless $mech;
-    
-    my $basedir = $self->TEMP_DIR;
-
-    my $links = $self->GetLinks('a');
-
-    # Get all files 
-    my $files = [];
-    foreach my $file_pattern (@$file_patterns)
-    {
-        foreach my $link (@$links)
-        {
-            if ($link =~ /$file_pattern/g)
-            {
-                my $go = 1;
-                my $try_number = 1;
-                my $url = $1;
-                $url = $host.'/'.$1 if (defined $host);
-                # Try to get file for three times, then give up
-                while ($go) {
-                    my $response = $mech->get($url);
-                    if ( (not $mech->success()) || ($response->code !~ /^2\d{2}/) )
-                    {
-                        $self->log->error("ERROR getting file $url") if (defined $self->log);
-                        $try_number++;  
-                        $go = 0 if $try_number > 3;
-                    } else {
-                        $go = 0;
-                    }
-                }
-
-                if ($try_number > 3) {
-                    $self->log->info ( "ERROR  getting file $url - exceeded max number of tries ") if (defined $self->log);
-                    $mech->back();
-                    next;
-                }
-
-                if ((not defined $type) && ($url =~ /.+(\..+$)/)) {
-                    $type = $1;
-                }
-                my $file_entry = {};
-                my $file_name = GenerateUUID();
-                my $file_path = $basedir."/".$file_name.$type;
-                open DOCUMENT, "> $file_path";
-                if (defined $encoding) {
-                    binmode DOCUMENT, ":encoding($encoding)";
-                }
-                print DOCUMENT $mech->content();
-                close DOCUMENT;
-    
-                $file_entry->{'path'} = $file_path;
-                $file_entry->{'url'} = $url;
-                push @$files, $file_entry; 
-                
-                # After download, go back to previous page 
-                $mech->back();
-            }
-        }
-    }
-
-    return $files;
-}
-
-#=============================================================
-
 =head1 Decompress
 
 =head2 INPUT
@@ -1911,17 +1212,6 @@ sub CheckFileType
     }
 
     return $type;
-}
-
-sub is_text
-{
-   my($tag) = @_;
-
-   if ( ($tag =~ /style/i) || ($tag =~ /script/i) || ($tag =~ /form/i) ||
-        ($tag =~ /noscript/i) ) {
-       return 0;
-   }
-   return 1;
 }
 
 1; # End of Mir::Util::WebUtils
