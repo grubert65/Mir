@@ -25,7 +25,7 @@ WriteMakefile(
         'XML::Simple'             => 0,
         'LEOCHARRE::HTML::Text'   => 0,
         'PDF::API2'               => 0,
-        'CAN::PDF'                => 0,
+        'CAM::PDF'                => 0,
         'Image::OCR::Tesseract'   => 0,
         'Image::Size'             => 0,
         'Imager'                  => 0,
