@@ -22,6 +22,9 @@ ok (my $doc = Mir::Util::WebUtils::Mechanize->new(
 ok ( $doc->WriteCache('year', '1984'),                                                                 "WriteCache");
 ok ( $doc->ReadCache('year'),                                                                          "ReadCache");
 ok ( $doc->GotoPage( 'http://www.regione.taa.it/bur/Bollettino_1e2.asp' ),                             "GotoPage");
+my $page_content = $doc->GetPageContent();
+ok ($page_content,                                                                                     "GetPageContent");
+ok ($doc->SetPageContent($page_content),                                                               "SetPageContent");
 ok ( $doc->FollowLink('ricerca_it.asp', LINK_URL),                                                     "FollowLink");
 my $form = $doc->SelectFormByNumber(0);
 ok ($form,                                                                                             "SelectFormByNumber");
