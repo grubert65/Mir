@@ -42,7 +42,7 @@ Andrea Poggi, C<< <andrea.poggi at softeco.it> >>
 =head1 BUGS
 
 Please report any bugs or feature requests to C<bug-mir-util-webutils at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Mir-Util-WebUtils>.  I will be notified, and then you'll
+the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Mir-Util-R-WebUtils>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
 
 
@@ -52,7 +52,7 @@ automatically be notified of progress on your bug as I make changes.
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Mir::Util::WebUtils
+    perldoc Mir::Util::R::WebUtils
 
 
 You can also look for information at:
@@ -61,19 +61,19 @@ You can also look for information at:
 
 =item * RT: CPAN's request tracker (report bugs here)
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Mir-Util-WebUtils>
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Mir-Util-R-WebUtils>
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
-L<http://annocpan.org/dist/Mir-Util-WebUtils>
+L<http://annocpan.org/dist/Mir-Util-R-WebUtils>
 
 =item * CPAN Ratings
 
-L<http://cpanratings.perl.org/d/Mir-Util-WebUtils>
+L<http://cpanratings.perl.org/d/Mir-Util-R-WebUtils>
 
 =item * Search CPAN
 
-L<http://search.cpan.org/dist/Mir-Util-WebUtils/>
+L<http://search.cpan.org/dist/Mir-Util-R-WebUtils/>
 
 =back
 
@@ -139,6 +139,7 @@ use File::Type                              ();
 use File::Path                              qw( rmtree );
 use HTML::Entities                          qw( decode_entities );
 use Mir::Util::DocHandler::pdf              ();
+use Data::GUID;
 
 use namespace::autoclean;
 
@@ -185,108 +186,6 @@ sub BUILD {
 
 #=============================================================
 
-=head1 GenerateUUID
-
-=head2 INPUT
-
-=head2 OUTPUT
-
-=head2 DESCRIPTION
-
-    Genereates a unique identifier based on current time
-
-=cut
-
-#=============================================================
-sub GenerateUUID
-{
-    my ($seconds, $microseconds) = gettimeofday;
-    return "$seconds".'_'."$microseconds";
-}
-
-#=============================================================
-
-=head2 getSQLDate
-
-=head3 INPUT
-
-    $day:           day of pubblication (numeric)
-    $month:         month of pubblication (literal)
-    $year:          year of pubblication (numeric)
-
-=head3 OUTPUT
-
-    $pub_date:      date of pubblication (yyyy-mm-dd HH:mm:ss)
-
-=head3 DESCRIPTION
-
-    Converts date of pubblication into MySQL format
-
-=cut
-
-#=============================================================
-sub getSQLDate
-{
-    my ($self, $day, $month, $year) = @_;
-
-    my @months = ('gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
-                  'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre');
-    my $month_number = 1;
-
-    my $found = 0;
-    foreach (@months) {
-        if ($month =~ /$_/i) {
-            $found = 1;
-            last;
-        }
-        $month_number++;
-    }
-
-    return undef if not $found;
-
-    $day = sprintf("%02d", $day);
-    $month_number = sprintf("%02d", $month_number);
-    $year = sprintf("%04d", $year);
-    return "$year-$month_number-$day 00:00:00";
-}
-
-#=============================================================
-
-=head1 GetItemIndex
-
-=head2 INPUT
-    $array:             input array
-    $item:              input item
-
-=head2 OUTPUT
-
-=head2 DESCRIPTION
-
-    Return index of item in array
-
-=cut
-
-#=============================================================
-sub GetItemIndex
-{
-    my ($self, $array, $item) = @_;
-
-    my $index = 0;
-    my $found = 0;
-    foreach (@$array) {
-        if ($item eq $_) {
-            $found = 1;
-            last;
-        }
-        $index++;
-    }
-
-    return undef unless $found;
-    return $index;
-}
-
-#=============================================================
-
 =head1 SetPageContent
 
 =head2 INPUT
@@ -296,7 +195,7 @@ sub GetItemIndex
 
 =head2 DESCRIPTION
 
-    Stores provided page content in object
+    Stores provided HTML page in object
 
 =cut
 
@@ -327,7 +226,8 @@ sub SetPageContent
 
 =head2 DESCRIPTION
 
-    Gets desired content from specified node
+    Gets desired content from node containing provided pattern
+    Search is carried out as a regular expression.
 
 =cut
 
@@ -379,7 +279,11 @@ sub GetNodeContent
 
 =head2 DESCRIPTION
 
-    Gets links from specified node and its children
+    Gets links from specified node and its children, using
+    provided search pattern.
+    Search is carried out as a regular expression.
+    If provided and set to 1, from_root parameter starts the
+    search from root node instead of current node.
 
 =cut
 
@@ -553,7 +457,7 @@ sub GetCurrentNode
 
 =head2 DESCRIPTION
 
-    Set passed node as current node
+    Sets provided node as current node
 
 =cut
 
@@ -588,7 +492,22 @@ sub SetCurrentNode
 
 =head2 DESCRIPTION
 
-    Selects desired node
+    Selects desired node, according to provided parameters.
+    Note that if id is provided, tag must be defined too,
+    otherwise id will be ignored.
+    If provided, pattern parameter will further refine search
+    according to passed string.
+    Here follow possible combination of search parameters:
+    - tag
+    - tag, pattern
+    - tag, id
+    - tag, id, use_regex
+    - tag, id, pattern
+    - tag, id, pattern, use_regex
+
+    Note that from_selected parameter can be added to all
+    above combinations, thus starting search from currently
+    selected node instead of root node.
 
 =cut
 
@@ -807,74 +726,6 @@ sub Decompress
 
     my $extracted_files = $zip->files;
     return $extracted_files;
-}
-
-#=============================================================
-
-=head1 GetAttributeFromPage
-
-=head2 INPUT
-    $file:              file
-    $desc_pattern :     description search pattern (array of 
-                        regex)
-    $attribute:         attribute
-    $node:              node attribute
-    $tag:               node value
-
-=head2 OUTPUT
-
-=head2 DESCRIPTION
-
-    Uses specified patterns to retrieve information about 
-    given document
-
-=cut
-
-#=============================================================
-sub GetAttributeFromPage
-{
-    my ($self, $file, $desc_pattern, $attribute) = @_;
-
-    my $attribute_found = 0;
-    my $description = $self->GetNodeContent($desc_pattern->[0]);
-    if ($description->[0] =~ /$desc_pattern->[1]/) {
-        $file->{$attribute} = $2;
-        $attribute_found = 1;
-    }
-
-    if (not $attribute_found) {
-        $self->log->info("WARNING Unable to find attribute \'$attribute\' using pattern \'$desc_pattern\'") if (defined $self->log);
-        return 0;
-    }
-
-    return $attribute_found;
-}
-
-#=============================================================
-
-=head1 AddAttribute
-
-=head2 INPUT
-    $file:              file hash
-    $attribute:         attribute name
-    $value:             attribute value
-
-=head2 OUTPUT
-
-=head2 DESCRIPTION
-
-    Adds attribute to document
-
-=cut
-
-#=============================================================
-sub AddAttribute
-{
-    my ($self, $file, $attribute, $value) = @_;
-
-    $file->{$attribute} = $value;
-
-    return 1;
 }
 
 #=============================================================
@@ -1150,7 +1001,8 @@ sub CheckFileType
 
     # Check for Excel and Word documents
     my $infos;
-    my $info_file = $self->TEMP_DIR."/".GenerateUUID();
+    my $guid = Data::GUID->new();
+    my $info_file = $self->TEMP_DIR."/".$guid->as_string;
     my $cmd = "antiword $file 2> $info_file 1> /dev/null";
     my $ret = system($cmd);
 
@@ -1214,4 +1066,4 @@ sub CheckFileType
     return $type;
 }
 
-1; # End of Mir::Util::WebUtils
+1; # End of Mir::Util::R::WebUtils
