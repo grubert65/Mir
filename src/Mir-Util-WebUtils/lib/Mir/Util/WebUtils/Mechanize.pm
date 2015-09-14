@@ -143,6 +143,7 @@ use Archive::Extract            ();
 use File::Basename              qw( dirname basename fileparse );
 use File::Copy                  qw( move );
 use Data::Dumper                qw(Dumper);
+use Data::GUID;
 
 use base qw( Exporter );
 use vars qw( $VERSION @ISA @EXPORT_OK %EXPORT_TAGS);
@@ -235,7 +236,8 @@ sub SetTimeout
 
 =head2 DESCRIPTION
 
-    Follows specified link
+    Follows specified link, searching for pattern in its name
+    (LINK_NAME) or URL (LINK_URL).
 
 =cut
 
@@ -306,7 +308,7 @@ sub FollowLink
 
 =head2 DESCRIPTION
 
-    Gets desired form
+    Gets desired form by provided name.
 
 =cut
 
@@ -339,7 +341,8 @@ sub SelectFormByName
 
 =head2 DESCRIPTION
 
-    Gets desired form
+    Gets desired form from its name, if provided; otherwise
+    returns first form of page.
 
 =cut
 
@@ -376,7 +379,7 @@ sub SelectForm
 
 =head2 DESCRIPTION
 
-    Gets desired form
+    Gets desired form if it contains provided field names.
 
 =cut
 
@@ -448,7 +451,7 @@ sub SelectFormByNumber
 
 =head2 DESCRIPTION
 
-    Fills desired field with given value
+    Fills desired field of provided form with given value
 
 =cut
 
@@ -686,6 +689,7 @@ sub ReloadPage
     $url:       target url
 
 =head2 OUTPUT
+    $ret:       0 (error) or 1 (success)
 
 =head2 DESCRIPTION
 
@@ -772,7 +776,7 @@ sub Back
 
 =head2 DESCRIPTION
 
-    Stores provided page content in object
+    Returns HTML source of currently loaded page.
 
 =cut
 
@@ -826,7 +830,7 @@ sub PageContentChanged
 
 =head2 DESCRIPTION
 
-    Stores current page content in object
+    Reloads current page content in object
 
 =cut
 
@@ -910,7 +914,8 @@ sub DownloadLink
         $type = $1 if length($1) <= 4;
     }
 
-    my $file_name = $self->GenerateUUID();
+    my $guid = Data::GUID->new();
+    my $file_name = $guid->as_string;
     my $file_path = $basedir."/".$file_name;
     open DOCUMENT, "> $file_path";
     if (defined $encoding) {
@@ -941,7 +946,6 @@ sub DownloadLink
 =head1 SaveContentToDisc
 
 =head2 INPUT
-    $file_patterns :    array of file search patterns (regex)
     $file_name:         file base name (without extension)
     $type:              file extension
     $encoding:          file encoding (not mandatory)
@@ -952,7 +956,8 @@ sub DownloadLink
 
 =head2 DESCRIPTION
 
-    Downloads desired files
+    Saves content of current page to file, using specified
+    encoding if provided.
 
 =cut
 
@@ -966,7 +971,9 @@ sub SaveContentToDisc
 
     my $basedir = $self->TEMP_DIR;
     my $file_entry = {};
-    $file_name = GenerateUUID() if not defined $file_name;
+    
+    my $guid = Data::GUID->new();
+    $file_name = $guid->as_string if not defined $file_name;
     my $file_path = $basedir."/".$file_name.$type;
 
     open DOCUMENT, "> $file_path";
@@ -1000,7 +1007,11 @@ sub SaveContentToDisc
 
 =head2 DESCRIPTION
 
-    Downloads desired files
+    Downloads desired files, looking for provided pattern in
+    their URLs. If needed, base host address and file encoding 
+    can be provided.
+    If extension is not provided, the method will try to
+    determine it by itself.
 
 =cut
 
@@ -1051,7 +1062,8 @@ sub GetFiles
                     $type = $1;
                 }
                 my $file_entry = {};
-                my $file_name = GenerateUUID();
+                my $guid = Data::GUID->new();
+                my $file_name = $guid->as_string;
                 my $file_path = $basedir."/".$file_name.$type;
                 open DOCUMENT, "> $file_path";
                 if (defined $encoding) {
