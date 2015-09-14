@@ -40,6 +40,7 @@ WriteMakefile(
         'namespace::autoclean'      => 0,
         'WWW::Mechanize'            => 0,
         'Time::HiRes'               => 0,
+        'Data::GUID'                => 0,
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'Mir-Util-WebUtils-*' },
