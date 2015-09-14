@@ -22,9 +22,6 @@ ok (my $doc = Mir::Util::WebUtils->new(
 ok ( $doc->WriteCache('year', '1984'),                                                                 "WriteCache");
 ok ( $doc->ReadCache('year'),                                                                          "ReadCache");
 
-my $array = ['one', 'two', 'three', 'four', 'five'];
-ok ($doc->GetItemIndex($array, 'four'),                                                                "GetItemIndex");
-
 ok ($doc->Decompress('./data/docs.zip', './test_data'),                                                "Decompress");
 
 my $title = "Titolo documento";

@@ -1,0 +1,26 @@
+---
+abstract: 'Media Indexer and Retriever'
+author:
+  - 'Marco Masetti <marco.masetti@softeco.it>'
+build_requires:
+  Test::More: '0'
+configure_requires:
+  ExtUtils::MakeMaker: '0'
+dynamic_config: 0
+generated_by: 'ExtUtils::MakeMaker version 7.0401, CPAN::Meta::Converter version 2.150001'
+license: artistic_2
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: '1.4'
+name: Mir
+no_index:
+  directory:
+    - t
+    - inc
+requires:
+  Data::GUID: '0'
+  DateTime: '0'
+  Moose: '0'
+  MooseX::Storage: '0'
+  perl: '5.006'
+version: '0.01'

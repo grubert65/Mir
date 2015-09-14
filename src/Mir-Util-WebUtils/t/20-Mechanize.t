@@ -22,6 +22,9 @@ ok (my $doc = Mir::Util::WebUtils::Mechanize->new(
 ok ( $doc->WriteCache('year', '1984'),                                                                 "WriteCache");
 ok ( $doc->ReadCache('year'),                                                                          "ReadCache");
 ok ( $doc->GotoPage( 'http://www.regione.taa.it/bur/Bollettino_1e2.asp' ),                             "GotoPage");
+my $page_content = $doc->GetPageContent();
+ok ($page_content,                                                                                     "GetPageContent");
+ok ($doc->SetPageContent($page_content),                                                               "SetPageContent");
 ok ( $doc->FollowLink('ricerca_it.asp', LINK_URL),                                                     "FollowLink");
 my $form = $doc->SelectFormByNumber(0);
 ok ($form,                                                                                             "SelectFormByNumber");
@@ -32,8 +35,6 @@ ok ( $doc->SubmitPage(),                                                        
 ok ( my $pub_node = $doc->SelectNode('name', 'ris_ricerca'),                                           "SelectNode");
 ok ( $doc->SetCurrentNode($pub_node->[0]),                                                             "SetCurrentNode");
 ok ( my $desc_node = $doc->SelectRightSibling(),                                                       "SelectDescendant");
-my $array = ['one', 'two', 'three', 'four', 'five'];
-ok ($doc->GetItemIndex($array, 'four'),                                                                "GetItemIndex");
 $form = $doc->SelectFormByNumber(0);
 ok ( $doc->SubmitForm($form, 'CONTINUA'),                                                              "SubmitForm");
 my $nodes;
