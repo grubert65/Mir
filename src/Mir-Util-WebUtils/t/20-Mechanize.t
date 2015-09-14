@@ -35,8 +35,6 @@ ok ( $doc->SubmitPage(),                                                        
 ok ( my $pub_node = $doc->SelectNode('name', 'ris_ricerca'),                                           "SelectNode");
 ok ( $doc->SetCurrentNode($pub_node->[0]),                                                             "SetCurrentNode");
 ok ( my $desc_node = $doc->SelectRightSibling(),                                                       "SelectDescendant");
-my $array = ['one', 'two', 'three', 'four', 'five'];
-ok ($doc->GetItemIndex($array, 'four'),                                                                "GetItemIndex");
 $form = $doc->SelectFormByNumber(0);
 ok ( $doc->SubmitForm($form, 'CONTINUA'),                                                              "SubmitForm");
 my $nodes;
