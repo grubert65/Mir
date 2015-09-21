@@ -29,6 +29,8 @@ WriteMakefile(
         'MooseX::Storage'       => 0,
         'Queue::Q'              => 0,
         'WWW::Mechanize'        => 0,
+        'Data::GUID'            => 0,
+        'File::Copy'            => 0,
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'Mir-*' },
