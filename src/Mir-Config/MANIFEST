@@ -15,7 +15,6 @@ public/css/error.css
 public/css/style.css
 lib/Mir/Config.pm
 bin/app.psgi
-scripts/system-acq-00.json
 views/index.tt
 views/layouts/main.tt
 environments/production.yml
