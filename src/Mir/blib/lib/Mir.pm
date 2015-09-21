@@ -1,9 +1,8 @@
-our $VERSION = '0.01';
+package Mir;
 
-package Mir::Util::WebUtils;
 =head1 NAME
 
-Mir::Util::WebUtils - This is the base class to handle web pages.
+Mir - Media Indexer and Retriever
 
 =head1 VERSION
 
@@ -16,50 +15,43 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
-This is the base module for handling and navigating web pages.
-It features the Mir::Util::R::WebUtils role, that provides all methods
-needed to navigate the DOM, plus some general utilities to read/write
-a cache, to check file types and to perform useful operations (check
-dates, handle items in an array, etc).
-Note that this module does not retrieve page content from web, it 
-must be set using SetPageContent method. 
-Here follows module usage.
+To fetch a bunch of web sites related by a topic
+------------------------------------------------
+- design your data extending the Mir::Doc role
+- build and deploy a class that consumes the Mir::Acq::Role::Fetch role for each source
+- Startup the Mir Acq subsystem (mir-acq start)
+- add and configure all the sources via cmd script mir-acq-add-source or Mir-Acq web site
+- configure the fetching campaign via mir-acq-add-campaign or mir-acq web site
+- let it play...
 
-    use Mir::Util::WebUtils;
+To view the extracted information
+---------------------------------
+- login to the mir web site
+- select the fetching campaign
+- browse indexed data and perform searches
 
-    my $wu = Mir::Util::WebUtils->new(
-        TEMP_DIR => './data',
-        CACHE_DIR => './test_data/cache',
-        CACHE_NAME => 'test_web'
-        );
-
-    ...retrieve page from web...
-
-    my $ret = $wu->SetPageContent($page_html);
+You can always build a dedicated delivery system on top of the
+Mir MongoDB data store.
 
 =head1 EXPORT
 
-Nothing to export
+None
 
 =head1 AUTHOR
 
-Andrea Poggi, C<< <andrea.poggi at softeco.it> >>
+Marco Masetti, C<< <marco.masetti at softeco.it> >>
 
 =head1 BUGS
 
-Please report any bugs or feature requests to C<bug-mir-util-webutils at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Mir-Util-WebUtils>.  I will be notified, and then you'll
+Please report any bugs or feature requests to C<bug-mir at rt.cpan.org>, or through
+the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Mir>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
-
-
-
 
 =head1 SUPPORT
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Mir::Util::WebUtils
-
+    perldoc Mir
 
 You can also look for information at:
 
@@ -67,19 +59,19 @@ You can also look for information at:
 
 =item * RT: CPAN's request tracker (report bugs here)
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Mir-Util-WebUtils>
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Mir>
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
-L<http://annocpan.org/dist/Mir-Util-WebUtils>
+L<http://annocpan.org/dist/Mir>
 
 =item * CPAN Ratings
 
-L<http://cpanratings.perl.org/d/Mir-Util-WebUtils>
+L<http://cpanratings.perl.org/d/Mir>
 
 =item * Search CPAN
 
-L<http://search.cpan.org/dist/Mir-Util-WebUtils/>
+L<http://search.cpan.org/dist/Mir/>
 
 =back
 
@@ -89,7 +81,7 @@ L<http://search.cpan.org/dist/Mir-Util-WebUtils/>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2015 Andrea Poggi.
+Copyright 2015 Marco Masetti.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a
@@ -129,9 +121,5 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 =cut
-use Moose;
-use namespace::autoclean;
 
-with 'Mir::Util::R::WebUtils';
-
-1;
+1; # End of Mir

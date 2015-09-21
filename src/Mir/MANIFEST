@@ -1,6 +1,4 @@
 Changes
-cookies.dat
-ignore.txt
 lib/Mir.pm
 lib/Mir/Acq/Scheduler.pm
 lib/Mir/Doc.pm

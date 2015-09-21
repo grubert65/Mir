@@ -1,0 +1,11 @@
+# configuration file for testing Mir::Acq::Scheduler
+
+fetcher : 
+    - 'Netatmo'
+    - 'WU'
+campaign : 'news'
+queues:
+    coda: 'foo'
+processors: 7
+params: '{ "coords":"ww.zz zz.ww"}'
+config_file: 'bar'

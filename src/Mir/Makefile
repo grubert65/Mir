@@ -1,12 +1,12 @@
 # This Makefile is for the Mir extension to perl.
 #
 # It was generated automatically by MakeMaker version
-# 7.04 (Revision: 70400) from the contents of
+# 7.0401 (Revision: 70401) from the contents of
 # Makefile.PL. Don't edit this file, edit Makefile.PL instead.
 #
 #       ANY CHANGES MADE HERE WILL BE LOST!
 #
-#   MakeMaker ARGV: ()
+#   MakeMaker ARGV: (q[PREFIX=/home/andrea/perl])
 #
 
 #   MakeMaker Parameters:
@@ -30,7 +30,7 @@
 
 # --- MakeMaker const_config section:
 
-# These definitions are from config.sh (via /home/grubert/perl5/perlbrew/perls/perl-5.21.8/lib/5.21.8/x86_64-linux/Config.pm).
+# These definitions are from config.sh (via /home/andrea/perl/lib/5.22.0/x86_64-linux/Config.pm).
 # They may have been overridden via Makefile.PL or on the command line.
 AR = ar
 CC = cc
@@ -41,19 +41,19 @@ DLSRC = dl_dlopen.xs
 EXE_EXT = 
 FULL_AR = /usr/bin/ar
 LD = cc
-LDDLFLAGS = -shared -O2 -L/usr/local/lib -fstack-protector
-LDFLAGS =  -fstack-protector -L/usr/local/lib
-LIBC = libc-2.13.so
+LDDLFLAGS = -shared -O2 -L/usr/local/lib -fstack-protector-strong
+LDFLAGS =  -fstack-protector-strong -L/usr/local/lib
+LIBC = libc-2.19.so
 LIB_EXT = .a
 OBJ_EXT = .o
 OSNAME = linux
-OSVERS = 3.2.0-4-amd64
+OSVERS = 3.16.0-4-amd64
 RANLIB = :
-SITELIBEXP = /home/grubert/perl5/perlbrew/perls/perl-5.21.8/lib/site_perl/5.21.8
-SITEARCHEXP = /home/grubert/perl5/perlbrew/perls/perl-5.21.8/lib/site_perl/5.21.8/x86_64-linux
+SITELIBEXP = /home/andrea/perl/lib/site_perl/5.22.0
+SITEARCHEXP = /home/andrea/perl/lib/site_perl/5.22.0/x86_64-linux
 SO = so
-VENDORARCHEXP = 
-VENDORLIBEXP = 
+VENDORARCHEXP = $(VENDORPREFIX)/lib/5.22.0/x86_64-linux
+VENDORLIBEXP = $(VENDORPREFIX)/lib
 
 
 # --- MakeMaker constants section:
@@ -78,57 +78,59 @@ INST_MAN3DIR = blib/man3
 MAN1EXT = 1
 MAN3EXT = 3
 INSTALLDIRS = site
-INSTALL_BASE = /home/grubert/.perlbrew/libs/perl-5.21.8@v2
 DESTDIR = 
-PREFIX = $(INSTALL_BASE)
-INSTALLPRIVLIB = $(INSTALL_BASE)/lib/perl5
+PREFIX = /home/andrea/perl
+PERLPREFIX = $(PREFIX)
+SITEPREFIX = $(PREFIX)
+VENDORPREFIX = $(PREFIX)
+INSTALLPRIVLIB = $(PERLPREFIX)/lib/5.22.0
 DESTINSTALLPRIVLIB = $(DESTDIR)$(INSTALLPRIVLIB)
-INSTALLSITELIB = $(INSTALL_BASE)/lib/perl5
+INSTALLSITELIB = $(SITEPREFIX)/lib/site_perl/5.22.0
 DESTINSTALLSITELIB = $(DESTDIR)$(INSTALLSITELIB)
-INSTALLVENDORLIB = $(INSTALL_BASE)/lib/perl5
+INSTALLVENDORLIB = $(VENDORPREFIX)/lib
 DESTINSTALLVENDORLIB = $(DESTDIR)$(INSTALLVENDORLIB)
-INSTALLARCHLIB = $(INSTALL_BASE)/lib/perl5/x86_64-linux
+INSTALLARCHLIB = $(PERLPREFIX)/lib/5.22.0/x86_64-linux
 DESTINSTALLARCHLIB = $(DESTDIR)$(INSTALLARCHLIB)
-INSTALLSITEARCH = $(INSTALL_BASE)/lib/perl5/x86_64-linux
+INSTALLSITEARCH = $(SITEPREFIX)/lib/site_perl/5.22.0/x86_64-linux
 DESTINSTALLSITEARCH = $(DESTDIR)$(INSTALLSITEARCH)
-INSTALLVENDORARCH = $(INSTALL_BASE)/lib/perl5/x86_64-linux
+INSTALLVENDORARCH = $(VENDORPREFIX)/lib/5.22.0/x86_64-linux
 DESTINSTALLVENDORARCH = $(DESTDIR)$(INSTALLVENDORARCH)
-INSTALLBIN = $(INSTALL_BASE)/bin
+INSTALLBIN = $(PERLPREFIX)/bin
 DESTINSTALLBIN = $(DESTDIR)$(INSTALLBIN)
-INSTALLSITEBIN = $(INSTALL_BASE)/bin
+INSTALLSITEBIN = $(SITEPREFIX)/bin
 DESTINSTALLSITEBIN = $(DESTDIR)$(INSTALLSITEBIN)
-INSTALLVENDORBIN = $(INSTALL_BASE)/bin
+INSTALLVENDORBIN = $(VENDORPREFIX)/bin
 DESTINSTALLVENDORBIN = $(DESTDIR)$(INSTALLVENDORBIN)
-INSTALLSCRIPT = $(INSTALL_BASE)/bin
+INSTALLSCRIPT = $(PERLPREFIX)/bin
 DESTINSTALLSCRIPT = $(DESTDIR)$(INSTALLSCRIPT)
-INSTALLSITESCRIPT = $(INSTALL_BASE)/bin
+INSTALLSITESCRIPT = $(SITEPREFIX)/bin
 DESTINSTALLSITESCRIPT = $(DESTDIR)$(INSTALLSITESCRIPT)
-INSTALLVENDORSCRIPT = $(INSTALL_BASE)/bin
+INSTALLVENDORSCRIPT = $(VENDORPREFIX)/bin
 DESTINSTALLVENDORSCRIPT = $(DESTDIR)$(INSTALLVENDORSCRIPT)
-INSTALLMAN1DIR = $(INSTALL_BASE)/man/man1
+INSTALLMAN1DIR = $(PERLPREFIX)/man/man1
 DESTINSTALLMAN1DIR = $(DESTDIR)$(INSTALLMAN1DIR)
-INSTALLSITEMAN1DIR = $(INSTALL_BASE)/man/man1
+INSTALLSITEMAN1DIR = $(SITEPREFIX)/man/man1
 DESTINSTALLSITEMAN1DIR = $(DESTDIR)$(INSTALLSITEMAN1DIR)
-INSTALLVENDORMAN1DIR = $(INSTALL_BASE)/man/man1
+INSTALLVENDORMAN1DIR = $(VENDORPREFIX)/man/man1
 DESTINSTALLVENDORMAN1DIR = $(DESTDIR)$(INSTALLVENDORMAN1DIR)
-INSTALLMAN3DIR = $(INSTALL_BASE)/man/man3
+INSTALLMAN3DIR = $(PERLPREFIX)/man/man3
 DESTINSTALLMAN3DIR = $(DESTDIR)$(INSTALLMAN3DIR)
-INSTALLSITEMAN3DIR = $(INSTALL_BASE)/man/man3
+INSTALLSITEMAN3DIR = $(SITEPREFIX)/man/man3
 DESTINSTALLSITEMAN3DIR = $(DESTDIR)$(INSTALLSITEMAN3DIR)
-INSTALLVENDORMAN3DIR = $(INSTALL_BASE)/man/man3
+INSTALLVENDORMAN3DIR = $(VENDORPREFIX)/man/man3
 DESTINSTALLVENDORMAN3DIR = $(DESTDIR)$(INSTALLVENDORMAN3DIR)
-PERL_LIB = /home/grubert/perl5/perlbrew/perls/perl-5.21.8/lib/5.21.8
-PERL_ARCHLIB = /home/grubert/perl5/perlbrew/perls/perl-5.21.8/lib/5.21.8/x86_64-linux
-PERL_ARCHLIBDEP = /home/grubert/perl5/perlbrew/perls/perl-5.21.8/lib/5.21.8/x86_64-linux
+PERL_LIB = /home/andrea/perl/lib/5.22.0
+PERL_ARCHLIB = /home/andrea/perl/lib/5.22.0/x86_64-linux
+PERL_ARCHLIBDEP = /home/andrea/perl/lib/5.22.0/x86_64-linux
 LIBPERL_A = libperl.a
 FIRST_MAKEFILE = Makefile
 MAKEFILE_OLD = Makefile.old
 MAKE_APERL_FILE = Makefile.aperl
 PERLMAINCC = $(CC)
-PERL_INC = /home/grubert/perl5/perlbrew/perls/perl-5.21.8/lib/5.21.8/x86_64-linux/CORE
-PERL_INCDEP = /home/grubert/perl5/perlbrew/perls/perl-5.21.8/lib/5.21.8/x86_64-linux/CORE
-PERL = "/home/grubert/perl5/perlbrew/perls/perl-5.21.8/bin/perl5.21.8"
-FULLPERL = "/home/grubert/perl5/perlbrew/perls/perl-5.21.8/bin/perl5.21.8"
+PERL_INC = /home/andrea/perl/lib/5.22.0/x86_64-linux/CORE
+PERL_INCDEP = /home/andrea/perl/lib/5.22.0/x86_64-linux/CORE
+PERL = "/home/andrea/perl/bin/perl"
+FULLPERL = "/home/andrea/perl/bin/perl"
 ABSPERL = $(PERL)
 PERLRUN = $(PERL)
 FULLPERLRUN = $(FULLPERL)
@@ -141,9 +143,9 @@ PERM_DIR = 755
 PERM_RW = 644
 PERM_RWX = 755
 
-MAKEMAKER   = /home/grubert/perl5/perlbrew/perls/perl-5.21.8/lib/5.21.8/ExtUtils/MakeMaker.pm
-MM_VERSION  = 7.04
-MM_REVISION = 70400
+MAKEMAKER   = /home/andrea/perl/lib/5.22.0/ExtUtils/MakeMaker.pm
+MM_VERSION  = 7.0401
+MM_REVISION = 70401
 
 # FULLEXT = Pathname for extension directory (eg Foo/Bar/Oracle).
 # BASEEXT = Basename part of FULLEXT. May be just equal FULLEXT. (eg Oracle)
@@ -167,11 +169,12 @@ O_FILES  =
 H_FILES  = 
 MAN1PODS = 
 MAN3PODS = lib/Mir.pm \
+	lib/Mir/Acq/Scheduler.pm \
 	lib/Mir/R/Acq/Fetch.pm \
+	lib/Mir/R/Acq/Fetch/Spider.pm \
 	lib/Mir/R/Doc.pm \
 	lib/Mir/R/Doc/Web.pm \
-	lib/Mir/Store.pm \
-	lib/Mir/Store/Doc/GU.pm
+	lib/Mir/Store.pm
 
 # Where is the Config information that we are using/depend on
 CONFIGDEP = $(PERL_ARCHLIBDEP)$(DFSEP)Config.pm $(PERL_INCDEP)$(DFSEP)config.h
@@ -195,6 +198,7 @@ PERL_ARCHIVE_AFTER =
 
 
 TO_INST_PM = lib/Mir.pm \
+	lib/Mir/Acq/Scheduler.pm \
 	lib/Mir/Doc.pm \
 	lib/Mir/Fetch.pm \
 	lib/Mir/R/Acq/Fetch.pm \
@@ -202,11 +206,12 @@ TO_INST_PM = lib/Mir.pm \
 	lib/Mir/R/Doc.pm \
 	lib/Mir/R/Doc/Web.pm \
 	lib/Mir/R/Store.pm \
-	lib/Mir/Store.pm \
-	lib/Mir/Store/Doc/GU.pm
+	lib/Mir/Store.pm
 
 PM_TO_BLIB = lib/Mir.pm \
 	blib/lib/Mir.pm \
+	lib/Mir/Acq/Scheduler.pm \
+	blib/lib/Mir/Acq/Scheduler.pm \
 	lib/Mir/Doc.pm \
 	blib/lib/Mir/Doc.pm \
 	lib/Mir/Fetch.pm \
@@ -222,13 +227,11 @@ PM_TO_BLIB = lib/Mir.pm \
 	lib/Mir/R/Store.pm \
 	blib/lib/Mir/R/Store.pm \
 	lib/Mir/Store.pm \
-	blib/lib/Mir/Store.pm \
-	lib/Mir/Store/Doc/GU.pm \
-	blib/lib/Mir/Store/Doc/GU.pm
+	blib/lib/Mir/Store.pm
 
 
 # --- MakeMaker platform_constants section:
-MM_Unix_VERSION = 7.04
+MM_Unix_VERSION = 7.0401
 PERL_MALLOC_DEF = -DPERL_EXTMALLOC_DEF -Dmalloc=Perl_malloc -Dfree=Perl_mfree -Drealloc=Perl_realloc -Dcalloc=Perl_calloc
 
 
@@ -319,8 +322,7 @@ DISTVNAME = Mir-0.01
 
 PASTHRU = LIBPERL_A="$(LIBPERL_A)"\
 	LINKTYPE="$(LINKTYPE)"\
-	PREFIX="$(PREFIX)"\
-	INSTALL_BASE="$(INSTALL_BASE)"
+	PREFIX="$(PREFIX)"
 
 
 # --- MakeMaker special_targets section:
@@ -449,18 +451,20 @@ POD2MAN = $(POD2MAN_EXE)
 
 manifypods : pure_all  \
 	lib/Mir.pm \
+	lib/Mir/Acq/Scheduler.pm \
 	lib/Mir/R/Acq/Fetch.pm \
+	lib/Mir/R/Acq/Fetch/Spider.pm \
 	lib/Mir/R/Doc.pm \
 	lib/Mir/R/Doc/Web.pm \
-	lib/Mir/Store.pm \
-	lib/Mir/Store/Doc/GU.pm
+	lib/Mir/Store.pm
 	$(NOECHO) $(POD2MAN) --section=3 --perm_rw=$(PERM_RW) -u \
 	  lib/Mir.pm $(INST_MAN3DIR)/Mir.$(MAN3EXT) \
+	  lib/Mir/Acq/Scheduler.pm $(INST_MAN3DIR)/Mir::Acq::Scheduler.$(MAN3EXT) \
 	  lib/Mir/R/Acq/Fetch.pm $(INST_MAN3DIR)/Mir::R::Acq::Fetch.$(MAN3EXT) \
+	  lib/Mir/R/Acq/Fetch/Spider.pm $(INST_MAN3DIR)/Mir::R::Acq::Fetch::Spider.$(MAN3EXT) \
 	  lib/Mir/R/Doc.pm $(INST_MAN3DIR)/Mir::R::Doc.$(MAN3EXT) \
 	  lib/Mir/R/Doc/Web.pm $(INST_MAN3DIR)/Mir::R::Doc::Web.$(MAN3EXT) \
-	  lib/Mir/Store.pm $(INST_MAN3DIR)/Mir::Store.$(MAN3EXT) \
-	  lib/Mir/Store/Doc/GU.pm $(INST_MAN3DIR)/Mir::Store::Doc::GU.$(MAN3EXT) 
+	  lib/Mir/Store.pm $(INST_MAN3DIR)/Mir::Store.$(MAN3EXT) 
 
 
 
@@ -535,7 +539,7 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) 'configure_requires:' >> META_new.yml
 	$(NOECHO) $(ECHO) '  ExtUtils::MakeMaker: '\''0'\''' >> META_new.yml
 	$(NOECHO) $(ECHO) 'dynamic_config: 1' >> META_new.yml
-	$(NOECHO) $(ECHO) 'generated_by: '\''ExtUtils::MakeMaker version 7.04, CPAN::Meta::Converter version 2.143240'\''' >> META_new.yml
+	$(NOECHO) $(ECHO) 'generated_by: '\''ExtUtils::MakeMaker version 7.0401, CPAN::Meta::Converter version 2.150001'\''' >> META_new.yml
 	$(NOECHO) $(ECHO) 'license: artistic_2' >> META_new.yml
 	$(NOECHO) $(ECHO) 'meta-spec:' >> META_new.yml
 	$(NOECHO) $(ECHO) '  url: http://module-build.sourceforge.net/META-spec-v1.4.html' >> META_new.yml
@@ -560,7 +564,7 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '      "Marco Masetti <marco.masetti@softeco.it>"' >> META_new.json
 	$(NOECHO) $(ECHO) '   ],' >> META_new.json
 	$(NOECHO) $(ECHO) '   "dynamic_config" : 1,' >> META_new.json
-	$(NOECHO) $(ECHO) '   "generated_by" : "ExtUtils::MakeMaker version 7.04, CPAN::Meta::Converter version 2.143240",' >> META_new.json
+	$(NOECHO) $(ECHO) '   "generated_by" : "ExtUtils::MakeMaker version 7.0401, CPAN::Meta::Converter version 2.150001",' >> META_new.json
 	$(NOECHO) $(ECHO) '   "license" : [' >> META_new.json
 	$(NOECHO) $(ECHO) '      "artistic_2"' >> META_new.json
 	$(NOECHO) $(ECHO) '   ],' >> META_new.json
@@ -678,7 +682,7 @@ distdir : create_distdir distmeta
 
 # --- MakeMaker dist_test section:
 disttest : distdir
-	cd $(DISTVNAME) && $(ABSPERLRUN) Makefile.PL 
+	cd $(DISTVNAME) && $(ABSPERLRUN) Makefile.PL "PREFIX=/home/andrea/perl"
 	cd $(DISTVNAME) && $(MAKE) $(PASTHRU)
 	cd $(DISTVNAME) && $(MAKE) test $(PASTHRU)
 
@@ -843,7 +847,7 @@ $(FIRST_MAKEFILE) : Makefile.PL $(CONFIGDEP)
 	-$(NOECHO) $(RM_F) $(MAKEFILE_OLD)
 	-$(NOECHO) $(MV)   $(FIRST_MAKEFILE) $(MAKEFILE_OLD)
 	- $(MAKE) $(USEMAKEFILE) $(MAKEFILE_OLD) clean $(DEV_NULL)
-	$(PERLRUN) Makefile.PL 
+	$(PERLRUN) Makefile.PL "PREFIX=/home/andrea/perl"
 	$(NOECHO) $(ECHO) "==> Your Makefile has been rebuilt. <=="
 	$(NOECHO) $(ECHO) "==> Please rerun the $(MAKE) command.  <=="
 	$(FALSE)
@@ -854,7 +858,7 @@ $(FIRST_MAKEFILE) : Makefile.PL $(CONFIGDEP)
 
 # --- MakeMaker makeaperl section ---
 MAP_TARGET    = perl
-FULLPERL      = "/home/grubert/perl5/perlbrew/perls/perl-5.21.8/bin/perl5.21.8"
+FULLPERL      = "/home/andrea/perl/bin/perl"
 
 $(MAP_TARGET) :: static $(MAKE_APERL_FILE)
 	$(MAKE) $(USEMAKEFILE) $(MAKE_APERL_FILE) $@
@@ -864,7 +868,8 @@ $(MAKE_APERL_FILE) : $(FIRST_MAKEFILE) pm_to_blib
 	$(NOECHO) $(PERLRUNINST) \
 		Makefile.PL DIR="" \
 		MAKEFILE=$(MAKE_APERL_FILE) LINKTYPE=static \
-		MAKEAPERL=1 NORECURS=1 CCCDLFLAGS=
+		MAKEAPERL=1 NORECURS=1 CCCDLFLAGS= \
+		PREFIX=/home/andrea/perl
 
 
 # --- MakeMaker test section:
@@ -907,7 +912,7 @@ ppd :
 	$(NOECHO) $(ECHO) '        <REQUIRE NAME="DateTime::" />' >> $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '        <REQUIRE NAME="Moose::" />' >> $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '        <REQUIRE NAME="MooseX::Storage" />' >> $(DISTNAME).ppd
-	$(NOECHO) $(ECHO) '        <ARCHITECTURE NAME="x86_64-linux-5.21" />' >> $(DISTNAME).ppd
+	$(NOECHO) $(ECHO) '        <ARCHITECTURE NAME="x86_64-linux-5.22" />' >> $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '        <CODEBASE HREF="" />' >> $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '    </IMPLEMENTATION>' >> $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '</SOFTPKG>' >> $(DISTNAME).ppd
@@ -918,6 +923,7 @@ ppd :
 pm_to_blib : $(FIRST_MAKEFILE) $(TO_INST_PM)
 	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)/auto'\'', q[$(PM_FILTER)], '\''$(PERM_DIR)'\'')' -- \
 	  lib/Mir.pm blib/lib/Mir.pm \
+	  lib/Mir/Acq/Scheduler.pm blib/lib/Mir/Acq/Scheduler.pm \
 	  lib/Mir/Doc.pm blib/lib/Mir/Doc.pm \
 	  lib/Mir/Fetch.pm blib/lib/Mir/Fetch.pm \
 	  lib/Mir/R/Acq/Fetch.pm blib/lib/Mir/R/Acq/Fetch.pm \
@@ -925,8 +931,7 @@ pm_to_blib : $(FIRST_MAKEFILE) $(TO_INST_PM)
 	  lib/Mir/R/Doc.pm blib/lib/Mir/R/Doc.pm \
 	  lib/Mir/R/Doc/Web.pm blib/lib/Mir/R/Doc/Web.pm \
 	  lib/Mir/R/Store.pm blib/lib/Mir/R/Store.pm \
-	  lib/Mir/Store.pm blib/lib/Mir/Store.pm \
-	  lib/Mir/Store/Doc/GU.pm blib/lib/Mir/Store/Doc/GU.pm 
+	  lib/Mir/Store.pm blib/lib/Mir/Store.pm 
 	$(NOECHO) $(TOUCH) pm_to_blib
 
 

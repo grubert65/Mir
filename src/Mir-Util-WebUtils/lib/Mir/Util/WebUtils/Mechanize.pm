@@ -6,7 +6,7 @@ use warnings;
 
 =head1 NAME
 
-Mir::Util::WebUtils::Mechanize - The great new Mir::Util::WebUtils!
+Mir::Util::WebUtils::Mechanize - Package to load and browse web pages via WWW::Mechanize
 
 =head1 VERSION
 
@@ -19,35 +19,27 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
+This package provides all methods to access web pages (via WWW::Mechanize) and to handle
+their contents (via role Mir::Util::R::WebUtils). 
+Please refer to Mir::Util::R::WebUtils for the description of its methods.
 
-Perhaps a little code snippet.
+Here follows module usage
 
-    use Mir::Util::WebUtils;
+    use Mir::Util::WebUtils::Mechanize;
 
-    my $foo = Mir::Util::WebUtils->new();
-    ...
+    my $mech = Mir::Util::WebUtils::Mechanize->new(
+        TEMP_DIR => './test_data',
+        CACHE_DIR => './test_data/cache',
+        CACHE_NAME => 'test_web'
+        );
+    my ret = $mech->GotoPage('http://some.page');
+    my $form = $mech->SelectFormByNumber(0);
+    $mech->FillForm($form, 'field', 'value');
+    $mech->SubmitPage();
 
 =head1 EXPORT
 
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
-
-=head1 SUBROUTINES/METHODS
-
-=head2 function1
-
-=cut
-
-sub function1 {
-}
-
-=head2 function2
-
-=cut
-
-sub function2 {
-}
+Nothing to export
 
 =head1 AUTHOR
 
@@ -56,7 +48,7 @@ Andrea Poggi, C<< <andrea.poggi at softeco.it> >>
 =head1 BUGS
 
 Please report any bugs or feature requests to C<bug-mir-util-webutils at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Mir-Util-WebUtils>.  I will be notified, and then you'll
+the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Mir-Util-WebUtils-Mechanize>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
 
 
@@ -66,7 +58,7 @@ automatically be notified of progress on your bug as I make changes.
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Mir::Util::WebUtils
+    perldoc Mir::Util::WebUtils::Mechanize
 
 
 You can also look for information at:
@@ -75,19 +67,19 @@ You can also look for information at:
 
 =item * RT: CPAN's request tracker (report bugs here)
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Mir-Util-WebUtils>
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Mir-Util-WebUtils::Mechanize>
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
-L<http://annocpan.org/dist/Mir-Util-WebUtils>
+L<http://annocpan.org/dist/Mir-Util-WebUtils::Mechanize>
 
 =item * CPAN Ratings
 
-L<http://cpanratings.perl.org/d/Mir-Util-WebUtils>
+L<http://cpanratings.perl.org/d/Mir-Util-WebUtils::Mechanize>
 
 =item * Search CPAN
 
-L<http://search.cpan.org/dist/Mir-Util-WebUtils/>
+L<http://search.cpan.org/dist/Mir-Util-WebUtils::Mechanize/>
 
 =back
 
@@ -151,7 +143,7 @@ use Archive::Extract            ();
 use File::Basename              qw( dirname basename fileparse );
 use File::Copy                  qw( move );
 use Data::Dumper                qw(Dumper);
-use PDF::Create                 ();
+use Data::GUID;
 
 use base qw( Exporter );
 use vars qw( $VERSION @ISA @EXPORT_OK %EXPORT_TAGS);
@@ -244,7 +236,8 @@ sub SetTimeout
 
 =head2 DESCRIPTION
 
-    Follows specified link
+    Follows specified link, searching for pattern in its name
+    (LINK_NAME) or URL (LINK_URL).
 
 =cut
 
@@ -315,7 +308,7 @@ sub FollowLink
 
 =head2 DESCRIPTION
 
-    Gets desired form
+    Gets desired form by provided name.
 
 =cut
 
@@ -348,7 +341,8 @@ sub SelectFormByName
 
 =head2 DESCRIPTION
 
-    Gets desired form
+    Gets desired form from its name, if provided; otherwise
+    returns first form of page.
 
 =cut
 
@@ -385,7 +379,7 @@ sub SelectForm
 
 =head2 DESCRIPTION
 
-    Gets desired form
+    Gets desired form if it contains provided field names.
 
 =cut
 
@@ -457,7 +451,7 @@ sub SelectFormByNumber
 
 =head2 DESCRIPTION
 
-    Fills desired field with given value
+    Fills desired field of provided form with given value
 
 =cut
 
@@ -645,6 +639,221 @@ sub SubmitRequest
 
 #=============================================================
 
+=head1 ReloadPage
+
+=head2 INPUT
+
+=head2 OUTPUT
+
+=head2 DESCRIPTION
+
+    Reloads current page
+
+=cut
+
+#=============================================================
+sub ReloadPage
+{
+    my $self = shift;
+
+    my $mech = $self->{ MECH };
+    return unless $mech;
+
+    my $go = 1;
+    my $try_number = 1;
+
+    # Try to submit page for three times, then give up
+    while ($go) {
+        my $response = $mech->reload();
+        if ( (not $mech->success()) ||  ($response->code !~ /2\d{2}/) ) {
+            $self->log->error("ERROR reloading page") if (defined $self->log);
+            $try_number++;  
+            $go = 0 if $try_number > 3;
+        } else {
+            $go = 0;
+        }
+    }
+    if ($try_number > 3) {
+        $self->log->info ( "ERROR reloading page - exceeded max number of tries ") if (defined $self->log);
+        return 0;
+    }
+
+    return 1;
+}
+
+#=============================================================
+
+=head1 GotoPage
+
+=head2 INPUT
+    $url:       target url
+
+=head2 OUTPUT
+    $ret:       0 (error) or 1 (success)
+
+=head2 DESCRIPTION
+
+    Gets URL. In case of a timeout, it tries 3 times before
+    returning an error
+
+=cut
+
+#=============================================================
+sub GotoPage
+{
+    my ($self, $url) = @_;
+    return unless $url;
+
+    my $mech = $self->{ MECH };
+    return unless $mech;
+
+    my $go = 1;
+    my $try_number = 1;
+
+    $self->log->info("Getting url $url...") if (defined $self->log);
+
+    # Try to load page for three times, then give up
+    while ($go) {
+        my $response = $mech->get( $url );
+        if ( (not $mech->success()) || ($response->code !~ /2\d{2}/) ) {
+            $self->log->info ( "ERROR getting URL $url, received code ".$response->code.
+                        " - try number $try_number") if (defined $self->log);
+            $try_number++;
+            $go = 0 if $try_number > 3;
+        } else {
+            $go = 0;
+        }
+    }
+    if ($try_number > 3) {
+        $self->log->info ( "ERROR getting URL $url - exceeded max number of tries ") if (defined $self->log);
+        return 0;
+    }
+
+    # Store current page in object
+    delete $self->{ CURRENT_PAGE };
+    $self->{ CURRENT_PAGE } = $mech->content();
+    # Select root node
+    my $root_node = HTML::TreeBuilder->new; 
+    $root_node->parse($self->{ CURRENT_PAGE });
+    $self->{ ROOT_NODE } = $root_node;
+
+    return 1
+}
+
+#=============================================================
+
+=head1 Back
+
+=head2 INPUT
+
+=head2 OUTPUT
+
+=head2 DESCRIPTION
+
+    Go back to previous page
+
+=cut
+
+#=============================================================
+sub Back
+{
+    my ($self) = @_;
+
+    my $mech = $self->{ MECH };
+    return 0 unless $mech;
+
+    return $mech->back();
+}
+
+#=============================================================
+
+=head1 GetPageContent
+
+=head2 INPUT
+
+=head2 OUTPUT
+    $page_html:       page source
+
+=head2 DESCRIPTION
+
+    Returns HTML source of currently loaded page.
+
+=cut
+
+#=============================================================
+sub GetPageContent
+{
+    my ($self) = @_;
+
+    my $mech = $self->{ MECH };
+    return 0 unless $mech;
+
+    return $self->{ CURRENT_PAGE };
+}
+
+#=============================================================
+
+=head1 PageContentChanged
+
+=head2 INPUT
+
+=head2 OUTPUT
+
+=head2 DESCRIPTION
+
+    Checks if page content has changed
+
+=cut
+
+#=============================================================
+sub PageContentChanged
+{
+    my ($self) = @_;
+
+    my $mech = $self->{ MECH };
+    return 0 unless $mech;
+
+    if ($mech->content ne $self->{ CURRENT_PAGE }) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+#=============================================================
+
+=head1 ResetPageContent
+
+=head2 INPUT
+
+=head2 OUTPUT
+
+=head2 DESCRIPTION
+
+    Reloads current page content in object
+
+=cut
+
+#=============================================================
+sub ResetPageContent
+{
+    my ($self) = @_;
+
+    my $mech = $self->{ MECH };
+    return 0 unless $mech;
+
+    $self->{ CURRENT_PAGE } = $mech->content();
+
+    # Select root node
+    my $root_node = HTML::TreeBuilder->new; 
+    $root_node->parse($self->{ CURRENT_PAGE });
+    $self->{ ROOT_NODE } = $root_node;
+
+    return 1;
+}
+
+#=============================================================
+
 =head1 DownloadLink
 
 =head2 INPUT
@@ -705,7 +914,8 @@ sub DownloadLink
         $type = $1 if length($1) <= 4;
     }
 
-    my $file_name = $self->GenerateUUID();
+    my $guid = Data::GUID->new();
+    my $file_name = $guid->as_string;
     my $file_path = $basedir."/".$file_name;
     open DOCUMENT, "> $file_path";
     if (defined $encoding) {
@@ -729,6 +939,150 @@ sub DownloadLink
     $mech->back();
 
     return ($file_entry, $code);
+}
+
+#=============================================================
+
+=head1 SaveContentToDisc
+
+=head2 INPUT
+    $file_name:         file base name (without extension)
+    $type:              file extension
+    $encoding:          file encoding (not mandatory)
+
+=head2 OUTPUT
+    $file:              hash contanining file path and 
+                        description
+
+=head2 DESCRIPTION
+
+    Saves content of current page to file, using specified
+    encoding if provided.
+
+=cut
+
+#=============================================================
+sub SaveContentToDisc
+{
+    my ($self, $file_name, $type, $encoding) = @_;
+
+    my $mech = $self->{'MECH'};
+    return unless $mech;
+
+    my $basedir = $self->TEMP_DIR;
+    my $file_entry = {};
+    
+    my $guid = Data::GUID->new();
+    $file_name = $guid->as_string if not defined $file_name;
+    my $file_path = $basedir."/".$file_name.$type;
+
+    open DOCUMENT, "> $file_path";
+    if (defined $encoding) {
+        binmode DOCUMENT, ":encoding($encoding)";
+    }
+    print DOCUMENT $mech->content();
+    close DOCUMENT;
+
+    $file_entry->{'path'} = $file_path;
+    $file_entry->{'url'} = $mech->uri()->as_string();
+
+    return $file_entry;
+}
+
+#=============================================================
+
+=head1 GetFiles
+
+=head2 INPUT
+    $file_patterns :    array of file search patterns (regex)
+    $host:              base web address (if needed)
+    $type:              (not mandatory) file extension. If
+                        not given, system will try to determine
+                        it from its link
+    $encoding:          file encoding (not mandatory)
+
+=head2 OUTPUT
+    $file:              hash contanining file path and 
+                        description
+
+=head2 DESCRIPTION
+
+    Downloads desired files, looking for provided pattern in
+    their URLs. If needed, base host address and file encoding 
+    can be provided.
+    If extension is not provided, the method will try to
+    determine it by itself.
+
+=cut
+
+#=============================================================
+sub GetFiles
+{
+    my ($self, $file_patterns, $host, $type, $encoding) = @_;
+
+    my $mech = $self->{ MECH };
+    return unless $mech;
+    
+    my $basedir = $self->TEMP_DIR;
+
+    my $links = $self->GetLinks('a');
+
+    # Get all files 
+    my $files = [];
+    foreach my $file_pattern (@$file_patterns)
+    {
+        foreach my $link (@$links)
+        {
+            if ($link =~ /$file_pattern/g)
+            {
+                my $go = 1;
+                my $try_number = 1;
+                my $url = $1;
+                $url = $host.'/'.$1 if (defined $host);
+                # Try to get file for three times, then give up
+                while ($go) {
+                    my $response = $mech->get($url);
+                    if ( (not $mech->success()) || ($response->code !~ /^2\d{2}/) )
+                    {
+                        $self->log->error("ERROR getting file $url") if (defined $self->log);
+                        $try_number++;  
+                        $go = 0 if $try_number > 3;
+                    } else {
+                        $go = 0;
+                    }
+                }
+
+                if ($try_number > 3) {
+                    $self->log->info ( "ERROR  getting file $url - exceeded max number of tries ") if (defined $self->log);
+                    $mech->back();
+                    next;
+                }
+
+                if ((not defined $type) && ($url =~ /.+(\..+$)/)) {
+                    $type = $1;
+                }
+                my $file_entry = {};
+                my $guid = Data::GUID->new();
+                my $file_name = $guid->as_string;
+                my $file_path = $basedir."/".$file_name.$type;
+                open DOCUMENT, "> $file_path";
+                if (defined $encoding) {
+                    binmode DOCUMENT, ":encoding($encoding)";
+                }
+                print DOCUMENT $mech->content();
+                close DOCUMENT;
+    
+                $file_entry->{'path'} = $file_path;
+                $file_entry->{'url'} = $url;
+                push @$files, $file_entry; 
+                
+                # After download, go back to previous page 
+                $mech->back();
+            }
+        }
+    }
+
+    return $files;
 }
 
 1; # End of Mir::Util::WebUtils::Mechanize
