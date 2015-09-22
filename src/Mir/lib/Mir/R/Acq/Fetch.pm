@@ -95,15 +95,25 @@ requires 'get_docs';
 
 =head3 DESCRIPTION
 
-Workflow:
-- per ogni doc in $self->docs:
-     - scarica documenti e store doc
+just try to get docs from the fetcher
 
 =cut
 
 #=============================================================
 sub fetch {
     my $self = shift;
+
+    $self->get_docs();
+
+    # TODO
+    # should we notify errors here or in each fetcher ?!?
+    if ( not $self->ret ) {
+        $self->log->error( "Error fetching from fetcher: ".ref $self );
+        foreach ( @{ $self->errors } ) {
+            $self->log->error( $_ );
+        }
+    }
+    return $self->ret;
 }
 
 1;
