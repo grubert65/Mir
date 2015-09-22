@@ -13,6 +13,7 @@ public/images/perldancer.jpg
 public/javascripts/jquery.js
 public/css/error.css
 public/css/style.css
+scripts/system-acq-00.json
 lib/Mir/Config.pm
 bin/app.psgi
 views/index.tt
