@@ -11,7 +11,7 @@
 # REQUIREMENTS: ---
 #         BUGS: ---
 #        NOTES: ---
-#       AUTHOR: YOUR NAME (), 
+#       AUTHOR: Marco Masetti (marco.masetti at softeco.it)
 # ORGANIZATION: 
 #      VERSION: 1.0
 #      CREATED: 08/20/2015 05:19:35 PM
@@ -19,12 +19,14 @@
 #===============================================================================
 use strict;
 use warnings;
+use feature "state";
 use utf8;
 use Queue::Q::ReliableFIFO::Redis   ();
-#use Parallel::ForkManager;
+use Parallel::ForkManager;
 use Log::Log4perl                   qw( :easy );
 use YAML                            qw( Load );
 use Getopt::Long                    qw( GetOptions );
+use Data::Dumper                    qw( Dumper );
 
 Log::Log4perl->easy_init( $DEBUG );
 my $log = Log::Log4perl->get_logger();
@@ -39,15 +41,26 @@ my $config;
 # by default we consume queue items in chunks of 3 items
 # at a time and don't pause between sessions
 my ( $campaign, $chunk, $pause, $server, $port ) = ( undef, 3, 10, 'localhost', 6379 );
+
 GetOptions (
     "campaign=s"    => \$campaign,
     "chunk=i"       => \$chunk,
     "pause=i"       => \$pause,
     "server=s"      => \$server,
     "port=i"        => \$port
-) or die "Usage: $0 --campaign <campaign tag> [ --chunk <number of items in chunk> ] [ --pause <number of seconds to sleep between sessions> ] [--server <queue server IP address>] [--port <queue server port number>]\n";
+) or die <<EOT;
+
+Usage: $0 --campaign <campaign tag> 
+          [--chunk <number of items in chunk> ] 
+          [--pause <number of seconds to sleep between sessions> ] 
+          [--server <queue server IP address>] 
+          [--port <queue server port number>]
+
+EOT
 
 die ("At least the campaign has to be passed via the --campaign input param\n") unless $campaign;
+
+my $pm = Parallel::ForkManager->new($chunk);
 
 $log->debug("Executing (max) $chunk fetchers for campaign: $campaign...");
 
@@ -59,75 +72,50 @@ my $q = Queue::Q::ReliableFIFO::Redis->new(
 
 $q->consume( \&run_fetchers, "drop", { 
         Chunk       => $chunk, 
-        Pause       => $pause,
-        ProcessAll  => 1, #process all items found in one chunk
+        Pause       => ( $chunk > 1 ) ? $pause : undef,
+        ProcessAll  => ( $chunk > 1 ) ? 1 : undef, #process all items found in one chunk
 } );
 
 sub run_fetchers {
     my @items = @_;
 
-    $log->debug("Got items:");
-    $log->debug( Dumper ( @items ) );
-    print ( Dumper( @items ));
+    state $called_times = 1;
+    state $thread = 0;
+    $log->debug( "CYCLE NUMBER: $called_times ------------\n" );
 
-#    my $pm = Parallel::ForkManager->new($chunk);
-
+    my $class;
     foreach my $item ( @items ) {
-        next unless $item->{ns};
-
-        $log->debug("Got item:");
-        $log->debug( Dumper ( $item ) );
-
-#        my $pid = $pm->start and next LOOP;
-        my $pid = fork() and next;
-
-        $log->debug("Process $pid forked!");
-
-        my $class = $config->{FETCHER_NS_PREFIX}.'::'.$item->{ns};
-
-        eval {
-            $log->debug("Trying with class $class in child $pid ...");
-            require $class;
-            my $o = $class->new( $item->{params} );
-            $o->fetch();
-        };
-        if ( $@ ) {
-            $log->error( "Error getting an obj for fetcher $class: $@");
+        if ( defined $item->{ns} ) {
+            $class= "Mir::Acq::Fetcher".'::'.$item->{ns};
+            eval "require $class";
+            if ( $@ ) {
+                $log->error ("Error, class $class not found\n");
+                next;
+            }
         }
-
-        $log->debug("Closing thread $pid");
-        exit();
-#        $pm->finish;
     }
 
-    $log->debug("Wait for all children to die...");
-#    $pm->wait_all_children;
-    while ( wait() != -1 ) {};
-    $log->debug("All children died!!");
-}
-
-
-
-
-
-
-
-
-while ( 1 ) {
-    my $fetcher = $q->claim_item || { ns => 'Sleep' };
-
-    my $class = $config->{FETCHER_NS_PREFIX}.'::'.$fetcher->{ns};
-
-    eval {
-        require $class;
-        my $o = $class->new();
-        $o->fetch();
-        $q->mark_item_as_done($fetcher);
-    };
-    if ( $@ ) {
-        $log->error( "Error getting an obj for fetcher $class");
-        die "Error getting an obj for fetcher $class\n";
+    FETCHER_LOOP:
+    foreach my $item ( @items ) {
+        $thread++;
+        my $pid = $pm->start and next FETCHER_LOOP;
+        $log->debug ("Thread: ".$thread."\n");
+        $log->debug ("Received:\n");
+        $log->debug (Dumper $item );
+        $class= "Mir::Acq::Fetcher".'::'.$item->{ns}
+            if ( defined $item->{ns} );
+        if ( defined $class ) {
+            $log->debug ("Going to create a $class fetcher...\n");
+            my $o = $class->new( $item );
+            $o->fetch();
+        } else {
+            $log->error ("ERROR, no class defined !!\n");
+        }
+        $pm->finish;
     }
+    $pm->wait_all_children;
+    print "All children ended\n";
+    $called_times++;
 }
 
 __DATA__
