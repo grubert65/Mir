@@ -113,4 +113,5 @@ sub add_child {
     my ( $self, $child ) = @_;
     push @{$self->{children}}, $child;
 }
+
 1;

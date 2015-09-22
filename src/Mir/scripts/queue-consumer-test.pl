@@ -45,9 +45,9 @@ my $q = Queue::Q::ReliableFIFO::Redis->new(
 print "Consuming items from queue $campaign....\n";
 
 $q->consume( \&handle_items, "drop", { 
-        Chunk       => 3, 
-        Pause       => 2,
-        ProcessAll  => 1,
+        Chunk       => $chunk, 
+        Pause       => ( $chunk > 1 ) ? $pause : undef,
+        ProcessAll  => ( $chunk > 1 ) ? 1 : undef,
     } );
 
 sub handle_item {
@@ -59,7 +59,6 @@ sub handle_item {
     print Dumper $item;
     print "\n";
     $called_times++;
-
 }
 
 sub handle_items {

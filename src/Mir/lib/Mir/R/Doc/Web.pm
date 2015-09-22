@@ -48,6 +48,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 #========================================================================
 use Moose::Role;
+with 'Mir::R::Doc';
 
 has 'url'    => ( is => 'rw', isa => 'Str' );
 has 'format' => ( is => 'rw', isa => 'Str' );
