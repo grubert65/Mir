@@ -2,10 +2,20 @@
   "tag":"ACQ",
   "fetchers":[{
     "campaign":"weather",
-    "ns":"WU"
+    "ns":"WU",
+    "params":{
+      "city":"Genoa",
+      "country":"IT"
+    }
   },{
     "campaign":"weather",
-    "ns":"Netatmo"
+    "ns":"Netatmo",
+    "params":{
+      "lat_ne": "44.460881",
+      "lon_ne": "9.041340",
+      "lat_sw": "44.378735",
+      "lon_sw": "8.746082"
+    }
   },{
     "campaign":"news",
     "ns":"RssReader",
