@@ -4,6 +4,7 @@ ignore.txt
 lib/Mir.pm
 lib/Mir/Acq/Scheduler.pm
 lib/Mir/Doc.pm
+lib/Mir/Doc/Acq.pm
 lib/Mir/Fetch.pm
 lib/Mir/R/Acq/Fetch.pm
 lib/Mir/R/Acq/Fetch/Spider.pm
@@ -26,6 +27,7 @@ scripts/test.json
 t/00-load.t
 t/01-fetch.t
 t/02-doc.t
+t/02-doc_acq.t
 t/03-store.t
 t/Acq/01-acq-scheduler-parse_input_params.t
 t/Acq/02-acq-scheduler-enqueue_fetchers_of_campaign.t
