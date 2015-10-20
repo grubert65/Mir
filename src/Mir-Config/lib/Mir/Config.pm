@@ -16,7 +16,6 @@ Provides a REST interface to configuration sections. it is fairly
 generic, handling configuration sections (handled as Mongo collections)
 transparently.
 
-Inoltre sono definite le seguenti route:
 The routes defined are:
 
   GET /<app>/version                             :returns a json string as {"version":"x.xx"} (current component version)
@@ -49,6 +48,8 @@ use Dancer2;
 use TryCatch;
 use MongoDB                 ();
 use Data::Dumper            qw( Dumper );
+
+set serializer => 'JSON';
 
 use vars qw( 
     $VERSION
@@ -119,6 +120,25 @@ get '/appname' => sub {
     return { appname => config->{appname} };
 };
 
+#=============================================================
+
+=head2 GET '/profile/:collection'
+
+=head3 INPUT
+
+    :collection: collection name
+
+=head3 OUTPUT
+
+A JSON formatted string
+
+=head3 DESCRIPTION
+
+Returns the complete content of the collection
+
+=cut
+
+#=============================================================
 get '/profile/:collection' => sub {
     my $collection = params->{collection};
     debug "Collection: $collection";
@@ -129,7 +149,7 @@ get '/profile/:collection' => sub {
     }
     my $data;
     if ( $cursor->count() ) {
-        $data = [ $cursor->all() ];
+        $data = $cursor->all();
     }
     debug "Profile for section $collection:";
     debug Dumper $data;

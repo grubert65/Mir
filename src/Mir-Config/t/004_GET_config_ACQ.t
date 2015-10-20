@@ -28,11 +28,11 @@ if ($res->is_success ) {
     diag $res->content;
 }
 
-diag"Getting the profile for the ACQ component...";
-$path="$prefix/config/ACQ/";
-diag "Path: $path";
-$res  = $test->request( GET $path );
-ok( $res->is_success, "[GET $path] successful" );
+#diag"Getting the profile for the ACQ component...";
+#$path="$prefix/config/ACQ/";
+#diag "Path: $path";
+#$res  = $test->request( GET $path );
+#ok( $res->is_success, "[GET $path] successful" );
 
 diag"Getting a resource of the ACQ component...";
 $path="$prefix/config/ACQ/fetchers";
