@@ -148,13 +148,13 @@ get '/profile/:collection' => sub {
         error "Error getting entire profile for collection $collection";
         status 500;
     }
-    my $data;
+    my @data = ();
     if ( $cursor->count() ) {
-        $data = [ $cursor->all() ];
+        @data = $cursor->all();
     }
     debug "Profile for section $collection:";
-    debug Dumper $data;
-    return $data->[0];
+    debug Dumper @data;
+    return \@data;
 };
 
 #=============================================================
