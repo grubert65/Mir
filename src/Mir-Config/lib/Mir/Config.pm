@@ -142,6 +142,7 @@ Returns the complete content of the collection
 get '/profile/:collection' => sub {
     my $collection = params->{collection};
     debug "Collection: $collection";
+    $DB::single=1;
     $cursor = eval{ $database->get_collection( param('collection') )->find(); };
     if ( $@ ) {
         error "Error getting entire profile for collection $collection";
@@ -149,11 +150,11 @@ get '/profile/:collection' => sub {
     }
     my $data;
     if ( $cursor->count() ) {
-        $data = $cursor->all();
+        $data = [ $cursor->all() ];
     }
     debug "Profile for section $collection:";
     debug Dumper $data;
-    return $data;
+    return $data->[0];
 };
 
 #=============================================================
