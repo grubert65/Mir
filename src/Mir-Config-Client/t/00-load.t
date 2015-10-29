@@ -19,6 +19,7 @@ diag "port: 5000";
 ok(my $o=Mir::Config::Client->new( 
 #        host    => 'localhost',
 #        port    => 5000,
+        prefix  =>  '/sco/'
         ), 'new' );
 
 ok(my $component_profile = $o->get_item( 
@@ -35,10 +36,10 @@ ok(my $resource = $o->get_resource(
 diag "Resource 'fetchers':";
 diag Dumper( $resource );
 
-ok(my $h = $o->get_any( 
-#        section => 'system',
-#        item => 'ACQ',
-#        resource => 'fetchers'
+ok(my $h = $o->get_any({ 
+        section => 'profile',
+        item => 'area',
+        }
 ), 'get_any' );
 diag Dumper( $h ) if ( defined $h );
 
