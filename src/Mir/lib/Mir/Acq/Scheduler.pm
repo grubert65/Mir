@@ -78,6 +78,7 @@ has 'log'           => (
 has 'campaigns'     => ( is => 'rw', isa => 'ArrayRef', trigger => \&_set_queue );
 has 'fetchers'      => ( is => 'rw', isa => 'ArrayRef' );
 has 'params'        => ( is => 'rw', isa => 'Str' );
+has 'prefix'        => ( is => 'rw', isa => 'Str', default => '/' );
 has 'queues'        => ( is => 'ro', isa => 'HashRef' );
 
 sub _set_queue {
@@ -115,17 +116,20 @@ sub parse_input_params {
     my @fetchers;
     my $params;
     my $config_file;
+    my $prefix;
 
     GetOptions ("campaign=s"        => \@campaigns,
                 "fetcher=s"         => \@fetchers,
                 "params=s"          => \$params,
-                "config-file=s"     => \$config_file
+                "config-file=s"     => \$config_file,
+                "prefix=s"          => \$prefix
     ) or die("Error in command line arguments\n");
 
     die "At least a campaign or a fetcher has to be configured\n" unless ( @campaigns || @fetchers );
 
     $self->campaigns ( \@campaigns  );
     $self->fetchers  ( \@fetchers   );
+    $self->prefix( $prefix )            if ( defined $prefix);
     $self->params( $params )            if ( defined $params );
     $self->config_file( $config_file )  if ( defined $config_file );
 
@@ -160,8 +164,9 @@ sub enqueue_fetchers_of_campaign {
 
     my @items;
     my $c = Mir::Config::Client->new(
-        $self->{config_server},
-        $self->{config_port}
+        host    =>  $self->{config_server},
+        port    =>  $self->{config_port},
+        prefix  =>  $self->{prefix}
     ) or die "No Mir::Config server found...";
 
     my $fetchers = $c->get_resource( 
