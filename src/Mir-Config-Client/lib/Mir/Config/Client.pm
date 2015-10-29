@@ -215,8 +215,9 @@ sub get_any {
             item
             resource
         )) {
-            $query .= $self->prefix.$params->{$_} if ( defined $params->{$_} );
+            $query .= $params->{$_}."/" if ( defined $params->{$_} );
         }
+        $query = substr($query, 0, length ($query) - 1) if ($query =~ /\/$/);
 
         $self->log->debug( "Query string: $query" );
         $res = eval { $self->ua->get( $query ); };
