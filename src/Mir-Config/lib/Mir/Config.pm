@@ -18,9 +18,13 @@ transparently.
 
 The routes defined are:
 
-  GET /<app>/version                             :returns a json string as {"version":"x.xx"} (current component version)
-TODO  GET /<app>/<v>/<section>/[<item>]/[<resource>] :returns the given item resource belonging to the section or the
-                                                  entire section if no item specified
+  GET /version :returns a json string as {"version":"x.xx"} (current component version)
+  GET /appname : returns the appname
+  GET /profile/:collection : returns the content of the passed collection
+  GET /:collection/:tag?/:resource? : returns the content of the passed collection,
+                                    it is possible to specify tag and resource
+  GET /id/:section/:id : ritorna un doc nella sezione passata dato il suo id
+  GET /key/:section/:key/:value : recupera il documento puntato dalla chiave passata
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
@@ -58,9 +62,13 @@ use vars qw(
     $cursor
 );
 
-$VERSION = '0.1';
+# history
+# 29.10.2015|0.2|ready to be deployed
+$VERSION = '0.2';
 
 # TODO : defaults needed as in test env config is not loaded (why ?)...
+$DB::single=1;
+debug "Store config section is SET!!!!!" if ( exists config->{store} );
 my $host   = config->{store}->{host}     || 'localhost';
 my $port   = config->{store}->{port}     || 27017;
 my $db     = config->{store}->{database} || 'MIR';
@@ -79,38 +87,6 @@ if ( defined $prefix ) {
     debug "NOTE: USING PREFIX $prefix";
     prefix $prefix;
 }
-
-#=============================================================
-
-=head2 /
-
-=head3 DESCRIPTION
-
-Returns a json-encoded string with all collections documents.
-
-=cut
-
-#=============================================================
-get '/' => sub {
-
-    my $data = {};
-
-    try {
-        my @collections = $database->collection_names;
-        foreach my $collection ( @collections ) {
-            my $cursor = $database->get_collection( $collection )->find();
-            if ( $cursor->count() ) {
-                $data->{ $collection } = [ $cursor->all() ];
-            }
-        }
-    } catch {
-        error "Error getting config database content";
-    }
-
-    debug "Complete Config database:";
-    debug Dumper $data;
-    return $data;
-};
 
 get '/version' => sub {
     return ( { version => $VERSION } );

@@ -28,6 +28,5 @@ store:
     database:   'MIR'
 # This section provides a look-up table for the MongoDB collections to use.
     sections:
-#        net:    'net'
-#        sensor: 'sensor'
         system: 'system'
+        config: 'system'
