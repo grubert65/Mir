@@ -20,6 +20,8 @@ WriteMakefile(
     PREREQ_PM => {
         #'ABC'              => 1.6,
         #'Foo::Bar::Module' => 5.0401,
+        'Log::Log4perl'     => 0,
+        'LWP::UserAgent'    => 0,
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'Mir-Config-Client-*' },
