@@ -97,6 +97,7 @@ sub run_fetchers {
 
     FETCHER_LOOP:
     foreach my $item ( @items ) {
+    	$ENV{WUNDERGROUND_API} = $config->{WUNDERGROUND_API};
         $thread++;
         my $pid = $pm->start and next FETCHER_LOOP;
         $log->debug ("Thread: ".$thread."\n");
@@ -120,3 +121,4 @@ sub run_fetchers {
 
 __DATA__
 FETCHER_NS_PREFIX: 'Mir::ACQ::Fetcher'
+WUNDERGROUND_API: 'f9a17cd41b53bb13'
