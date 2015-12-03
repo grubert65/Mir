@@ -88,8 +88,9 @@ sub BUILD {
     $self->log->debug("Connecting to port  :".$self->port);
 
     $self->query_path('http://'.$self->host.':'.$self->port);
-    my $res = $self->ua->get($self->{query_path}.$self->{prefix}."version");
-    die "No server found" unless $res->is_success;
+    my $url = $self->{query_path}.$self->{prefix}."version";
+    my $res = $self->ua->get( $url );
+    die "No server found, calling URL: $url" unless $res->is_success;
     my $h = decode_json( $res->content );
     $self->log->debug("Mir::Config version: $h->{version}");
 }
