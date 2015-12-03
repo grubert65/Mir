@@ -9,9 +9,10 @@ use_ok('Mir::Acq::Scheduler');
 
 ok(my $o=Mir::Acq::Scheduler->new, 'new');
 
-@ARGV = qw(
-    --campaign
-    weather
+@ARGV = (
+    '--campaign'  => 'Ishare',
+    '--fetcher'   => 'FS',
+    '--prefix'    => '/sco/'
 );
 
 ok( $o->parse_input_params(), 'parse input params' );
