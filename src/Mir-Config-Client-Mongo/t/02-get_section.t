@@ -11,4 +11,8 @@ ok(my $o=Mir::Config::Client->create(
                 dbname  => 'MIR'
         } ), 'create' );
 ok($o->connect(), 'connect');
+ok(my $system=$o->get_section('system'), 'get_section');
+diag "System section:\n";
+diag Dumper( $system );
+
 done_testing();
