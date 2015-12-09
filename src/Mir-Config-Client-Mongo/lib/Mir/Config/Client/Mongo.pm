@@ -51,16 +51,25 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #========================================================================
 use Moose;
 use MongoDB;
+use MongoDB::OID;
 
 with 'Mir::R::Config';
 
-has 'host' => ( is => 'rw', isa => 'Str', default => 'localhost' );
-has 'port' => ( is => 'rw', isa => 'Int', default => 27017 );
-has 'dbname' => ( is => 'rw', isa => 'Str', default => 'MIR' );
+has 'host' => ( is => 'ro', isa => 'Str', default => 'localhost' );
+has 'port' => ( is => 'ro', isa => 'Int', default => 27017 );
+has 'dbname' => ( is => 'ro', isa => 'Str', default => 'MIR' );
+has 'section'=> ( is => 'rw', isa => 'Str' );
+
 has 'database' => ( 
     is => 'ro', 
     isa => 'MongoDB::Database',
     writer => '_set_database'
+);
+
+has 'collection' => (
+    is  => 'ro',
+    isa => 'MongoDB::Collection',
+    writer => '_set_collection'
 );
 
 sub connect {
@@ -73,23 +82,34 @@ sub connect {
 
     $self->_set_database( $client->get_database( $self->dbname ) )
         or die "Error getting a MongoDB::Database obj\n";
+
+    if ( $self->section ) {
+        $self->_set_collection( $self->database->get_collection( $self->section ) )
+            or die "Error getting section $self->{section}\n";
+    }
 }
 
 sub get_section {
     my ( $self, $section ) = @_;
-    return undef unless $section;
 
-    my $collection = $self->database->get_collection( $section )
-        or die "Error getting section $section\n";
+    if ( $section ) {
+        $self->_set_collection( $self->database->get_collection( $section ) )
+            or die "Error getting section $section\n";
+    }
 
-    my $cursor = $collection->find();
+    return undef unless $self->collection;
+    my $cursor = $self->collection->find();
     
     return [ $cursor->all ];
 }
 
 sub get_id {
+    my ( $self, $id ) = @_;
     
-    return 1;
+    return undef unless $self->collection;
+    my $obj = $self->collection->find_one({ _id => $id });
+
+    return $obj;
 }
 
 sub get_key {
