@@ -10,7 +10,7 @@ use_ok('Mir::Acq::Scheduler');
 ok(my $o=Mir::Acq::Scheduler->new, 'new');
 
 @ARGV = (
-    '--campaign'  => 'Ishare',
+    '--campaign'  => 'FSIndex',
     '--fetcher'   => 'FS',
     '--prefix'    => '/sco/'
 );

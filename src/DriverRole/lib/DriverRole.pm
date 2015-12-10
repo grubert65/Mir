@@ -17,14 +17,17 @@ our $VERSION = '0.01';
 =head1 SYNOPSIS
 
     package Foo;
-    use Moose;
+    use Moose::Role;
     with 'DriverRole';
+
+    requires sub_a;
 
     package Main;
     use Moose;
     use Foo; # classe base (interface) di cui vogliamo un driver...
 
     my $foo_driver = Foo->create( driver => $driver );
+    $foo_driver->sub_a();
 
 
 =head1 SUBROUTINES/METHODS

@@ -8,6 +8,8 @@ use JSON qw( decode_json );
 use Data::Dumper qw( Dumper );
 use TryCatch;
 
+with 'DriverRole';
+
 =head1 NAME
 
 Mir::Config::Client - A client to interact with the Mir::Config server.
@@ -225,10 +227,7 @@ sub get_any {
         $h = decode_json( $res->content );
 
     } catch ( $e ) {
-
-        $self->log->error( 
-            "Error retrieving query $query:".
-            $res->status_line );
+        $self->log->error( "Error retrieving query $query: $e" );
 
         return undef;
     }
