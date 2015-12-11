@@ -87,6 +87,8 @@ sub connect {
         $self->_set_collection( $self->database->get_collection( $self->section ) )
             or die "Error getting section $self->{section}\n";
     }
+
+    return $self;
 }
 
 sub get_section {
