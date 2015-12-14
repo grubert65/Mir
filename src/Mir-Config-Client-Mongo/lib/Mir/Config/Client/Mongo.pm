@@ -10,6 +10,11 @@ on a Mongo data store.
 
 0.01
 
+=cut
+
+use vars qw( $VERSION );
+$VERSION='0.01';
+
 =head1 SYNOPSIS
 
     use Mir::R::Config;
