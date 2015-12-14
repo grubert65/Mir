@@ -16,6 +16,7 @@
 #               --separator                 CSV field separator (optional. If
 #                                           not defined, comma will be used)                
 #               --mapfile                   YAML map file (optional)
+#               --substitutions             YAML substitutions file (optional)
 #               --output <outfile>          The output file (optional. If not
 #                                           defined, STDOUT will be used)
 # REQUIREMENTS: JSON, Getopt::Long, YAML, Log::Log4perl
@@ -34,18 +35,20 @@ use utf8;
 
 use JSON;
 use Getopt::Long                    qw( GetOptions );
-use YAML                            qw( Load );
+use YAML                            qw( Load LoadFile );
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init( $DEBUG );
 my $log = Log::Log4perl->get_logger( __PACKAGE__ );
 
-my ($file, $tag, $separator, $mapfile, $output) = (undef, undef, ",", undef, undef);
+my $substitutions;
+my ($file, $tag, $separator, $mapfile, $subst_file, $output) = (undef, undef, ",", undef, undef, undef);
 GetOptions (
-    "file=s"        => \$file,
-    "tag=s"         => \$tag,
-    "separator=s"   => \$separator,
-    "mapfile=s"     => \$mapfile,
-    "output=s"      => \$output,
+    "file=s"            => \$file,
+    "tag=s"             => \$tag,
+    "separator=s"       => \$separator,
+    "mapfile=s"         => \$mapfile,
+    "substitutions=s"   => \$subst_file,
+    "output=s"          => \$output,
 ) or die <<EOT;
 
 Usage: $0 --file <csv input file> --tag <optional JSON tag> --separator <optional CSV field separator> --separator <separator char> --mapfile <mapfile path> --output <optional output file, STDOUT if not provided>
@@ -57,12 +60,18 @@ die ("CSV file has to be passed via the --file input param\n") unless $file;
 my $rows = [];
 my $item;
 
+# If mapping file was provided, load it
 if (defined $mapfile) {
     $log->debug("Mapping file $mapfile was provided, loading it...");
     open FILE_INFO, "< $mapfile" or die "Cannot open mapping file $mapfile";
     read (FILE_INFO, $item, (stat(FILE_INFO))[7]);
     close FILE_INFO;
     $log->debug("Mapping file $mapfile was correctly loaded");
+}
+
+# If substitutions file was provided, load its YAML
+if ((defined $subst_file) && (stat $subst_file)) {
+    $substitutions = LoadFile($subst_file);
 }
  
 # Get all rows and put them in an array of hashes
@@ -96,6 +105,8 @@ while ( my $row = <$fh> ) {
                 push @$rows, { $label => $cell }; 
             }
         } else {
+            # Change value according to substitions, if provided
+            $cell = $substitutions->{$cell} if defined $substitutions->{$cell};
             # If mapping was provided, use it
             if (defined $item) {
                 my $single_row = $rows->[$index];
