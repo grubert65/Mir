@@ -17,18 +17,18 @@ $VERSION='0.01';
 
 =head1 SYNOPSIS
 
-    use Mir::R::Config;
-
-    my $o = Mir::R::Config->create( driver => 'Mongo' );
+    use Mir::Config::Client;
+    my $o = Mir::Config::Client->create( driver => 'Mongo' );
 
     $o->connect(
         host    => 'localhost',
         port    => 5000,
-        database=> 'MIR'
+        database=> 'MIR',
+        section => 'system'
     ) or die "Error getting a Mir::Config::Client::Mongo obj\n";
 
-    # retrieves the complete content of a configuration section...
-    my $section = $o->get_section( $collection_name );
+    # refer to L<Mir::R::Config> role pod for detailed API 
+    # documentation
 
 =head1 DESCRIPTION
 
@@ -120,8 +120,11 @@ sub get_id {
 }
 
 sub get_key {
+    my ( $self, $keys, $fields ) = @_;
+    return undef unless $self->collection;
 
-    return 1;
+    return [ $self->collection->find( $keys )->fields( $fields )->all() ];
+
 }
 
 1; # End of Mir::Config::Client::Mongo
