@@ -149,7 +149,7 @@ dies in case of errors.
 
 =head3 DESCRIPTION
 
-Gets the list of the fetchers configured for the campaign and 
+Gets the list of the fetchers configured for the campaign(s) and 
 enqueue them in the queue for the campaign.
 If a fetcher has the "split" config attribute set, then a set
 of fetchers is added in the queue, one for each configured param

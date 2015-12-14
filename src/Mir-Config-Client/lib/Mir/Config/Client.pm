@@ -24,9 +24,10 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
-
-Perhaps a little code snippet.
+#    Note, this module implements the old API layer and interacts with the 
+#    Mir::Config server directly. 
+#    Look at pod in L<Mir::R::Config> rule for the new API model of
+#    any Mir::Config::Client driver
 
     use Mir::Config::Client;
 

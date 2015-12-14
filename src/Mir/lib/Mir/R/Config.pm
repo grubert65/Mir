@@ -14,8 +14,20 @@ Mir::R::Config - role for any Mir::Config::Client driver
     # connect to the Mir::Config
     my $client = Mir::Config::Client::Foo->connect( %connection_params );
 
-    # get the profile of a component
-    #
+    # get a Mir::Config section
+    my $section = $client->get_section( 'system' );
+
+    # get all configuration docs matching a key/value pairs filter
+    my $docs = $client->get_key({
+        tag => 'ACQ',
+        campaign => qw( weather twitter )
+    });
+
+    # get some configuration attributes matching a key/value filter
+    my $attr = $client->get_key({
+        tag => 'ACQ',
+        campaign => qw( weather twitter )
+    }, qw( fetchers ));
 
 =head1 DESCRIPTION
 
@@ -27,10 +39,6 @@ Each component can have a custom list of parameters.
 The component profile can be modelled as a list of key/values where 'tag' is
 a mandatory key.
 The profile of a component can be split is different structures.
-The profile tree layers are:
-
-    tag/
-
 
 =head1 AUTHOR
 
@@ -132,9 +140,8 @@ requires 'get_id';
 
 =head3 INPUT
 
-    $section
-    $key
-    $value
+    An hashref with a list of key/value pairs
+    An hashref with the list of attributes to have back( {a=>1,b=>1,...} )
 
 =head3 OUTPUT
 
@@ -142,7 +149,7 @@ An arrayref.
 
 =head3 DESCRIPTION
 
-Returns all structures in section that contains the passed key/value pair.
+Returns all structures in section that contains the passed key/value pairs.
 
 =cut
 
