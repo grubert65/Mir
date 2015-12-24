@@ -7,21 +7,30 @@ Mir::Acq::Scheduler - base class that implements an acq scheduler
 
 =head1 VERSION
 
-0.01
+0.02
+
+=cut 
+
+use vars qw( $VERSION );
+# History
+# 0.02: 15.12.2015 : now uses the new Mir::Config::Client API...
+$VERSION='0.02';
 
 =head1 SYNOPSIS
 
     use Mir::Acq::Scheduler;
 
+    # this will load fetch
     my $scheduler = Mir::Acq::Scheduler->new(
-        queue_server => 'localhost',
-        queue_port   => 6379,
+        campaigns   => ['weather'],
+        config_driver   => 'Mongo',
+        config_params   => {
+            host    => 'localhost',
+            port    => 27017,
+            dbname  => 'MIR',
+            section => 'system'
+        }
     ) or die "Error getting a Mir::Acq::Scheduler object";
-
-    # check input params
-    # if a campaign tag is found the corresponding
-    # queue object is created
-    $scheduler->parse_input_params();
 
     # get and enqueue all fetchers of the campaign
     # or the ones passed in input
@@ -55,20 +64,13 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #========================================================================
 use Moose;
 use namespace::clean;
-
-use Queue::Q::ReliableFIFO::Redis   ();
-use Mir::Config::Client             ();
+use Queue::Q::ReliableFIFO::Redis ();
+use Mir::Config::Client           ();
 use Log::Log4perl;
-use Getopt::Long                    qw( GetOptions );
-
-my $config;
+use JSON                          qw( decode_json );
 
 my $log = Log::Log4perl->get_logger( __PACKAGE__ );
 
-has 'queue_server'  => ( is => 'rw', default => 'localhost', trigger => \&_set_queue );
-has 'queue_port'    => ( is => 'rw', default => 6379, trigger => \&_set_queue );
-has 'config_server' => ( is => 'rw', default => 'localhost' );
-has 'config_port'   => ( is => 'rw', default => 5000 );
 has 'log'           => ( 
     is      => 'ro', 
     isa     => 'Log::Log4perl::Logger',
@@ -77,8 +79,12 @@ has 'log'           => (
 
 has 'campaigns'     => ( is => 'rw', isa => 'ArrayRef', trigger => \&_set_queue );
 has 'fetchers'      => ( is => 'rw', isa => 'ArrayRef' );
-has 'params'        => ( is => 'rw', isa => 'Str' );
-has 'prefix'        => ( is => 'rw', isa => 'Str', default => '/' );
+has 'fetcher_params'=> ( is => 'rw', isa => 'HashRef', default => sub { {} } );
+has 'queue_server'  => ( is => 'rw', isa => 'Str', default => "localhost" );
+has 'queue_port'    => ( is => 'rw', isa => 'Int', default => 6379 );
+has 'config_driver' => ( is => 'rw', isa => 'Str', default => 'Mongo' );
+has 'config_params' => ( is => 'rw', isa => 'HashRef', default => sub { {} } );
+
 has 'queues'        => ( is => 'ro', isa => 'HashRef' );
 
 sub _set_queue {
@@ -94,46 +100,6 @@ sub _set_queue {
             $self->log->debug("Created queue for campaign $campaign");
         }
     }
-}
-
-#=============================================================
-
-=head2 parse_input_params
-
-=head3 INPUT
-
-=head3 OUTPUT
-
-=head3 DESCRIPTION
-
-=cut
-
-#=============================================================
-sub parse_input_params {
-    my $self = shift;
-
-    my @campaigns;
-    my @fetchers;
-    my $params;
-    my $config_file;
-    my $prefix;
-
-    GetOptions ("campaign=s"        => \@campaigns,
-                "fetcher=s"         => \@fetchers,
-                "params=s"          => \$params,
-                "config-file=s"     => \$config_file,
-                "prefix=s"          => \$prefix
-    ) or die("Error in command line arguments\n");
-
-    die "At least a campaign or a fetcher has to be configured\n" unless ( @campaigns || @fetchers );
-
-    $self->campaigns ( \@campaigns  );
-    $self->fetchers  ( \@fetchers   );
-    $self->prefix( $prefix )            if ( defined $prefix);
-    $self->params( $params )            if ( defined $params );
-    $self->config_file( $config_file )  if ( defined $config_file );
-
-    return 1;
 }
 
 #=============================================================
@@ -163,41 +129,58 @@ sub enqueue_fetchers_of_campaign {
     my $self = shift;
 
     my @items;
-    my $c = Mir::Config::Client->new(
-        host    =>  $self->{config_server},
-        port    =>  $self->{config_port},
-        prefix  =>  $self->{prefix}
-    ) or die "No Mir::Config server found...";
 
-    my $fetchers = $c->get_resource( 
+    my $c = Mir::Config::Client->create( 
+        driver => $self->config_driver,
+        params => $self->config_params
+    ) or die "No Mir::Config::Client object...\n";
+
+    $c->connect() or die "Error connecting to a Mir::Config data store\n";
+
+    my @fetchers;
+    foreach my $campaign ( @{ $self->campaigns } ) {
+        push @fetchers, @{ 
+            $c->get_key(
+                {
+                    campaign => $campaign,
+                    tag      => 'ACQ'
+                },
+                { 'fetchers' => 1 }
+            )->[0]->{ fetchers };
+        };
+
+=begin  BlockComment  # BlockCommentNo_1
+
+    my $fetchers = $c->get_key( 
         section  => 'system',
         item     => 'ACQ',
         resource => 'fetchers'
     );
 
-    foreach my $fetcher ( @$fetchers ) {
-        foreach my $campaign ( @{ $self->campaigns } ) {
-            if ( $fetcher->{campaign} eq $campaign ) {
-                if ( defined $fetcher->{split} ) {
-                    die "No params section confired for fetcher" 
-                        unless ( defined $fetcher->{params} );
-                    foreach ( @{ $fetcher->{params} } ) {
-                        push @items, { 
-                            campaign    => $fetcher->{campaign},
-                            ns          => $fetcher->{ns},
-                            %$_
-                        };
-                    }
-                } else {
-                    push @items, $fetcher;
-                }
-            } 
-        }
-    }
 
-    foreach my $item ( @items ) {
-        $self->log->debug( "Adding fetcher $item->{ns} to campaign $item->{campaign}" );
-        $self->{queues}->{$item->{campaign}}->enqueue_item( $item );
+=end    BlockComment  # BlockCommentNo_1
+
+=cut
+
+        foreach my $fetcher ( @fetchers ) {
+            if ( defined $fetcher->{split} ) {
+                die "No params section configured for fetcher" 
+                    unless ( defined $fetcher->{params} );
+                foreach ( @{ $fetcher->{params} } ) {
+                    push @items, { 
+                        ns => $fetcher->{ns},
+                        %$_
+                    };
+                }
+            } else {
+                push @items, $fetcher;
+            }
+        }
+
+        foreach my $item ( @items ) {
+            $self->log->debug( "Adding fetcher $item->{ns} to campaign $campaign" );
+            $self->{queues}->{$campaign}->enqueue_item( $item );
+        }
     }
     return scalar @items;
 }
