@@ -7,15 +7,17 @@ use_ok('Mir::Acq::Scheduler');
 # configure the Mir::Config to host the
 # right fetchers list...
 
-ok(my $o=Mir::Acq::Scheduler->new, 'new');
+ok(my $o=Mir::Acq::Scheduler->new(
+        campaigns       => [ 'weather' ],
+        config_driver   => 'Mongo',
+        config_params   => {
+            host    => 'localhost',
+            port    => 27017,
+            dbname  => 'MIR',
+            section => 'system'
+        }
+    ), 'new');
 
-@ARGV = (
-    '--campaign'  => 'FSIndex',
-    '--fetcher'   => 'FS',
-    '--prefix'    => '/sco/'
-);
-
-ok( $o->parse_input_params(), 'parse input params' );
 ok( my $num_items = $o->enqueue_fetchers_of_campaign(), 'enqueue_fetchers_of_campaign');
 diag "Queued $num_items items...";
 

@@ -97,6 +97,8 @@ sub run_fetchers {
 
     FETCHER_LOOP:
     foreach my $item ( @items ) {
+        # TODO 
+        # this should be removed from here...
     	$ENV{WUNDERGROUND_API} = $config->{WUNDERGROUND_API};
         $thread++;
         my $pid = $pm->start and next FETCHER_LOOP;
@@ -107,7 +109,16 @@ sub run_fetchers {
             if ( defined $item->{ns} );
         if ( defined $class ) {
             $log->debug ("Going to create a $class fetcher...\n");
-            my $o = $class->new( $item );
+            # the proc_queue_params are needed in case
+            # the fetcher needs to enqueue itself back
+            my $o = $class->new( 
+                $item,
+                proc_queue_params => {
+                    server     => $server,
+                    port       => $port,
+                    queue_name => $campaign,
+                }
+            );
             $o->fetch();
         } else {
             $log->error ("ERROR, no class defined !!\n");

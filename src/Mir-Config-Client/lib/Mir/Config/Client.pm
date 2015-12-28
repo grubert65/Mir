@@ -29,6 +29,8 @@ our $VERSION = '0.01';
 #    Look at pod in L<Mir::R::Config> rule for the new API model of
 #    any Mir::Config::Client driver
 
+# the old way to use the module was this:
+#
     use Mir::Config::Client;
 
     # get a client connect to a specific Mir::Config server 
@@ -53,6 +55,23 @@ our $VERSION = '0.01';
     # ...or get any...
     my $hash = $c->get_any( section => $section )
         or die "Section $section does not exists...";
+
+# the new way should be:
+#
+    my $o=Mir::Config::Client->create( 
+            driver => 'Mongo', 
+            params => {
+                host    => 'localhost',
+                port    => 27017,
+                dbname  => 'MIR',
+                section => 'system'
+        } );
+    $o->connect();
+    my $fetchers = $o->get_key({tag=>'ACQ'},{fetchers=>1});
+
+
+
+
 
 =head1 METHODS
 

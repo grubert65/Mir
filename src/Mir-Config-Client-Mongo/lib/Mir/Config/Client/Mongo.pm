@@ -60,8 +60,8 @@ use MongoDB::OID;
 
 with 'Mir::R::Config';
 
-has 'host' => ( is => 'ro', isa => 'Str', default => 'localhost' );
-has 'port' => ( is => 'ro', isa => 'Int', default => 27017 );
+has 'host' =>   ( is => 'ro', isa => 'Str', default => 'localhost' );
+has 'port' =>   ( is => 'ro', isa => 'Int', default => 27017 );
 has 'dbname' => ( is => 'ro', isa => 'Str', default => 'MIR' );
 has 'section'=> ( is => 'rw', isa => 'Str' );
 
