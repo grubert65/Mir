@@ -15,7 +15,9 @@ SKIP: {
     ok (my $doc = Mir::Util::DocHandler::rtf->new(),                                        "new"); 
     ok ($doc->open_doc("./data/NovateMezzola.rtf"),                                         "open_doc");
     ok ($doc->pages(),                                                                      "pages");
-    ok ($doc->page_text(1, "./data"),                                                       "page_text");
+    ok (my($text, $confidence) = $doc->page_text(1, "./data"),                              "page_text");
+    is ( $confidence, 100, "confidence is always 100 for an rtf file...");
+    isnt ( $text, undef, "ok, got something...");
     ok ($doc->ConvertToPDF('./data/NovateMezzola.pdf', $display),                           "ConvertToPDF");
     unlink('./data/NovateMezzola.pdf') if stat('./data/NovateMezzola.pdf');
 }

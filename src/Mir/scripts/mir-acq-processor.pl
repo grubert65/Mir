@@ -109,16 +109,8 @@ sub run_fetchers {
             if ( defined $item->{ns} );
         if ( defined $class ) {
             $log->debug ("Going to create a $class fetcher...\n");
-            # the proc_queue_params are needed in case
-            # the fetcher needs to enqueue itself back
-            my $o = $class->new( 
-                $item,
-                proc_queue_params => {
-                    server     => $server,
-                    port       => $port,
-                    queue_name => $campaign,
-                }
-            );
+            $DB::single=1;
+            my $o = $class->new( %{$item->{params}} );
             $o->fetch();
         } else {
             $log->error ("ERROR, no class defined !!\n");

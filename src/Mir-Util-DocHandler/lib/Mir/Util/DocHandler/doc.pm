@@ -8,9 +8,9 @@ Microsoft Word documents
 
 =head2 SYNOPSIS
 
-    use Mir::Util::DocHandler::doc;
+    use Mir::Util::DocHandler;
 
-    my $doc = Mir::Util::DocHandler::doc->new();
+    my $doc = Mir::Util::DocHandler->create( driver => 'doc' );
 
 =head2 DESCRIPTION
 
@@ -52,10 +52,6 @@ of the License, or (at your option) any later version.
 #========================================================================
 use Moose;
 extends 'Mir::Util::DocHandler::Office';
-
-use Time::HiRes                 qw(gettimeofday);
-use File::Copy                  qw( copy );
-use File::Basename              qw( basename );
 
 #=============================================================
 
@@ -116,6 +112,8 @@ sub page_text
     my ($self, $page, $temp_dir) = @_;
 
     my $confidence = 100;
+    $temp_dir = $self->{TEMP_DIR} unless $temp_dir;
+    $temp_dir = '/tmp' unless $temp_dir;
 
     my $doc = $self->{'DOC_PATH'};
     if (not defined $doc) {

@@ -65,7 +65,9 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 use Moose;
 use namespace::clean;
 use Queue::Q::ReliableFIFO::Redis ();
+use Try::Tiny;
 use Mir::Config::Client           ();
+
 use Log::Log4perl;
 use JSON                          qw( decode_json );
 
@@ -138,29 +140,22 @@ sub enqueue_fetchers_of_campaign {
     $c->connect() or die "Error connecting to a Mir::Config data store\n";
 
     my @fetchers;
+    $DB::single=1;
     foreach my $campaign ( @{ $self->campaigns } ) {
-        push @fetchers, @{ 
-            $c->get_key(
-                {
-                    campaign => $campaign,
-                    tag      => 'ACQ'
-                },
-                { 'fetchers' => 1 }
-            )->[0]->{ fetchers };
+        try {
+            push @fetchers, @{ 
+                $c->get_key(
+                    {
+                        campaign => $campaign,
+                        tag      => 'ACQ'
+                    },
+                    { 'fetchers' => 1 }
+                )->[0]->{ fetchers };
+            };
+        } catch {
+            $self->log->warn("Key not found in Config data store");
+            next;
         };
-
-=begin  BlockComment  # BlockCommentNo_1
-
-    my $fetchers = $c->get_key( 
-        section  => 'system',
-        item     => 'ACQ',
-        resource => 'fetchers'
-    );
-
-
-=end    BlockComment  # BlockCommentNo_1
-
-=cut
 
         foreach my $fetcher ( @fetchers ) {
             if ( defined $fetcher->{split} ) {

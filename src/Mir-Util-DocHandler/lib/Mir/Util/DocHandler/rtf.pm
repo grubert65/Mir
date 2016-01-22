@@ -8,9 +8,9 @@ RTF documents
 
 =head2 SYNOPSIS
 
-    use Mir::Util::DocHandler::rtf;
+    use Mir::Util::DocHandler;
 
-    my $doc = Mir::Util::DocHandler::rtf->new();
+    my $doc = Mir::Util::DocHandler->create(driver => 'rtf' );
 
 =head2 DESCRIPTION
 
@@ -111,8 +111,7 @@ Returns text of document
 =cut
 
 #=============================================================
-sub page_text
-{
+sub page_text {
     my ($self, $page, $temp_dir) = @_;
 
     my $doc = $self->{'DOC_PATH'};

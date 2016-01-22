@@ -8,9 +8,9 @@ HTML documents
 
 =head2 SYNOPSIS
 
-    use Mit::Util::DocHandler::html;
+    use Mit::Util::DocHandler;
 
-    my $doc = Mir::Util::DocHandler::html->new();
+    my $doc = Mir::Util::DocHandler->create( driver => 'html' );
 
 =head2 DESCRIPTION
 

@@ -20,6 +20,23 @@ WriteMakefile(
     PREREQ_PM => {
         #'ABC'              => 1.6,
         #'Foo::Bar::Module' => 5.0401,
+        'Moose'                 => 0,
+        'DriverRole'            => 0,
+        'Time::HiRes'           => 0,
+        'File::Copy'            => 0,
+        'File::Basename'        => 0,
+        'File::Path'            => 0,
+        'Encode'                => 0,
+        'LEOCHARRE::HTML::Text' => 0,
+        'PDF::API2'             => 0,
+        'CAM::PDF'              => 0,
+        'Image::OCR::Tesseract' => 0,
+        'Image::Size'           => 0,
+        'Imager'                => 0,
+        'PDF::Extract'          => 0,
+        'DirHandle'             => 0,
+
+
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'Mir-Util-DocHandler-*' },
