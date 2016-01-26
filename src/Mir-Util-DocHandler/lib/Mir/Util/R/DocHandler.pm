@@ -86,6 +86,35 @@ has 'params' => (
     default => sub { return {} },
 );
 
+requires 'pages';
+
+#=============================================================
+
+=head2 page_text
+
+=head3 INPUT
+
+$page:                  page number (ignored)
+$temp_dir:              temp dir where text is stored
+
+=head3 OUTPUT
+
+$text:                  Text of document if successful, undef 
+                        if not. Page number is ignored 
+$confidence:            Estimated accuracy of extracted text 
+                        (100 if antiword was successful, 0
+                        otherwise)
+
+=head3 DESCRIPTION
+
+Returns text of document and the confidence on it.
+Currently implemented by each driver.
+
+=cut
+
+#=============================================================
+requires 'page_text';
+
 #=============================================================
 =head2 open_doc
 
@@ -123,64 +152,6 @@ sub open_doc
     return 1; 
 }
 
-#=============================================================
-
-=head2 pages
-
-=head3 INPUT
-
-=head3 OUTPUT
-
-Currently unavailable, always returns 1
-
-=head3 DESCRIPTION
-
-Currently unavailable, always returns 1
-
-=cut
-
-#=============================================================
-sub pages
-{
-    my ($self) = shift;
-
-    $self->log->error("Use proper DocHandler to process document");
-
-    return 0;
-}
-
-#=============================================================
-
-=head2 page_text
-
-=head3 INPUT
-
-$page:                  page number (ignored)
-$temp_dir:              temp dir where text is stored
-
-=head3 OUTPUT
-
-$text:                  Text of document if successful, undef 
-                        if not. Page number is ignored 
-$confidence:            Estimated accuracy of extracted text 
-                        (100 if antiword was successful, 0
-                        otherwise)
-
-=head3 DESCRIPTION
-
-Returns text of document
-
-=cut
-
-#=============================================================
-sub page_text
-{
-    my ($self, $page, $temp_dir) = @_;
-
-    $self->log->error("Use proper DocHandler to process document");
-
-    return (undef, 0);
-}
 #=============================================================
 
 =head1 CheckFileType

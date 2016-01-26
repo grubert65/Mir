@@ -104,7 +104,7 @@ has 'confidence' => (
 
 # the pdf document and where everything get stored...
 has 'pdf'           => ( is => 'rw', isa => 'Str' );
-has 'pages'         => ( is => 'rw', isa => 'Int' );
+has 'page_num'      => ( is => 'rw', isa => 'Int' );
 has 'pdf_pages_dir' => ( is => 'rw', isa => 'Str' );
 has 'pdf_images_dir'=> ( is => 'rw', isa => 'Str' );
 has 'pdf_text_dir'  => ( is => 'rw', isa => 'Str' );
@@ -163,7 +163,7 @@ sub open_doc {
         
         # If everything was OK, get document infos
         if ($infos =~ /pages\:.*?(\d{1,})/i) {
-            $self->pages( $1 );
+            $self->page_num( $1 );
         } else {
             $self->log->error("Cannot get document $pdf infos") if $self->log;
             return 0;
@@ -177,6 +177,11 @@ sub open_doc {
     }
     
     return 1; 
+}
+
+sub pages {
+    my $self = shift;
+    return $self->page_num;
 }
 
 #=============================================================
@@ -203,8 +208,8 @@ sub extractAllAndConvert {
     my $self = shift;
 
     my @pages;
-    if ( $self->pages ) {
-        foreach( my $page_num=1;$page_num<=$self->pages;$page_num++){
+    if ( $self->page_num ) {
+        foreach( my $page_num=1;$page_num<=$self->page_num;$page_num++){
             # extract each page as single pdf
             my $pdf_file = $self->extractPage ($page_num)
                 or return undef;
