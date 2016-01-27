@@ -70,7 +70,7 @@ has 'id' => (
 );
 
 has 'title'         => ( is => 'rw', isa => 'Str' );
-has 'text'          => ( is => 'rw', isa => 'Str' );
+#has 'text'          => ( is => 'rw', isa => 'Str' );
 has 'source'        => ( is => 'rw', isa => 'Str' );
 has 'creation_date' => ( 
     is      => 'ro',

@@ -109,7 +109,6 @@ sub run_fetchers {
             if ( defined $item->{ns} );
         if ( defined $class ) {
             $log->debug ("Going to create a $class fetcher...\n");
-            $DB::single=1;
             my $o = $class->new( %{$item->{params}} );
             $o->fetch();
         } else {
