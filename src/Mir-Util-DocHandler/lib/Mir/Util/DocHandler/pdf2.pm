@@ -153,7 +153,7 @@ sub open_doc {
     ($self->{basename}, $self->{suffix}) = split(/\./, $self->{filename});
 
     my $infos;
-    my $cmd = "pdfinfo $pdf > $basedir/pdf_info_file.txt 2>&1";
+    my $cmd = "pdfinfo \"$pdf\" > $basedir/pdf_info_file.txt 2>&1";
     my $ret = system($cmd);
     if ($ret == 0) {
         # Get infos and delete temp dir...
@@ -387,7 +387,7 @@ sub convertToImage {
     my $img_file = $self->pdf_images_dir.'/'.$filename.'.jpg';
     return $img_file if ( -e $img_file );
 
-    my $cmd = "convert -density 300 -quality 100 $pdf_file $img_file";
+    my $cmd = "convert -density 300 -quality 100 \"$pdf_file\" \"$img_file\"";
     $ret = system( $cmd );
     if( $ret != 0 ) {
         $self->log->error("ERROR executing cmd: $cmd");

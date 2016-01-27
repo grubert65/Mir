@@ -124,7 +124,6 @@ unless ( $e->indices->exists( index => $params->{idx_server}->{index} ) ) {
     );
 };
 
-
 $log->info("Start consuming items...");
 $q->consume( \&index_item, "drop" );
 
@@ -145,7 +144,12 @@ sub index_item {
         return 0; 
     }
 
-    my $item_to_index = Mir::Doc::File->unpack( $item )->to_index();
+    my $item_obj = Mir::Doc::File->unpack( $item );
+    unless ( $item_obj ) {
+        $log->error("Error getting back a Mir::Doc::File obj");
+        return;
+    }
+    my $item_to_index = $item_obj->to_index();
 
     $item_to_index->{pages} = [];
     my $dh;
@@ -160,25 +164,33 @@ sub index_item {
     $item_to_index->{num_pages} = $dh->pages();
     $log->info( "Doc has $item_to_index->{num_pages} pages" );
 
+        $DB::single=1;
     foreach( my $page=1;$page<=$item_to_index->{num_pages};$page++ ) {
         # get page text and confidence
         # add them to item profile
         push @{ $item_to_index->{pages} }, [ $dh->page_text( $page ) ];
     }
 
-
     try {
         # index item in the proper index...
         $log->info("Indexing document:");
         $log->info( Dumper $item_to_index );
 
+        $DB::single=1;
         my $ret = $e->index( 
             index   => $params->{idx_server}->{index},
             type    => $params->{idx_server}->{type},
             body    => $item_to_index 
         );
-        $log->info("Indexed document $item_to_index->{id}");
-        $log->info($ret);
+        if ( $ret->{_id} ) {
+            $log->info("Indexed document $item_to_index->{id}, IDX id: $ret->{_id}");
+            $item_obj->{idx_id}     = $ret->{_id};
+            $item_obj->{num_pages}  = $item_to_index->{num_pages};
+            $item_obj->{status}     = 1; # 1 => INDEXED
+            $item_obj->store();
+        } else {
+            $log->error("Error indexing document $item_to_index->{id}, no IDX ID");
+        }
     } catch {
         $log->error("Error indexing document $item->{id}: $_");
     };

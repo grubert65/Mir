@@ -52,7 +52,7 @@ with Storage( 'format' => 'JSON' );
 
 use namespace::autoclean;
 
-# stato del documento
+# doc status
 use enum qw( 
     NEW 
     INDEXED
