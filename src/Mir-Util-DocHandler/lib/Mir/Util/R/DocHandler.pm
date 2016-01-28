@@ -12,7 +12,8 @@ drivers
 
 =cut
 
-our $VERSION='0.01';
+use vars qw( $VERSION );
+$VERSION='0.01';
 
 =head1 SYNOPSIS
 
@@ -184,7 +185,7 @@ sub CheckFileType
     my $infos;
     my ($seconds, $microseconds) = gettimeofday;
     my $info_file = $self->{'TEMP_DIR'}."/"."$seconds"."_"."$microseconds";
-    my $cmd = "antiword $file 2> $info_file 1> /dev/null";
+    my $cmd = "antiword \"$file\" 2> $info_file 1> /dev/null";
     my $ret = system($cmd);
 
     if (stat ($info_file))

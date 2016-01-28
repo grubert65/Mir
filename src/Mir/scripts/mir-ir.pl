@@ -56,6 +56,7 @@ use Mir::Config::Client ();
 use Mir::Util::DocHandler ();
 use Try::Tiny;
 use Mir::Doc::File;
+use Mir::Stat;
 
 Log::Log4perl->easy_init( $INFO );
 my $log = Log::Log4perl->get_logger( __PACKAGE__);
@@ -112,6 +113,10 @@ $log->info("Opening queue:");
 $log->info( Dumper $params->{idx_queue_params} );
 my $q = Queue::Q::ReliableFIFO::Redis->new( %{ $params->{idx_queue_params} } );
 my $e = Mir::IR->new( %{ $params->{idx_server}->{ir_params} } );
+my $s = Mir::Stat->new(
+    counter => $campaign.'_indexed',
+    select  => 10,
+);
 
 # create index if not exists
 # set mapping
@@ -164,7 +169,6 @@ sub index_item {
     $item_to_index->{num_pages} = $dh->pages();
     $log->info( "Doc has $item_to_index->{num_pages} pages" );
 
-        $DB::single=1;
     foreach( my $page=1;$page<=$item_to_index->{num_pages};$page++ ) {
         # get page text and confidence
         # add them to item profile
@@ -176,7 +180,6 @@ sub index_item {
         $log->info("Indexing document:");
         $log->info( Dumper $item_to_index );
 
-        $DB::single=1;
         my $ret = $e->index( 
             index   => $params->{idx_server}->{index},
             type    => $params->{idx_server}->{type},
@@ -188,6 +191,7 @@ sub index_item {
             $item_obj->{num_pages}  = $item_to_index->{num_pages};
             $item_obj->{status}     = 1; # 1 => INDEXED
             $item_obj->store();
+            $s->incrBy();
         } else {
             $log->error("Error indexing document $item_to_index->{id}, no IDX ID");
         }

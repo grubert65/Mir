@@ -85,19 +85,18 @@ sub open_doc
 {
     my ($self, $document) = @_;
 
-    if (not defined $document) {
+    unless (defined $document) {
         $self->log->error("No document was provided");
         return 0;
     }
 
-    if (not stat ($document)) {
+    unless (stat ($document)) {
         $self->log->error("Cannot find document $document");
         return 0;
     }
 
-    # Check if original file is an MS Office document
-    if ($self->CheckFileType($document) !~ /htm/i) {
-        $self->log->error("$document is not an HTML document");
+    unless ( -T $document ) {
+        $self->log->error("Document is not a text file");
         return 0;
     }
 
@@ -126,12 +125,6 @@ Currently unavailable, always returns 1
 sub pages
 {
     my ($self) = shift;
-
-    my $doc = $self->{'DOC_PATH'};
-    if (not defined $doc) {
-        $self->log->error("No document was ever opened");
-        return undef;
-    }
 
     return 1;
 }
@@ -167,16 +160,13 @@ sub page_text
     my $confidence = 100;
 
     my $doc = $self->{'DOC_PATH'};
-    if (not defined $doc) {
-        $self->log->error("No document was ever opened");
-        return undef;
-    }
 
     my $text = undef;
-    $text = html2txt($doc);
-    if (not defined $text) {
-        $self->log->error("Unable to read page $page from document $doc");
-        return (undef, 0);
+    {
+        local $/;
+        open my $fh, "< $doc";
+        $text=<$fh>;
+        close $fh;
     }
 
     # Find weird encodings
