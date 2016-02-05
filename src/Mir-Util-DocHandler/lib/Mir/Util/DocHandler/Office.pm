@@ -49,7 +49,6 @@ of the License, or (at your option) any later version.
 
 #========================================================================
 use Moose;
-with 'Mir::Util::R::DocHandler';
 
 use Time::HiRes                 qw(gettimeofday);
 use File::Copy                  qw( copy );

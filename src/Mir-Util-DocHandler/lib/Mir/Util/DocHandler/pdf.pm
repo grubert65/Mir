@@ -8,9 +8,9 @@ documents
 
 =head2 SYNOPSIS
 
-    use Mir::Util::DocHandler::pdf;
+    use Mir::Util::DocHandler;
 
-    my $doc = Mir::Util::DocHandler::pdf->new();
+    my $doc = Mir::Util::DocHandler->create( driver => 'pdf' );
 
 =head2 DESCRIPTION
 
@@ -114,7 +114,7 @@ sub open_doc {
     rmtree ($temp_dir) if stat ($temp_dir);
     mkdir ($temp_dir);
     my $infos;
-    my $cmd = "pdfinfo $document > $temp_dir/pdf_info_file.txt 2>&1";
+    my $cmd = "pdfinfo \"$document\" > $temp_dir/pdf_info_file.txt 2>&1";
     my $ret = system($cmd);
     if ($ret == 0) {
         # Get infos and delete temp dir...
@@ -207,6 +207,7 @@ sub page_text
     my $ocr_threshold = $self->{'OCR_THRESHOLD'};
     my $text = "";
     my $confidence = $self->{'CONFIDENCE'};
+    $temp_dir = $self->{TEMP_DIR} unless ( $temp_dir );
     $temp_dir .= "/"._generateUUID();
     rmtree ($temp_dir) if stat ($temp_dir);
     mkdir ($temp_dir);

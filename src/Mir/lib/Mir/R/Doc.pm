@@ -52,7 +52,7 @@ with Storage( 'format' => 'JSON' );
 
 use namespace::autoclean;
 
-# stato del documento
+# doc status
 use enum qw( 
     NEW 
     INDEXED
@@ -70,7 +70,7 @@ has 'id' => (
 );
 
 has 'title'         => ( is => 'rw', isa => 'Str' );
-has 'text'          => ( is => 'rw', isa => 'Str' );
+#has 'text'          => ( is => 'rw', isa => 'Str' );
 has 'source'        => ( is => 'rw', isa => 'Str' );
 has 'creation_date' => ( 
     is      => 'ro',

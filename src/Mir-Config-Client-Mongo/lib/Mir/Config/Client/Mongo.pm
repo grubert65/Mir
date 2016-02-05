@@ -124,7 +124,6 @@ sub get_key {
     return undef unless $self->collection;
 
     return [ $self->collection->find( $keys )->fields( $fields )->all() ];
-
 }
 
 1; # End of Mir::Config::Client::Mongo

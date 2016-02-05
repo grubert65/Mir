@@ -1,14 +1,14 @@
 use 5.006;
 use strict;
-use warnings;
+use warnings FATAL => 'all';
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
-    NAME             => 'DriverRole',
+    NAME             => 'Mir::Stat',
     AUTHOR           => q{Marco Masetti <marco.masetti@softeco.it>},
-    VERSION_FROM     => 'lib/DriverRole.pm',
-    ABSTRACT_FROM    => 'lib/DriverRole.pm',
-    LICENSE          => 'artistic_2',
+    VERSION_FROM     => 'lib/Mir/Stat.pm',
+    ABSTRACT_FROM    => 'lib/Mir/Stat.pm',
+    LICENSE          => 'Artistic_2_0',
     PL_FILES         => {},
     MIN_PERL_VERSION => 5.006,
     CONFIGURE_REQUIRES => {
@@ -18,8 +18,9 @@ WriteMakefile(
         'Test::More' => 0,
     },
     PREREQ_PM => {
-        'Moose'             => 0,
+        #'ABC'              => 1.6,
+        #'Foo::Bar::Module' => 5.0401,
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
-    clean => { FILES => 'DriverRole-*' },
+    clean => { FILES => 'Mir-Stat-*' },
 );

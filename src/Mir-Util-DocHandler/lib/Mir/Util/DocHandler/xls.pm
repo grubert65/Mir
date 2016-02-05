@@ -51,11 +51,8 @@ of the License, or (at your option) any later version.
 
 #========================================================================
 use Moose;
+with 'Mir::Util::R::DocHandler';
 extends 'Mir::Util::DocHandler::Office';
-
-use Time::HiRes                 qw(gettimeofday);
-use File::Copy                  qw( copy );
-use File::Basename              qw( basename );
 
 #=============================================================
 
