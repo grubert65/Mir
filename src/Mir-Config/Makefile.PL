@@ -21,6 +21,7 @@ WriteMakefile(
         'YAML'          => 0,
         'Dancer2'       => 0.160003,
         'MongoDB'       => 0,
+        'Plack::Test'   => 0,
         'TryCatch'      => 0,
         'Data::Dumper'  => 0,
     },

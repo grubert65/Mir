@@ -18,14 +18,13 @@ WriteMakefile(
         'Test::More' => 0,
     },
     PREREQ_PM => {
-        #'ABC'              => 1.6,
-        #'Foo::Bar::Module' => 5.0401,
-        'Moose'                 => 0,
+        'DirHandle'             => 0,
         'DriverRole'            => 0,
         'Time::HiRes'           => 0,
         'File::Copy'            => 0,
         'File::Basename'        => 0,
         'File::Path'            => 0,
+        'File::Type'            => 0,
         'Encode'                => 0,
         'LEOCHARRE::HTML::Text' => 0,
         'PDF::API2'             => 0,
@@ -33,8 +32,10 @@ WriteMakefile(
         'Image::OCR::Tesseract' => 0,
         'Image::Size'           => 0,
         'Imager'                => 0,
+        'Moose'                 => 0,
+        'Path::Class'           => 0,
         'PDF::Extract'          => 0,
-        'DirHandle'             => 0,
+        'XML::Simple'           => 0,
 
 
     },

@@ -1,9 +1,18 @@
+.todo
 Changes
+ignore.txt
 lib/Mir/Config/Client/Mongo.pm
 Makefile.PL
 MANIFEST			This list of files
 README
+scripts/get_acq_fetchers.pl
+scripts/get_campaign_config.pl
 t/00-load.t
+t/01-connect.t
+t/02-get_section.t
+t/03-get_id.t
+t/04-get_key.t
+t/boilerplate.t
 t/manifest.t
 t/pod-coverage.t
 t/pod.t

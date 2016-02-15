@@ -42,8 +42,6 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 #========================================================================
 use Moose::Role;
-use Archive::Extract                        ();
-use Archive::Zip                            qw( :ERROR_CODES :CONSTANTS );
 use File::Basename                          qw( dirname basename );
 use DirHandle                               ();
 use File::Copy                              qw( copy );
