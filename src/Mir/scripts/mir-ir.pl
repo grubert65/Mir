@@ -13,7 +13,7 @@ mir-ir.pl - Mir indexer process
 
 =head1 USAGE
 
-    perl mir-ir.pl <JSON-encoded config file>
+    perl mir-ir.pl --campaign <campaign tag>
 
 =head1 REQUIRED ARGUMENTS
 
@@ -121,11 +121,9 @@ my $s = Mir::Stat->new(
 # create index if not exists
 # set mapping
 unless ( $e->indices->exists( index => $params->{idx_server}->{index} ) ) {
-    $e->indices->create( index => $params->{idx_server}->{index} );
-    $e->indices->put_mapping(
-        index   => $params->{idx_server}->{index},
-        type    => $params->{idx_server}->{type},
-        body    => $params->{idx_server}->{mappings}
+    $e->indices->create( 
+        index => $params->{idx_server}->{index}, 
+        body  => $params->{idx_server}->{mappings}
     );
 };
 
@@ -207,7 +205,7 @@ sub get_suffix {
 
 __DATA__
 {
-    "pdf":"pdf2",
+    "pdf":  "pdf2",
     "html": "html",
     "doc":  "doc",
     "docx": "doc",

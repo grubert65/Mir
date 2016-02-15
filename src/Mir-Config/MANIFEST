@@ -1,3 +1,4 @@
+.todo
 bin/app.psgi
 config.yml
 cpanfile
@@ -21,6 +22,10 @@ README
 scripts/area.json
 scripts/net.json
 scripts/system-acq-00.json
+scripts/system-acq-01.json
+scripts/system-acq-fs.json
+scripts/system-acq-news.json
+scripts/system-acq-weather.json
 scripts/test.py
 specifiche.txt
 t/001_base.t

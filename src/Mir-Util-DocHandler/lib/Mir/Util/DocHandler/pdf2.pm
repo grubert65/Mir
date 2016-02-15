@@ -109,6 +109,8 @@ has 'pdf_pages_dir' => ( is => 'rw', isa => 'Str' );
 has 'pdf_images_dir'=> ( is => 'rw', isa => 'Str' );
 has 'pdf_text_dir'  => ( is => 'rw', isa => 'Str' );
 
+$ENV{SM2_TEMP_DIR} //= '/tmp';
+
 #=============================================================
 
 =head2 open_doc

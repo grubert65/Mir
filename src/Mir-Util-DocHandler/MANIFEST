@@ -1,11 +1,16 @@
 Changes
+data/1453812585_62623/Udine.tiff
+data/1453812585_62623/Udine.tiff.tmp.1453812585804.tif
 data/Bollettino.pdf
 data/Bollettino2.pdf
 data/fail.doc
 data/FVG.pdf
+'data/html file.html'
 data/Lucca.doc
 data/MassaCarrara.doc
 data/NovateMezzola.rtf
+data/pdf_info_file.txt
+'data/Piano attività.pdf'
 data/RegioneAbruzzo.pdf
 data/siti.xls
 data/Storo.html
@@ -20,8 +25,10 @@ lib/Mir/Util/DocHandler/doc.pm
 lib/Mir/Util/DocHandler/html.pm
 lib/Mir/Util/DocHandler/Office.pm
 lib/Mir/Util/DocHandler/pdf.pm
+lib/Mir/Util/DocHandler/pdf2.pm
 lib/Mir/Util/DocHandler/rtf.pm
 lib/Mir/Util/DocHandler/tiff.pm
+lib/Mir/Util/DocHandler/txt.pm
 lib/Mir/Util/DocHandler/xls.pm
 lib/Mir/Util/R/DocHandler.pm
 Makefile.PL
@@ -35,7 +42,10 @@ t/30-pdf.t
 t/40-rtf.t
 t/50-tiff.t
 t/60-xls.t
+t/70-pdf2.t
+t/80-txt.t
 t/manifest.t
 t/pod-coverage.t
 t/pod.t
+test.out
 xt/boilerplate.t
