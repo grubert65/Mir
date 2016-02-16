@@ -3,16 +3,19 @@ package Mir::R::Config;
 
 =head1 NAME
 
-Mir::R::Config - role for any Mir::Config::Client driver
+Mir::R::Config - role for any Mir::Config::Client drivers
 
 =head1 SYNOPSIS
 
-    package Mir::Config::Client::Foo;
-    use Moose;
-    with 'Mir::R::Config';
+    use Mir::Config::Client;
+
+    # get a Mir::Config::Client
+    my $client = Mir::Config::Client->create( 
+        driver  => 'Foo',
+        params  => $connection_params );
 
     # connect to the Mir::Config
-    my $client = Mir::Config::Client::Foo->connect( %connection_params );
+    $client->connect();
 
     # get a Mir::Config section
     my $section = $client->get_section( 'system' );
@@ -20,14 +23,14 @@ Mir::R::Config - role for any Mir::Config::Client driver
     # get all configuration docs matching a key/value pairs filter
     my $docs = $client->get_key({
         tag => 'ACQ',
-        campaign => qw( weather twitter )
+        campaign => 'weather'
     });
 
-    # get some configuration attributes matching a key/value filter
+    # get only configuration attributes matching a key/value filter
     my $attr = $client->get_key({
         tag => 'ACQ',
-        campaign => qw( weather twitter )
-    }, qw( fetchers ));
+        campaign => 'weather'
+    }, { fetchers => 1 });
 
 =head1 DESCRIPTION
 
@@ -62,10 +65,6 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #========================================================================
 use Moose::Role;
 use namespace::autoclean;
-use MongoDB;
-use Log::Log4perl;
-use Try::Tiny;
-
 with 'DriverRole';
 
 #=============================================================
@@ -74,11 +73,11 @@ with 'DriverRole';
 
 =head3 INPUT
 
-An hashref with parameters specific to each specific client
+    An hashref with parameters specific to each specific client
 
 =head3 OUTPUT
 
-A Mir::Config::Client driver object.
+    A Mir::Config::Client driver object.
 
 =head3 DESCRIPTION
 
@@ -133,7 +132,6 @@ pointed to by the id.
 #=============================================================
 requires 'get_id';
 
-
 #=============================================================
 
 =head2 get_key
@@ -141,7 +139,7 @@ requires 'get_id';
 =head3 INPUT
 
     An hashref with a list of key/value pairs
-    An hashref with the list of attributes to have back( {a=>1,b=>1,...} )
+    An arrayref with the list of attributes to have back( {a=>1,b=>1,...} )
 
 =head3 OUTPUT
 
