@@ -166,7 +166,6 @@ Internal method to get a new Redis object.
 #=============================================================
 sub _get_redis {
     my $self = shift;
-    $DB::single=1;
     my $r = Redis->new( server  => $self->server );
     $r->select( $self->select );
     return $r;
@@ -191,7 +190,6 @@ Reads the value of the counter
 #=============================================================
 sub get_value {
     my $self = shift;
-    $DB::single=1;
     return $self->redis->get( $self->counter );
 }
 
