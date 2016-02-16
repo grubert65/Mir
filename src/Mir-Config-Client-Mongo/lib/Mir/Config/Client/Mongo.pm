@@ -77,6 +77,25 @@ has 'collection' => (
     writer => '_set_collection'
 );
 
+#=============================================================
+
+=head2 connect
+
+=head3 INPUT
+
+    An hashref with parameters specific to each specific client
+
+=head3 OUTPUT
+
+    A Mir::Config::Client driver object.
+
+=head3 DESCRIPTION
+
+Connects to the proper config data store.
+
+=cut
+
+#=============================================================
 sub connect {
     my  $self = shift;
 
@@ -96,6 +115,25 @@ sub connect {
     return $self;
 }
 
+#=============================================================
+
+=head2 get_section
+
+=head3 INPUT
+
+    $section : the section (in a Mongo data stores eq to a collection
+
+=head3 OUTPUT
+
+An arrayref.
+
+=head3 DESCRIPTION
+
+Returns the complete content of a configuration section.
+
+=cut
+
+#=============================================================
 sub get_section {
     my ( $self, $section ) = @_;
 
@@ -110,6 +148,27 @@ sub get_section {
     return [ $cursor->all ];
 }
 
+#=============================================================
+
+=head2 get_id
+
+=head3 INPUT
+
+    $section: the section the configuration structure belongs to.
+    $id: the unique configuration structure id
+
+=head3 OUTPUT
+
+An hashref
+
+=head3 DESCRIPTION
+
+Given the passed section, it looks into it for the structure
+pointed to by the id.
+
+=cut
+
+#=============================================================
 sub get_id {
     my ( $self, $id ) = @_;
     
@@ -119,6 +178,26 @@ sub get_id {
     return $obj;
 }
 
+#=============================================================
+
+=head2 get_key
+
+=head3 INPUT
+
+    An hashref with a list of key/value pairs
+    An arrayref with the list of attributes to have back( {a=>1,b=>1,...} )
+
+=head3 OUTPUT
+
+An arrayref.
+
+=head3 DESCRIPTION
+
+Returns all structures in section that contains the passed key/value pairs.
+
+=cut
+
+#=============================================================
 sub get_key {
     my ( $self, $keys, $fields ) = @_;
     return undef unless $self->collection;
