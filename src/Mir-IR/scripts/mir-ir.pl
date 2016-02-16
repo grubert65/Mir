@@ -24,6 +24,7 @@
 use Moose;
 use Getopt::Long            qw( GetOptions );
 use Log::Log4perl           qw( :easy );
+use JSON                    qw( decode_json );
 
 use Mir::IR ();
 
