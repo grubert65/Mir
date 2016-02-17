@@ -7,7 +7,7 @@
       "params":{
         "node":"localhost",
         "root_dir":".",
-        "suffixes":["pm","t"],
+        "suffixes":["pm","t", "txt"],
         "browse_func":"dir_walk",
         "cache_params":{
             "server":"127.0.0.1:6379",
@@ -88,6 +88,11 @@
                     "index": "analyzed",
                     "store": "yes",
                     "type": "string"
+                },
+                "num_pages":{
+                    "index": "analyzed",
+                    "store": "no",
+                    "type": "long"
                 },
                 "pages":{
                     "index": "analyzed",

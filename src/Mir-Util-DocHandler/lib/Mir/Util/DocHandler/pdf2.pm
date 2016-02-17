@@ -84,13 +84,17 @@ use Image::Size                 qw( imgsize );
 use Imager;
 use PDF::Extract;
 use DirHandle;
+use Data::UUID;
 
 use vars qw( $VERSION );
 
 # 0.01 : first stable release
 # 0.02 : added crop method
 # 0.03 : ported under Mir
-$VERSION = '0.03';
+# 0.04 : now uses $ENV{CACHE_DIR} (defaults to /tmp) as
+#        basedir. This prevents errors in case we don't
+#        have priviledges on the pdf base fodler...
+$VERSION = '0.04';
 
 #binmode(STDOUT, ':utf8');
 
@@ -109,7 +113,7 @@ has 'pdf_pages_dir' => ( is => 'rw', isa => 'Str' );
 has 'pdf_images_dir'=> ( is => 'rw', isa => 'Str' );
 has 'pdf_text_dir'  => ( is => 'rw', isa => 'Str' );
 
-$ENV{SM2_TEMP_DIR} //= '/tmp';
+$ENV{CACHE_DIR} //= '/tmp';
 
 #=============================================================
 
@@ -146,7 +150,9 @@ sub open_doc {
         return 0;
     }
 
-    my $basedir = dirname( $self->pdf );
+    $DB::single=1;
+    mkdir ( $ENV{CACHE_DIR} ) unless ( -d $ENV{CACHE_DIR} );
+    my $basedir = $ENV{CACHE_DIR};
     $self->pdf_pages_dir("$basedir/pages");
     $self->pdf_images_dir("$basedir/images");
     $self->pdf_text_dir("$basedir/text");
@@ -172,9 +178,12 @@ sub open_doc {
         }
     }
 
-    return 1 if ( -d $self->pdf_pages_dir && -d $self->pdf_images_dir );
+    return 1 if ( -d $self->pdf_pages_dir && 
+                  -d $self->pdf_images_dir &&
+                  -d $self->pdf_text_dir
+              );
 
-    foreach ( qw( pdf_pages_dir pdf_images_dir ) ) {
+    foreach ( qw( pdf_pages_dir pdf_images_dir pdf_text_dir ) ) {
         mkdir ($self->{$_}) if ( ! -d $self->{$_} );
     }
     
@@ -265,13 +274,13 @@ sub page_text {
         return undef unless ( $img && -e $img );
     }
 
-    $text = get_ocr( $img, $ENV{SM2_TEMP_DIR}, 'ita' );
+    $text = get_ocr( $img, $ENV{CACHE_DIR}, 'ita' );
     if ( $text =~ /average_doc_confidence:(\d{1,3})/ ) {
         $confidence = $1;
         $text =~ s/average_doc_confidence:(\d{1,3})//g;
     }
 
-    $self->_delete_temp_files( $ENV{SM2_TEMP_DIR} );
+    $self->_delete_temp_files( $ENV{CACHE_DIR} );
 
     $self->log->debug("Confidence: $confidence");
     $self->log->debug("Text      :\n\n$text");

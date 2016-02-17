@@ -76,7 +76,8 @@ use vars qw(
     $e
     $queue
 );
-$VERSION = '0.01';
+
+$VERSION = '0.02';
 $log = Log::Log4perl->get_logger( __PACKAGE__ );
 {
     local $/;
@@ -122,7 +123,6 @@ sub config {
     ) or die "No Mir::Config::Client object...\n";
     
     $c->connect() or die "Error connecting to a Mir::Config data store\n";
-    $DB::single=1;
     my $params = $c->get_key({
             tag         => 'IR',
             campaign    => $self->campaign,
@@ -179,8 +179,31 @@ sub process_items_in_queue {
     $self->queue->consume( \&_index_item, "drop" );
 }
 
+#=============================================================
+
+=head2 _index_item
+
+=head3 INPUT
+
+A Mir::Doc::File object
+
+=head3 OUTPUT
+
+The result of the index or undef in case of errors.
+
+=head3 DESCRIPTION
+
+Queue items consuming callback.
+Tries to extract the text from the object and index it in the 
+index, for the type and with the mapping configured.
+
+=cut
+
+#=============================================================
 sub _index_item {
-    my $item = shift;
+#    my $item = shift;
+    $DB::single=1;
+    my $item = (ref $_[0] eq 'HASH') ? $_[0] : $_[1];
 
     $log->info( "Found NEW item -------------------------------------------");
     $log->info( $item->{id} );
@@ -191,7 +214,7 @@ sub _index_item {
         return 0; 
     }
 
-    if ( not -f $item->{abspath} ) {
+    if ( not -f "$item->{abspath}" ) {
         $log->error( "File $item->{abspath} not exists or not readable" );
         return 0; 
     }
@@ -207,7 +230,7 @@ sub _index_item {
     my $dh;
     if ( $item_to_index->{suffix} && ( $dh = Mir::Util::DocHandler->create( driver => get_suffix ( $item_to_index->{suffix} ) ) ) ) {
         $log->info("Opening doc $item_to_index->{abspath}...");
-        $dh->open_doc( $item_to_index->{abspath} ) or return;
+        $dh->open_doc( "$item_to_index->{abspath}" ) or return;
     
         $item_to_index->{num_pages} = $dh->pages();
         $log->info( "Doc has $item_to_index->{num_pages} pages" );
@@ -215,18 +238,23 @@ sub _index_item {
         foreach( my $page=1;$page<=$item_to_index->{num_pages};$page++ ) {
             # get page text and confidence
             # add them to item profile
-            push @{ $item_to_index->{pages} }, [ $dh->page_text( $page ) ];
+    $DB::single=1;
+            my ( $text, $confidence ) = $dh->page_text( $page, '/tmp' );
+            if ( $confidence > 80 ) {
+                push @{ $item_to_index->{pages} }, $text;
+            }
         }
     } else {
         $log->warn("WARNING: no Mir::Util::DocHandler driver for document $item_to_index->{abspath}");
     }
 
+    my $ret;
     try {
         # index item in the proper index...
         $log->info("Indexing document: $item_to_index->{id}");
         $log->debug( Dumper $item_to_index );
 
-        my $ret = $e->index( 
+        $ret = $e->index( 
             index   => $index,
             type    => $type,
             body    => $item_to_index 
@@ -244,6 +272,7 @@ sub _index_item {
     } catch {
         $log->error("Error indexing document $item->{id}: $_");
     };
+    return ( $ret );
 }
 
 sub get_suffix {
@@ -255,7 +284,7 @@ sub get_suffix {
 
 __DATA__
 {
-    "pdf":  "pdf2",
+    "pdf":  "pdf",
     "html": "html",
     "doc":  "doc",
     "docx": "doc",
