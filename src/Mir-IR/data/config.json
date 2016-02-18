@@ -132,6 +132,16 @@
              }
           }
        }
+    },
+    "doc_handlers_lut":{
+        "pdf":  "pdf",
+        "html": "html",
+        "doc":  "doc",
+        "docx": "doc",
+        "rtf":  "rtf",
+        "java": "txt",
+        "js":   "txt",
+        "pm":   "txt"
     }
   }
 ]

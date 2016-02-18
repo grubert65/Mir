@@ -129,7 +129,8 @@ sub config {
         },
         {
             idx_queue_params => 1,
-            idx_server       => 1
+            idx_server       => 1,
+            doc_handlers_lut => 1
         }
     )->[0];
 
@@ -157,6 +158,9 @@ sub config {
         counter => $self->{campaign}.'_indexed',
         select  => 10,
     );
+
+    $DB::single=1;
+    $drivers_lut = $params->{doc_handlers_lut} if ( $params->{doc_handlers_lut} );
 }
 
 #=============================================================
