@@ -97,7 +97,7 @@
                 "pages":{
                     "index": "analyzed",
                     "store": "no",
-                    "type": "nested"
+                    "type": "string"
                 },
                 "path":{
                     "index": "analyzed",

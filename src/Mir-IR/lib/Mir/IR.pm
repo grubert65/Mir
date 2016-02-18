@@ -59,7 +59,7 @@ use Log::Log4perl;
 use Queue::Q::ReliableFIFO::Redis ();
 use Log::Log4perl           qw( :easy );
 use Data::Dumper            qw( Dumper );
-use Try::Tiny;
+use TryCatch;
 use JSON;
 use Mir::Config::Client ();
 use Mir::Util::DocHandler ();
@@ -202,7 +202,6 @@ index, for the type and with the mapping configured.
 #=============================================================
 sub _index_item {
 #    my $item = shift;
-    $DB::single=1;
     my $item = (ref $_[0] eq 'HASH') ? $_[0] : $_[1];
 
     $log->info( "Found NEW item -------------------------------------------");
@@ -238,7 +237,6 @@ sub _index_item {
         foreach( my $page=1;$page<=$item_to_index->{num_pages};$page++ ) {
             # get page text and confidence
             # add them to item profile
-    $DB::single=1;
             my ( $text, $confidence ) = $dh->page_text( $page, '/tmp' );
             if ( $confidence > 80 ) {
                 push @{ $item_to_index->{pages} }, $text;
@@ -269,8 +267,8 @@ sub _index_item {
         } else {
             $log->error("Error indexing document $item_to_index->{id}, no IDX ID");
         }
-    } catch {
-        $log->error("Error indexing document $item->{id}: $_");
+    } catch ( $err ) {
+        $log->error("Error indexing document $item->{id}: $err");
     };
     return ( $ret );
 }
