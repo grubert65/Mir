@@ -133,6 +133,7 @@
           }
        }
     },
+    "confidence_threashold":"20",
     "doc_handlers_lut":{
         "pdf":  "pdf",
         "html": "html",

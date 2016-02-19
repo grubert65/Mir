@@ -2,9 +2,9 @@ use 5.006;
 use strict;
 use warnings FATAL => 'all';
 use Test::More;
-use Mir::Acq::Fetcher::FS;
-use Mir::Config::Client;
 use Log::Log4perl qw( :easy );
+use Search::Elasticsearch;
+use JSON;
 
 Log::Log4perl->easy_init( $DEBUG );
 
@@ -14,33 +14,25 @@ BEGIN {
 
 diag( "Testing Mir::IR $Mir::IR::VERSION, Perl $], $^X" );
 
-# to test Mir::IR we need first to launch a fetcher (for example the
-# Mir::Acq::Fetcher::FS) that creates some docs in a configured 
-# mongo folder and enqueue items in the IR queue...
-my $config_obj = Mir::Config::Client->create(
-    driver  => 'JSON',
-    params  => { path => './data/config.json' },
-);
+my $res = `curl "http://localhost:9200"`;
+unless ( $res ) {
+    diag "It seems that no Elastic server is listening at 0.0.0.0:9200, exiting...\n";
+    exit;
+}
 
-$config_obj->connect();
+#
+# deleting test index...
+my $e = Search::Elasticsearch->new();
+if ( $e->indices->exists( index => "ir-test" ) ) {
+    $e->indices->delete( index => "ir-test" );
+}
 
-my $fetchers = $config_obj->get_key({
-        tag     => 'ACQ',
-        campaign=> 'IR-test',
-
-    },{
-        fetchers => 1,
-    }
-);
-
-my $f = Mir::Acq::Fetcher::FS->new( $fetchers->[0]->{fetchers}->[0]->{params} )
-    or die "Error getting an FS fetcher...\n";
-
-$f->fetch();
-if ( $f->ret ) {
-    foreach ( @{ $f->docs } ) {
-        diag "Got $_->{path}\n";
-    }
+my $docs_json;
+{
+    local $/;
+    open my $fh, "<./data/docs_ir.json";
+    $docs_json = <$fh>;
+    close $fh;
 }
 
 ok( my $o = Mir::IR->new(
@@ -51,6 +43,9 @@ ok( my $o = Mir::IR->new(
 
 ok( $o->config(), 'config' );
 
-ok( $o->process_items_in_queue(), 'process_items_in_queue' );
+my $items = decode_json $docs_json;
+foreach my $item ( @$items ) {
+    ok(my $ret = $o->_index_item( $item ), "_index_item");
+}
 
 done_testing;

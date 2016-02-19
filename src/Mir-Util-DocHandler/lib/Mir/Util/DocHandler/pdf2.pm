@@ -85,6 +85,7 @@ use Imager;
 use PDF::Extract;
 use DirHandle;
 use Data::UUID;
+use TryCatch;
 
 use vars qw( $VERSION );
 
@@ -94,7 +95,8 @@ use vars qw( $VERSION );
 # 0.04 : now uses $ENV{CACHE_DIR} (defaults to /tmp) as
 #        basedir. This prevents errors in case we don't
 #        have priviledges on the pdf base fodler...
-$VERSION = '0.04';
+# 0.05 : bug fixing...
+$VERSION = '0.05';
 
 #binmode(STDOUT, ':utf8');
 
@@ -253,6 +255,7 @@ sub extractAllAndConvert {
 Returns text of desired page of document page.
 The page is converted in image and text is extracted using
 OCR.
+Returns ( undef, 0 ) in case of errors.
 
 =cut
 
@@ -268,10 +271,17 @@ sub page_text {
     my $img = $self->pdf_images_dir.'/'.$filename.$page.'.jpg';
     $self->log->debug("Going to extract text from image: $img");
     if (! -e $img ) {
-        $self->log->debug("Image $img not existent, going to extract page and convert...");
-        my $page = $self->extractPage( $page );
-        $img = $self->convertToImage( $page );
-        return undef unless ( $img && -e $img );
+        try {
+            $DB::single=1;
+            $self->log->debug("Image $img not existent, going to extract page and convert...");
+            my $pdf_page = $self->extractPage( $page )
+                or die "Error extracting page $page\n";
+            $img = $self->convertToImage( $pdf_page );
+            die "Error converting image" unless ( $img && -e $img );
+        } catch ( my $err ) {
+            $self->log->error( $err );
+            return ( undef, 0 );
+        }
     }
 
     $text = get_ocr( $img, $ENV{CACHE_DIR}, 'ita' );
@@ -348,6 +358,7 @@ pdf with file name <base filename>-<page_num>.pdf
 sub extractPage {
     my ( $self, $page_num ) = @_;
 
+    $DB::single=1;
     my $pdf_page=$self->{pdf_pages_dir}.'/'.$self->{basename}.$page_num.'.'.$self->{suffix};
     return $pdf_page if (-e $pdf_page );
     my $pdf=new PDF::Extract( PDFDoc=> $self->pdf );

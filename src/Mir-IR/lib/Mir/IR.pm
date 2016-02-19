@@ -71,13 +71,14 @@ use vars qw(
     $log 
     $stat
     $drivers_lut
+    $confidence_threashold
     $index
     $type
     $e
     $queue
 );
 
-$VERSION = '0.02';
+$VERSION = '0.03';
 $log = Log::Log4perl->get_logger( __PACKAGE__ );
 {
     local $/;
@@ -130,7 +131,8 @@ sub config {
         {
             idx_queue_params => 1,
             idx_server       => 1,
-            doc_handlers_lut => 1
+            doc_handlers_lut => 1,
+            confidence_threashold => 1
         }
     )->[0];
 
@@ -161,6 +163,8 @@ sub config {
 
     $DB::single=1;
     $drivers_lut = $params->{doc_handlers_lut} if ( $params->{doc_handlers_lut} );
+    # if no threashold defined we take everything...
+    $confidence_threashold = $params->{confidence_threashold} || 0; 
 }
 
 #=============================================================
@@ -231,7 +235,7 @@ sub _index_item {
 
     $item_to_index->{pages} = [];
     my $dh;
-    if ( $item_to_index->{suffix} && ( $dh = Mir::Util::DocHandler->create( driver => get_suffix ( $item_to_index->{suffix} ) ) ) ) {
+    if ( $item_to_index->{suffix} && ( $dh = Mir::Util::DocHandler->create( driver => get_driver ( $item_to_index->{suffix} ) ) ) ) {
         $log->info("Opening doc $item_to_index->{abspath}...");
         $dh->open_doc( "$item_to_index->{abspath}" ) or return;
     
@@ -242,7 +246,7 @@ sub _index_item {
             # get page text and confidence
             # add them to item profile
             my ( $text, $confidence ) = $dh->page_text( $page, '/tmp' );
-            if ( $confidence > 80 ) {
+            if ( $confidence > $confidence_threashold ) {
                 push @{ $item_to_index->{pages} }, $text;
             }
         }
@@ -277,7 +281,23 @@ sub _index_item {
     return ( $ret );
 }
 
-sub get_suffix {
+#=============================================================
+
+=head2 get_driver
+
+=head3 INPUT
+
+=head3 OUTPUT
+
+=head3 DESCRIPTION
+
+Returns the Mir::Util::DocHandler driver based on the document
+suffix.
+
+=cut
+
+#=============================================================
+sub get_driver {
     my $suffix = shift;
     ( $drivers_lut->{$suffix} ) ? return $drivers_lut->{$suffix} : $suffix;
 }
