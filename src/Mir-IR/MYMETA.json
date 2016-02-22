@@ -1,0 +1,46 @@
+{
+   "abstract" : "frontend for the Elastic Search indexer.",
+   "author" : [
+      "Marco Masetti <marco.masetti@softeco.it>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "ExtUtils::MakeMaker version 7.0401, CPAN::Meta::Converter version 2.150001",
+   "license" : [
+      "unknown"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "Mir-IR",
+   "no_index" : {
+      "directory" : [
+         "t",
+         "inc"
+      ]
+   },
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "Test::More" : "0"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "0"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "Mir" : "0",
+            "Mir::Acq::Fetcher::FS" : "0",
+            "Mir::Config::Client" : "0",
+            "Mir::Config::Client::JSON" : "0",
+            "Mir::Stat" : "0",
+            "perl" : "5.006"
+         }
+      }
+   },
+   "release_status" : "stable",
+   "version" : "0.02"
+}
