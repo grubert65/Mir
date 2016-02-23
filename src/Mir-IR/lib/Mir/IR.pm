@@ -233,7 +233,6 @@ sub _index_item {
         return;
     }
     my $item_to_index = $item_obj->to_index();
-
     $item_to_index->{pages} = [];
     my $dh;
     if ( $item_to_index->{suffix} && ( $dh = Mir::Util::DocHandler->create( driver => get_driver ( $item_to_index->{suffix} ) ) ) ) {
