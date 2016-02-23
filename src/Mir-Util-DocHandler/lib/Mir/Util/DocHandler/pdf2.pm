@@ -225,10 +225,10 @@ sub extractAllAndConvert {
         foreach( my $page_num=1;$page_num<=$self->page_num;$page_num++){
             # extract each page as single pdf
             my $pdf_file = $self->extractPage ($page_num)
-                or return undef;
+                or next;
 
             # convert each pdf page in image
-            my $img_file = $self->convertToImage($pdf_file) or return undef;
+            my $img_file = $self->convertToImage($pdf_file) or next;
 
             push @pages, { pdf => $pdf_file, img => $img_file };
         }
@@ -270,6 +270,7 @@ sub page_text {
     my ($filename, $suffix) = split(/\./, $path[-1]);
     my $img = $self->pdf_images_dir.'/'.$filename.$page.'.jpg';
     $self->log->debug("Going to extract text from image: $img");
+    $DB::single=1;
     if (! -e $img ) {
         try {
             $DB::single=1;
@@ -278,10 +279,15 @@ sub page_text {
                 or die "Error extracting page $page\n";
             $img = $self->convertToImage( $pdf_page );
             die "Error converting image" unless ( $img && -e $img );
-        } catch ( my $err ) {
-            $self->log->error( $err );
+        } catch {
+            $self->log->error( $@ );
             return ( undef, 0 );
         }
+    }
+
+    unless ( $img ) {
+        $self->log->error( "Error getting an image for page $page, skipping..." );
+        return ( "", 0 );
     }
 
     $text = get_ocr( $img, $ENV{CACHE_DIR}, 'ita' );
@@ -361,15 +367,19 @@ sub extractPage {
     $DB::single=1;
     my $pdf_page=$self->{pdf_pages_dir}.'/'.$self->{basename}.$page_num.'.'.$self->{suffix};
     return $pdf_page if (-e $pdf_page );
-    my $pdf=new PDF::Extract( PDFDoc=> $self->pdf );
-    $pdf->setVars( PDFCache => $self->{pdf_pages_dir} );
-    my $ret = $pdf->savePDFExtract( PDFPages=>$page_num );
-    if ( $ret == 0 ) {
-        $self->log->error( $pdf->getVars("PDFError") );
+    try {
+        my $pdf=new PDF::Extract( PDFDoc=> $self->pdf );
+        $pdf->setVars( PDFCache => $self->{pdf_pages_dir} );
+        my $ret = $pdf->savePDFExtract( PDFPages=>$page_num );
+        if ( $ret == 0 ) {
+            $self->log->error( $pdf->getVars("PDFError") );
+            return undef;
+        }
+        return $pdf_page;
+    } catch {
+        $self->log->error("Error extracting page $page_num: $@");
         return undef;
     }
-
-    return $pdf_page;
 }
 
 #=============================================================

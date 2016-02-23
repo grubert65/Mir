@@ -1,4 +1,3 @@
-
 package Mir::Util::DocHandler;
 use Moose;
 use namespace::autoclean;

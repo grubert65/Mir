@@ -7,7 +7,11 @@ Mir::IR - frontend for the Elastic Search indexer.
 
 =head1 VERSION
 
-0.01
+0.04
+
+=cut
+
+our $VERSION = '0.04';
 
 =head1 SYNOPSIS
 
@@ -67,7 +71,6 @@ use Mir::Doc::File;
 use Mir::Stat;
 
 use vars qw( 
-    $VERSION 
     $log 
     $stat
     $drivers_lut
@@ -78,7 +81,6 @@ use vars qw(
     $queue
 );
 
-$VERSION = '0.03';
 $log = Log::Log4perl->get_logger( __PACKAGE__ );
 {
     local $/;
@@ -161,7 +163,6 @@ sub config {
         select  => 10,
     );
 
-    $DB::single=1;
     $drivers_lut = $params->{doc_handlers_lut} if ( $params->{doc_handlers_lut} );
     # if no threashold defined we take everything...
     $confidence_threashold = $params->{confidence_threashold} || 0; 
@@ -246,7 +247,8 @@ sub _index_item {
             # get page text and confidence
             # add them to item profile
             my ( $text, $confidence ) = $dh->page_text( $page, '/tmp' );
-            if ( $confidence > $confidence_threashold ) {
+            if ( ( $confidence > $confidence_threashold ) && 
+                 ( $text ) ) {
                 push @{ $item_to_index->{pages} }, $text;
             }
         }
@@ -315,5 +317,3 @@ __DATA__
     "js":   "txt",
     "pm":   "txt"
 }
- 
-
