@@ -7,7 +7,11 @@ Mir::IR - frontend for the Elastic Search indexer.
 
 =head1 VERSION
 
-0.01
+0.04
+
+=cut
+
+our $VERSION = '0.04';
 
 =head1 SYNOPSIS
 
@@ -67,17 +71,16 @@ use Mir::Doc::File;
 use Mir::Stat;
 
 use vars qw( 
-    $VERSION 
     $log 
     $stat
     $drivers_lut
+    $confidence_threashold
     $index
     $type
     $e
     $queue
 );
 
-$VERSION = '0.02';
 $log = Log::Log4perl->get_logger( __PACKAGE__ );
 {
     local $/;
@@ -130,7 +133,8 @@ sub config {
         {
             idx_queue_params => 1,
             idx_server       => 1,
-            doc_handlers_lut => 1
+            doc_handlers_lut => 1,
+            confidence_threashold => 1
         }
     )->[0];
 
@@ -159,8 +163,9 @@ sub config {
         select  => 10,
     );
 
-    $DB::single=1;
     $drivers_lut = $params->{doc_handlers_lut} if ( $params->{doc_handlers_lut} );
+    # if no threashold defined we take everything...
+    $confidence_threashold = $params->{confidence_threashold} || 0; 
 }
 
 #=============================================================
@@ -228,10 +233,9 @@ sub _index_item {
         return;
     }
     my $item_to_index = $item_obj->to_index();
-
     $item_to_index->{pages} = [];
     my $dh;
-    if ( $item_to_index->{suffix} && ( $dh = Mir::Util::DocHandler->create( driver => get_suffix ( $item_to_index->{suffix} ) ) ) ) {
+    if ( $item_to_index->{suffix} && ( $dh = Mir::Util::DocHandler->create( driver => get_driver ( $item_to_index->{suffix} ) ) ) ) {
         $log->info("Opening doc $item_to_index->{abspath}...");
         $dh->open_doc( "$item_to_index->{abspath}" ) or return;
     
@@ -242,7 +246,8 @@ sub _index_item {
             # get page text and confidence
             # add them to item profile
             my ( $text, $confidence ) = $dh->page_text( $page, '/tmp' );
-            if ( $confidence > 80 ) {
+            if ( ( $confidence > $confidence_threashold ) && 
+                 ( $text ) ) {
                 push @{ $item_to_index->{pages} }, $text;
             }
         }
@@ -277,7 +282,23 @@ sub _index_item {
     return ( $ret );
 }
 
-sub get_suffix {
+#=============================================================
+
+=head2 get_driver
+
+=head3 INPUT
+
+=head3 OUTPUT
+
+=head3 DESCRIPTION
+
+Returns the Mir::Util::DocHandler driver based on the document
+suffix.
+
+=cut
+
+#=============================================================
+sub get_driver {
     my $suffix = shift;
     ( $drivers_lut->{$suffix} ) ? return $drivers_lut->{$suffix} : $suffix;
 }
@@ -295,5 +316,3 @@ __DATA__
     "js":   "txt",
     "pm":   "txt"
 }
- 
-

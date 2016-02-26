@@ -13,19 +13,21 @@ on a Mongo data store.
 =cut
 
 use vars qw( $VERSION );
-$VERSION='0.01';
+$VERSION='0.02';
 
 =head1 SYNOPSIS
 
     use Mir::Config::Client;
-    my $o = Mir::Config::Client->create( driver => 'Mongo' );
+    my $o = Mir::Config::Client->create(
+                driver => 'Mongo', 
+                params => {
+                    host    => 'localhost',
+                    port    => 27017,
+                    dbname  => 'MIR'
+                });
 
-    $o->connect(
-        host    => 'localhost',
-        port    => 5000,
-        database=> 'MIR',
-        section => 'system'
-    ) or die "Error getting a Mir::Config::Client::Mongo obj\n";
+    $o->connect()
+        or die "Error getting a Mir::Config::Client::Mongo obj\n";
 
     # refer to L<Mir::R::Config> role pod for detailed API 
     # documentation
@@ -63,7 +65,7 @@ with 'Mir::R::Config';
 has 'host' =>   ( is => 'ro', isa => 'Str', default => 'localhost' );
 has 'port' =>   ( is => 'ro', isa => 'Int', default => 27017 );
 has 'dbname' => ( is => 'ro', isa => 'Str', default => 'MIR' );
-has 'section'=> ( is => 'rw', isa => 'Str' );
+has 'section'=> ( is => 'rw', isa => 'Str', default => 'system' );
 
 has 'database' => ( 
     is => 'ro', 
