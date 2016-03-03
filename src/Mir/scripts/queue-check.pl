@@ -4,6 +4,7 @@ use warnings;
 use utf8;
 use Redis;
 use Data::Printer;
+use JSON;
 
 my $r = Redis->new()
     or die "Error: Redis server not running\n";
@@ -25,7 +26,9 @@ my $range = ( $len > $max ) ? $max : $len;
 
 foreach ( my $i=0;$i<$range;$i++) {
     print "\n---------- Item $i: ---------------\n";
-    p $r->lindex( $key, $i );
+    $DB::single=1;
+    my $item = decode_json( $r->lindex( $key, $i ) );
+    p $item;
     print "\n";
 }
 
