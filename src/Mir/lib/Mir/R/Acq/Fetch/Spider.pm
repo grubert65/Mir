@@ -362,7 +362,7 @@ sub SelectNode
                         } else {
                             $node = $_[0];
                         }
-                        if ($node =~ /$pattern/g) {
+                        if ($node =~ /$pattern/gi) {
                             $selected_node = $single_node unless defined $selected_node;
                         }
                         return HTML::Element::OK; 
@@ -382,6 +382,43 @@ sub SelectNode
         $self->{ CURRENT_NODE } = \@selected_nodes;
         return \@selected_nodes;
     }
+}
+
+#=============================================================
+
+=head1 SelectParent
+
+=head2 INPUT
+
+=head2 OUTPUT
+    $selected_node:     selected node
+
+=head2 DESCRIPTION
+
+    Selects desired parent node
+
+=cut
+
+#=============================================================
+sub SelectParent
+{
+    my ($self) = @_;
+
+    my $start_node = $self->{ CURRENT_NODE };
+    if (not defined $start_node) {
+        $self->log->error("ERROR No node is currently selected") if (defined $self->log);
+        return undef;
+    }
+    if (scalar @$start_node != 1) {
+        $self->log->error("ERROR Invalid node is currently selected") if (defined $self->log);
+        return undef;
+    }
+
+    my $parent = $start_node->[0]->parent();
+    return undef if (not defined $parent);
+
+    $self->{ CURRENT_NODE } = [$parent];
+    return $parent;
 }
 
 #=============================================================
@@ -431,6 +468,57 @@ sub SelectRightSibling
         return $right_node;
     } else {
         $self->log->error("ERROR No rightmost node found") if (defined $self->log);
+        return undef;
+    }
+}
+
+#=============================================================
+
+=head1 SelectLeftSibling
+
+=head2 INPUT
+
+    $node:          (not mandatory) Start node. If not defined,
+                    currently provided node will be used
+
+=head2 OUTPUT
+
+=head2 DESCRIPTION
+
+    Selects the left sibling of provided node or currently 
+    selected node
+
+=cut
+
+#=============================================================
+sub SelectLeftSibling
+{
+    my $self = shift;
+    my $node = shift;
+
+    my $start_node;
+    if (not defined $node) {
+        my $nodes = $self->{ CURRENT_NODE };
+        if (scalar @$nodes != 1) {
+            $self->log->info("ERROR Invalid node selected") if (defined $self->log);
+            return undef;
+        }
+        $start_node = $nodes->[0];
+    } else {
+        $start_node = $node;
+    }
+
+    my $left_node = $start_node->left();
+    if (not defined $left_node) {
+        $self->log->info("ERROR No leftmost node found") if (defined $self->log);
+        return undef;
+    }
+
+    if (defined $left_node && ref $left_node eq 'HTML::Element') {
+        $self->{ CURRENT_NODE } = [$left_node];
+        return $left_node;
+    } else {
+        $self->log->error("ERROR No leftmost node found") if (defined $self->log);
         return undef;
     }
 }
