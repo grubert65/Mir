@@ -11,7 +11,9 @@ Mir::IR - frontend for the Elastic Search indexer.
 
 =cut
 
-our $VERSION = '0.04';
+#HISTORY
+# 0.05 | 26.02.2016 | decoding abspath from utf8 octets to characters....
+our $VERSION = '0.05';
 
 =head1 SYNOPSIS
 
@@ -69,6 +71,7 @@ use Mir::Config::Client ();
 use Mir::Util::DocHandler ();
 use Mir::Doc::File;
 use Mir::Stat;
+use Encode;
 
 use vars qw( 
     $log 
@@ -95,6 +98,7 @@ has 'config_driver' => ( is => 'rw', isa => 'Str', default => sub { return 'Mong
 has 'config_params' => ( is => 'rw', isa => 'HashRef' );
 has 'config_params_json' => ( is => 'rw', isa => 'Str' );
 has 'queue'         => ( is => 'rw', isa => 'Queue::Q::ReliableFIFO::Redis' );
+
 
 #=============================================================
 
@@ -210,7 +214,6 @@ index, for the type and with the mapping configured.
 
 #=============================================================
 sub _index_item {
-#    my $item = shift;
     my $item = (ref $_[0] eq 'HASH') ? $_[0] : $_[1];
 
     $log->info( "Found NEW item -------------------------------------------");
@@ -222,6 +225,7 @@ sub _index_item {
         return 0; 
     }
 
+    $item->{abspath} = decode_utf8( $item->{abspath} );
     if ( not -f "$item->{abspath}" ) {
         $log->error( "File $item->{abspath} not exists or not readable" );
         return 0; 
@@ -233,27 +237,8 @@ sub _index_item {
         return;
     }
     my $item_to_index = $item_obj->to_index();
-    $item_to_index->{pages} = [];
-    my $dh;
-    if ( $item_to_index->{suffix} && ( $dh = Mir::Util::DocHandler->create( driver => get_driver ( $item_to_index->{suffix} ) ) ) ) {
-        $log->info("Opening doc $item_to_index->{abspath}...");
-        $dh->open_doc( "$item_to_index->{abspath}" ) or return;
-    
-        $item_to_index->{num_pages} = $dh->pages();
-        $log->info( "Doc has $item_to_index->{num_pages} pages" );
-    
-        foreach( my $page=1;$page<=$item_to_index->{num_pages};$page++ ) {
-            # get page text and confidence
-            # add them to item profile
-            my ( $text, $confidence ) = $dh->page_text( $page, '/tmp' );
-            if ( ( $confidence > $confidence_threashold ) && 
-                 ( $text ) ) {
-                push @{ $item_to_index->{pages} }, $text;
-            }
-        }
-    } else {
-        $log->warn("WARNING: no Mir::Util::DocHandler driver for document $item_to_index->{abspath}");
-    }
+
+    get_text( $item_to_index );
 
     my $ret;
     try {
@@ -280,6 +265,61 @@ sub _index_item {
         $log->error("Error indexing document $item->{id}: $err");
     };
     return ( $ret );
+}
+
+#=============================================================
+
+=head2 get_text
+
+=head3 INPUT
+
+    $doc : the document metadata hashref
+
+=head3 OUTPUT
+
+1/undef in case of errors
+
+=head3 DESCRIPTION
+
+Tries its best to get the page texts out of the document.
+Computes the overall text extraction confidence.
+Page text is collected in the arrayref $doc->{text}.
+
+=cut
+
+#=============================================================
+sub get_text {
+    my $doc = $_;
+
+    $doc->{text} = [];
+    $doc->{mean_confidence} = 0;
+
+    my $dh;
+    my $mean_confidence=0;
+    if ( $doc->{suffix} && ( $dh = Mir::Util::DocHandler->create( driver => get_driver ( $doc->{suffix} ) ) ) ) {
+        $log->info("Opening doc $doc->{abspath}...");
+        $dh->open_doc( "$doc->{abspath}" ) or return;
+    
+        $doc->{num_pages} = $dh->pages();
+        $log->info( "Doc has $doc->{num_pages} pages" );
+    
+        foreach( my $page=1;$page<=$doc->{num_pages};$page++ ) {
+            # get page text and confidence
+            # add them to item profile
+            my ( $text, $confidence ) = $dh->page_text( $page, '/tmp' );
+            if ( ( $confidence > $confidence_threashold ) && 
+                 ( $text ) ) {
+                push @{ $doc->{text} }, $text;
+                $mean_confidence += $confidence;
+            }
+        }
+        $doc->{mean_confidence} = $mean_confidence/$doc->{num_pages};
+    } else {
+        $log->warn("WARNING: no Mir::Util::DocHandler driver for document $doc->{abspath}");
+        return 0;
+    }
+
+    return 1;
 }
 
 #=============================================================
