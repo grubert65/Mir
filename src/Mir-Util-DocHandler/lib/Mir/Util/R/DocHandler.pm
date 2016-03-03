@@ -49,8 +49,6 @@ use File::stat                              ();
 use File::Path                              qw( mkpath );
 use File::Type                              ();
 use Path::Class                             ();
-use XML::Simple                             qw( XMLin XMLout );
-use Cwd                                     qw( cwd );
 use Log::Log4perl                           ();
 use Time::HiRes                             qw(gettimeofday);
 use namespace::autoclean;
@@ -85,32 +83,16 @@ has 'params' => (
     default => sub { return {} },
 );
 
+#=============================================================
+# just stores doc path in object
+#=============================================================
+#requires 'open_doc';
+
 requires 'pages';
 
 #=============================================================
-
-=head2 page_text
-
-=head3 INPUT
-
-$page:                  page number (ignored)
-$temp_dir:              temp dir where text is stored
-
-=head3 OUTPUT
-
-$text:                  Text of document if successful, undef 
-                        if not. Page number is ignored 
-$confidence:            Estimated accuracy of extracted text 
-                        (100 if antiword was successful, 0
-                        otherwise)
-
-=head3 DESCRIPTION
-
-Returns text of document and the confidence on it.
-Currently implemented by each driver.
-
-=cut
-
+#Returns text of document and the confidence on it.
+#Currently implemented by each driver.
 #=============================================================
 requires 'page_text';
 
