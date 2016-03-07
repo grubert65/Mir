@@ -3,7 +3,7 @@ package Mir::R::Doc;
 
 =head1 NAME
 
-Mir::R::Doc : ruolo base per la gestione di un documento
+Mir::R::Doc : base role for any document type
 
 =head1 VERSION
 
@@ -21,7 +21,7 @@ our $VERSION='0.01';
 
 =head1 DESCRIPTION
 
-Ruolo che implementa la logica base di un documento.
+This role implements the basic logic for any document.
 
 =head1 AUTHOR
 
@@ -46,18 +46,9 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 use Moose::Role;
 use Data::GUID;
 use DateTime;
-
 use MooseX::Storage;
 with Storage( 'format' => 'JSON' );
-
 use namespace::autoclean;
-
-# doc status
-use enum qw( 
-    NEW 
-    INDEXED
-    DELETED
-);
 
 has 'id' => ( 
     is => 'rw', 
@@ -80,11 +71,11 @@ has 'creation_date' => (
 
 # TODO : questo e' forse inutile, dal namespace...
 #has 'type'   => ( is => 'rw', isa => 'Str' );
-has 'status'        => ( 
-    is      => 'rw',
-    isa     => 'Int',
-    default => sub { NEW },
-);
+#has 'status'        => ( 
+#    is      => 'rw',
+#    isa     => 'Int',
+#    default => sub { NEW },
+#);
 
 # documento padre
 has 'father'    => ( is => 'rw', isa => 'Obj' );
