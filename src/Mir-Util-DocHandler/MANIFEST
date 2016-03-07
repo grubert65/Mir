@@ -27,6 +27,7 @@ lib/Mir/Util/DocHandler/html.pm
 lib/Mir/Util/DocHandler/Office.pm
 lib/Mir/Util/DocHandler/pdf.pm
 lib/Mir/Util/DocHandler/pdf2.pm
+lib/Mir/Util/DocHandler/pdf3.pm
 lib/Mir/Util/DocHandler/rtf.pm
 lib/Mir/Util/DocHandler/tiff.pm
 lib/Mir/Util/DocHandler/txt.pm
@@ -35,7 +36,15 @@ lib/Mir/Util/R/DocHandler.pm
 Makefile.PL
 MANIFEST			This list of files
 README
+scripts/crop_morphology.py
+scripts/crop_morphology.pyc
 scripts/dh.pl
+scripts/dir_walk.pl
+scripts/dir_walk_max.pl
+scripts/dir_walk_reports/brochure_2011_pdf.out
+scripts/dir_walk_reports/brochure_2011_pdf2.out
+scripts/dir_walk_reports/cv_all.out
+scripts/dir_walk_reports/segr_pub_dati_personali_cv_pdf.out
 scripts/Module1.xba
 t/00-load.t
 t/10-html.t
@@ -45,6 +54,7 @@ t/40-rtf.t
 t/50-tiff.t
 t/60-xls.t
 t/70-pdf2.t
+t/71-pdf3.t
 t/80-txt.t
 t/manifest.t
 t/pod-coverage.t
