@@ -11,7 +11,7 @@ use constant INDEXED    => 1;
 use constant DELETED    => 2;
 
 @EXPORT_OK = qw( NEW INDEXED DELETED );
-%EXPORT_TAGS = (statuses => [qw( NEW INDEXED DELETED )] );
+%EXPORT_TAGS = (status => [qw( NEW INDEXED DELETED )] );
 
 # doc status
 has 'status' => ( 
