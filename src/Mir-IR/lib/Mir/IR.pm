@@ -123,7 +123,8 @@ the system collection of the MIR Mongo database...
 sub config {
     my $self = shift;
 
-    $self->config_params( decode_json( $self->config_params_json ) ) if ( $self->config_params_json );
+    $self->config_params( decode_json( $self->config_params_json ) ) 
+        if ( $self->config_params_json );
 
     my $c = Mir::Config::Client->create( 
         driver => $self->config_driver,
