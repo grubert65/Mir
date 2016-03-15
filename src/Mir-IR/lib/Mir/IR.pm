@@ -69,6 +69,7 @@ use TryCatch;
 use JSON;
 use Mir::Config::Client ();
 use Mir::Util::DocHandler ();
+use Mir::Doc;
 use Mir::Doc::File;
 use Mir::Stat;
 use Encode;
@@ -122,7 +123,8 @@ the system collection of the MIR Mongo database...
 sub config {
     my $self = shift;
 
-    $self->config_params( decode_json( $self->config_params_json ) ) if ( $self->config_params_json );
+    $self->config_params( decode_json( $self->config_params_json ) ) 
+        if ( $self->config_params_json );
 
     my $c = Mir::Config::Client->create( 
         driver => $self->config_driver,
@@ -255,7 +257,7 @@ sub _index_item {
             $log->info("Indexed document $item_to_index->{id}, IDX id: $ret->{_id}");
             $item_obj->{idx_id}     = $ret->{_id};
             $item_obj->{num_pages}  = $item_to_index->{num_pages};
-            $item_obj->{status}     = 1; # 1 => INDEXED
+            $item_obj->{status}     = Mir::Doc::INDEXED; 
             $item_obj->store();
             $stat->incrBy();
         } else {

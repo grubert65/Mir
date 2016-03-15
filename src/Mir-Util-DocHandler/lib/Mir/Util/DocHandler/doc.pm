@@ -52,6 +52,7 @@ of the License, or (at your option) any later version.
 #========================================================================
 use Moose;
 with 'Mir::Util::R::DocHandler';
+use Encode;
 
 extends 'Mir::Util::DocHandler::Office';
 
@@ -144,7 +145,9 @@ sub page_text
         return (undef, 0);
     }
 
-    return ($text, $confidence);
+    # we suppose antiword saves text utf8-encoded...
+    my $decoded = decode_utf8( $text );
+    return ($decoded, $confidence);
 }
 
 1;
