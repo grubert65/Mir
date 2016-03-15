@@ -82,7 +82,6 @@ use vars qw(
     $index
     $type
     $e
-    $queue
 );
 
 $log = Log::Log4perl->get_logger( __PACKAGE__ );
@@ -291,7 +290,7 @@ Page text is collected in the arrayref $doc->{text}.
 
 #=============================================================
 sub get_text {
-    my $doc = $_;
+    my $doc = $_[0];
 
     $doc->{text} = [];
     $doc->{mean_confidence} = 0;
