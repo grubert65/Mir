@@ -60,6 +60,6 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #========================================================================
 use Moose;
 use namespace::autoclean;
-with 'Mir::R::Store', 'DriverRole';
+with 'DriverRole';
 
 1;
