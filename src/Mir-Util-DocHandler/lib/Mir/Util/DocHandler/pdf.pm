@@ -222,21 +222,24 @@ sub page_text
         read (SINGLE_PAGE, $text, (stat(SINGLE_PAGE))[7]);
         close (SINGLE_PAGE);
 
-        # removing weird code points...
-        # (all Unicode first 0x1f control chars...
-        # they may corrupt the CMS portal...
-        # we actually replace them with a space to avoid words collision...
-        my $hex;
-        for (my $i=0x00;$i<=0x1f;$i++) {
-            $hex = sprintf("%X", $i);
-            $text =~ s/\x{$hex}/\x{20}/g;
+        if ( $text ) {
+            # removing weird code points...
+            # (all Unicode first 0x1f control chars...
+            # they may corrupt the CMS portal...
+            # we actually replace them with a space to avoid words collision...
+            my $hex;
+            for (my $i=0x00;$i<=0x1f;$i++) {
+                $hex = sprintf("%X", $i);
+                $text =~ s/\x{$hex}/\x{20}/g;
+            }
+    
+            # extracting text from PDF can result in some non printable chars
+            # the following should be connected with pdf 'bookmarks'
+            # this again can corrupt the CMS representation...
+            $text =~ s/\cH/ /g;
+        } else {
+            $confidence = 0;
         }
-
-        # extracting text from PDF can result in some non printable chars
-        # the following should be connected with pdf 'bookmarks'
-        # this again can corrupt the CMS representation...
-        $text =~ s/\cH/ /g;
-
         unlink "$temp_dir/page.txt";
     } else {
         $self->log->error("Unable to read page $page from document $doc");
