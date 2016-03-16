@@ -37,7 +37,7 @@ diag "The complete configuration file content:";
 p $o->config;
 
 ok(my $fetchers = $o->get_key({tag=>'ACQ'},{fetchers=>1}), 'get_key');
-is_deeply( $fetchers->[0]->{fetchers}, $docs->[0]->{fetchers}, 'got right data back...' );
+is_deeply( $fetchers->[0]->{fetchers}, $docs->[0]->{fetchers}, 'get_key: got right data back...' );
 ok( my $params = $o->get_key({
             tag         => 'IR',
             campaign    => 'IR-test',

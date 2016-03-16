@@ -2,6 +2,7 @@ use Test::More;
 use Log::Log4perl qw( :easy );
 use JSON;
 use MongoDB;
+use Data::Printer;
 Log::Log4perl->easy_init( $DEBUG );
 
 use_ok(
@@ -38,6 +39,8 @@ ok(my $o=Mir::Acq::Scheduler->new(
 
 ok( my $num_items = $o->enqueue_fetchers_of_campaign(), 'enqueue_fetchers_of_campaign');
 diag "Queued $num_items items...";
+ok(my $num_items = $o->get_number_queue_items(), 'get_number_queue_items' );
+p $num_items;
 
 done_testing;
 
