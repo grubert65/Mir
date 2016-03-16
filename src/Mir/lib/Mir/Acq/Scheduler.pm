@@ -41,7 +41,6 @@ $VERSION='0.02';
 This class exports all methods usefull to implement an ACQ scheduler
 that follows the Mir specifications.
 
-
 =head1 AUTHOR
 
 Marco Masetti (marco.masetti @ softeco.it )
@@ -92,13 +91,12 @@ has 'queues'        => ( is => 'ro', isa => 'HashRef' );
 sub _set_queue {
     my ( $self, $campaigns ) = @_;
     foreach my $campaign ( @$campaigns ) {
-        if ( not defined $self->{queues}->{$campaign} ) {
+        unless ( $self->{queues}->{$campaign} ) {
             $self->{queues}->{$campaign} = Queue::Q::ReliableFIFO::Redis->new(
                 server     => $self->queue_server,
                 port       => $self->queue_port,
                 queue_name => $campaign,
             ) or die "Error creating a queue for campaign $campaign\n";
-    
             $self->log->debug("Created queue for campaign $campaign");
         }
     }
@@ -178,6 +176,63 @@ sub enqueue_fetchers_of_campaign {
         }
     }
     return scalar @items;
+}
+
+#=============================================================
+
+=head2 get_number_queue_items
+
+=head3 INPUT
+
+=head3 OUTPUT
+
+An ArrayRef
+
+=head3 DESCRIPTION
+
+Returns a ref to a list of hashes representing the number of items in queue
+for each campaign
+
+=cut
+
+#=============================================================
+sub get_number_queue_items {
+    my $self = shift;
+
+    my @out;
+    while ( my ( $campaign, $queue_obj ) = each ( %{ $self->{queues} } ) ) {
+        push @out, {
+            campaign    => $campaign,
+            number      => $queue_obj->queue_length()
+        };
+    }
+
+    return \@out;
+}
+
+#=============================================================
+
+=head2 flush_queue
+
+=head3 INPUT
+
+    $campaign: the campaign of the queue to flush
+
+=head3 OUTPUT
+
+=head3 DESCRIPTION
+
+Flushes the queue for the passed campaign.
+
+=cut
+
+#=============================================================
+sub flush_queue {
+    my ( $self, $campaign ) = @_;
+    return undef 
+      unless ( $campaign && ( exists $self->{queues}->{$campaign} ) );
+
+    return $self->{queues}->{$campaign}->flush_queue();
 }
 
 1;
