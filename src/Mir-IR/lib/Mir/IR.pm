@@ -7,13 +7,14 @@ Mir::IR - frontend for the Elastic Search indexer.
 
 =head1 VERSION
 
-0.04
+0.06
 
 =cut
 
 #HISTORY
-# 0.05 | 26.02.2016 | decoding abspath from utf8 octets to characters....
-our $VERSION = '0.05';
+# 0.05 | 26.02.2016 | Decoding abspath from utf8 octets to characters....
+# 0.06 | 17.03.2016 | Mean confidence added to store after indexing doc...
+our $VERSION = '0.06';
 
 =head1 SYNOPSIS
 
@@ -98,7 +99,6 @@ has 'config_driver' => ( is => 'rw', isa => 'Str', default => sub { return 'Mong
 has 'config_params' => ( is => 'rw', isa => 'HashRef' );
 has 'config_params_json' => ( is => 'rw', isa => 'Str' );
 has 'queue'         => ( is => 'rw', isa => 'Queue::Q::ReliableFIFO::Redis' );
-
 
 #=============================================================
 
@@ -232,7 +232,9 @@ sub _index_item {
         return 0; 
     }
 
+    my $orig_id = $item->{id};
     my $item_obj = Mir::Doc::File->unpack( $item );
+    $item_obj->id( $orig_id );
     unless ( $item_obj ) {
         $log->error("Error getting back a Mir::Doc::File obj");
         return;
@@ -343,6 +345,46 @@ suffix.
 sub get_driver {
     my $suffix = shift;
     ( $drivers_lut->{$suffix} ) ? return $drivers_lut->{$suffix} : $suffix;
+}
+
+#=============================================================
+
+=head2 exists
+
+=head3 INPUT
+
+    $id: the document id
+
+=head3 OUTPUT
+
+1 if doc exists
+
+=head3 DESCRIPTION
+
+Check if document with the passed id has been already indexed.
+Returns the total number of hits found.
+
+=cut
+
+#=============================================================
+sub exists {
+    my ( $self, $id, $index ) = @_;
+
+    return undef unless $id;
+    my $filter = { 
+        match => { id => $id }
+    };
+    my $res;
+    try {
+        $res = $e->search(
+            index => $index,
+            body  => { query => $filter }
+        );
+    } catch {
+        $log->error("Error checking for doc $id: $@");
+        return undef;
+    }
+    return $res->{hits}->{total};
 }
 
 1;
