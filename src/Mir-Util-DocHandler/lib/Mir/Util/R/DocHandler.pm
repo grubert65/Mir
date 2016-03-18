@@ -62,7 +62,7 @@ has 'TEMP_DIR' => (
 has 'OCR_THRESHOLD' => ( 
     is => 'rw', 
     isa => 'Str',
-    default => '70'
+    default => '80'
 );
 has 'CONFIDENCE' => ( 
     is => 'rw', 

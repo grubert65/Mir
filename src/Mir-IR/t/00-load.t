@@ -5,6 +5,7 @@ use Test::More;
 use Log::Log4perl qw( :easy );
 use Search::Elasticsearch;
 use JSON;
+use Data::Printer;
 
 Log::Log4perl->easy_init( $DEBUG );
 
@@ -46,6 +47,8 @@ ok( $o->config(), 'config' );
 my $items = decode_json $docs_json;
 foreach my $item ( @$items ) {
     ok(my $ret = $o->_index_item( $item ), "_index_item");
+    diag "Doc indexed\n";
+    p $ret;
 }
 
 done_testing;

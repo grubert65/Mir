@@ -199,7 +199,7 @@ sub process_items_in_queue {
 
 =head3 INPUT
 
-A Mir::Doc::File object
+A Mir::Doc::File object or a hash representing a doc profile
 
 =head3 OUTPUT
 
@@ -256,6 +256,7 @@ sub _index_item {
             $log->info("Indexed document $item_to_index->{id}, IDX id: $ret->{_id}");
             $item_obj->{idx_id}     = $ret->{_id};
             $item_obj->{num_pages}  = $item_to_index->{num_pages};
+            $item_obj->{mean_confidence} = $item_to_index->{mean_confidence};
             $item_obj->{status}     = Mir::Doc::INDEXED; 
             $item_obj->store();
             $stat->incrBy();
@@ -348,7 +349,7 @@ sub get_driver {
 
 __DATA__
 {
-    "pdf":  "pdf",
+    "pdf":  "pdf3",
     "html": "html",
     "doc":  "doc",
     "docx": "doc",
