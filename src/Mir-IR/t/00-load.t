@@ -47,8 +47,10 @@ ok( $o->config(), 'config' );
 my $items = decode_json $docs_json;
 foreach my $item ( @$items ) {
     ok(my $ret = $o->_index_item( $item ), "_index_item");
-    diag "Doc indexed\n";
+    diag "Doc with id $item->{id} indexed\n";
     p $ret;
+    sleep(1);
+    ok($o->exists( $item->{id}, "ir-test" ), 'OK, doc indexed...');
 }
 
 done_testing;
