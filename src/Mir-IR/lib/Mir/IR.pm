@@ -14,7 +14,9 @@ Mir::IR - frontend for the Elastic Search indexer.
 #HISTORY
 # 0.05 | 26.02.2016 | Decoding abspath from utf8 octets to characters....
 # 0.06 | 17.03.2016 | Mean confidence added to store after indexing doc...
-our $VERSION = '0.06';
+# 0.07 | 18.03.2016 | utf8 decoding of apspath commented out...
+# 0.08 | 22.03.2016 | got rid of issue on Mir::Doc::File->store sub...
+our $VERSION = '0.08';
 
 =head1 SYNOPSIS
 
@@ -71,8 +73,8 @@ use JSON;
 use Mir::Config::Client ();
 use Mir::Util::DocHandler ();
 use Mir::Doc;
-use Mir::Doc::File;
-use Mir::Stat;
+use Mir::Stat ();
+use Mir::Store ();
 use Encode;
 
 use vars qw( 
@@ -82,6 +84,7 @@ use vars qw(
     $confidence_threashold
     $index
     $type
+    @mapping_keys
     $e
 );
 
@@ -171,6 +174,10 @@ sub config {
     $drivers_lut = $params->{doc_handlers_lut} if ( $params->{doc_handlers_lut} );
     # if no threashold defined we take everything...
     $confidence_threashold = $params->{confidence_threashold} || 0; 
+
+    if ( exists ( $params->{idx_server}->{mappings} ) ) {
+        @mapping_keys = keys %{ $params->{idx_server}->{mappings}->{docs}->{properties} };
+    }
 }
 
 #=============================================================
@@ -217,53 +224,59 @@ index, for the type and with the mapping configured.
 sub _index_item {
     my $item = (ref $_[0] eq 'HASH') ? $_[0] : $_[1];
 
-    $log->info( "Found NEW item -------------------------------------------");
-    $log->info( $item->{id} );
-    $log->debug( Dumper ( $item ) );
-
     unless ( $item ) {
         $log->error( "No item found!" );
         return 0; 
     }
 
     $item->{abspath} = decode_utf8( $item->{abspath} );
+    $log->info( "Found NEW item -------------------------------------------");
+    $log->info( $item->{id} );
+    $log->debug( Dumper ( $item ) );
+
+    if ( $item->{abspath} =~ /citt/ ) {
+        $DB::single=1;
+    }
+
     if ( not -f "$item->{abspath}" ) {
         $log->error( "File $item->{abspath} not exists or not readable" );
         return 0; 
     }
 
-    my $orig_id = $item->{id};
-    my $item_obj = Mir::Doc::File->unpack( $item );
-    $item_obj->id( $orig_id );
-    unless ( $item_obj ) {
-        $log->error("Error getting back a Mir::Doc::File obj");
-        return;
-    }
-    my $item_to_index = $item_obj->to_index();
+    my %item_to_index;
+    @item_to_index{@mapping_keys} = @$item{@mapping_keys};
 
-    get_text( $item_to_index );
+    get_text( \%item_to_index );
 
     my $ret;
     try {
         # index item in the proper index...
-        $log->info("Indexing document: $item_to_index->{id}");
-        $log->debug( Dumper $item_to_index );
+        $log->info("Indexing document: $item_to_index{id}");
+        $log->debug( Dumper \%item_to_index );
 
         $ret = $e->index( 
             index   => $index,
             type    => $type,
-            body    => $item_to_index 
+            body    => \%item_to_index 
         );
         if ( $ret->{_id} ) {
-            $log->info("Indexed document $item_to_index->{id}, IDX id: $ret->{_id}");
-            $item_obj->{idx_id}     = $ret->{_id};
-            $item_obj->{num_pages}  = $item_to_index->{num_pages};
-            $item_obj->{mean_confidence} = $item_to_index->{mean_confidence};
-            $item_obj->{status}     = Mir::Doc::INDEXED; 
-            $item_obj->store();
+            $log->info("Indexed document $item_to_index{id}, IDX id: $ret->{_id}");
             $stat->incrBy();
+
+            if ( exists ( $item->{storage_io_params} ) ) {
+                my $store = Mir::Store->create(
+                    driver => $item->{storage_io_params}->{io}->[0],
+                    params => $item->{storage_io_params}->{io}->[1]
+                );
+                $store->connect();
+                $item->{idx_id}          = $ret->{_id};
+                $item->{num_pages}       = $item_to_index{num_pages};
+                $item->{mean_confidence} = $item_to_index{mean_confidence};
+                $item->{status}          = Mir::Doc::INDEXED; 
+                $store->update( $item );
+            }
         } else {
-            $log->error("Error indexing document $item_to_index->{id}, no IDX ID");
+            $log->error("Error indexing document $item_to_index{id}, no IDX ID");
         }
     } catch ( $err ) {
         $log->error("Error indexing document $item->{id}: $err");
