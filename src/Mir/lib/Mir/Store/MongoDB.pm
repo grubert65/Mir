@@ -22,6 +22,7 @@ our $VERSION='0.0.1';
     my $store = Mir::Store->create( 
         driver => 'MongoDB',
         params => {
+            "key_attr"  => "id",
             "host"      => "localhost",
             "port"      => 27017,
             "database"  => "MIR",
@@ -45,6 +46,15 @@ our $VERSION='0.0.1';
 
     # count docs in collection
     my $count = $store->count();
+
+    # update a document in store
+    unless ( $store->update({
+        id => '1',
+        foo => 'baz'
+    }) ) {
+        die "Error updating document 1\n";
+    }
+    
 
 =head1 DESCRIPTION
 
@@ -77,6 +87,11 @@ use Log::Log4perl;
 use TryCatch;
 
 with 'Mir::R::Store';
+
+has key_attr => (
+    is       => 'rw',
+    isa      => 'Str',
+);
 
 has 'host'  => (
     is      => 'rw',
@@ -124,9 +139,48 @@ has 'log' => (
     default => sub { Log::Log4perl->get_logger( __PACKAGE__ ); },
 );
 
+has 'colls' => (
+    is  => 'ro',
+    isa => 'HashRef',
+    default => sub { return {} },
+);
+
+#=============================================================
+
+=head2 connect
+
+=head3 INPUT
+
+=head3 OUTPUT
+
+A MongoDB::Collection object or undef in case of errors
+
+=head3 DESCRIPTION
+
+Tries to connect to the MongoDB object as configured by input
+params. 
+Stores the collection object in a has so subsequent calls to 
+the connect subroutine for the same collection should return
+the same object speeding up things.
+
+=cut
+
+#=============================================================
 sub connect {
     my $self = shift;
     return undef unless $self->database;
+
+    if ( exists ( $self->colls  ->{ $self->host }
+                                ->{ $self->port }
+                                ->{ $self->database }
+                                ->{ $self->collection } ) ) {
+        my $coll_obj = $self->colls->{ $self->host }
+                             ->{ $self->port }
+                             ->{ $self->database }
+                             ->{ $self->collection };
+        $self->_set_coll( $coll_obj );
+        return ( $coll_obj );
+    }
 
     try {
         $self->client( MongoDB::MongoClient->new(
@@ -137,6 +191,10 @@ sub connect {
         $self->db_obj( $self->client->get_database( $self->database ) );
         if ( $self->collection ) {
             $self->_set_coll( $self->db_obj->get_collection( $self->collection ) );
+            $self->colls->{ $self->host }
+                        ->{ $self->port }
+                        ->{ $self->database }
+                        ->{ $self->collection } = $self->coll;
         }
     } catch  {
         $self->log->error(
@@ -161,11 +219,26 @@ sub find_by_id {
 
 sub insert {
     my ( $self, $doc ) = @_;
-    return $self->coll->insert( $doc );
+    my $key_attr = $self->key_attr;
+    my $key_val = $doc->{$key_attr};
+
+    try {
+        return $self->coll->update( 
+            { $key_attr => $key_val }, 
+            $doc, 
+            { "safe" => 1, "upsert" => 1 } );
+    } catch {
+        $self->log->error ("Error storing document: $_");
+        return undef;
+    };
 }
+
+sub update;
+*update = \&insert;
 
 sub count {
     my $self = shift;
     return $self->coll->count();
 }
+
 1;

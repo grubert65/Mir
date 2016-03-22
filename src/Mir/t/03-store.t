@@ -17,12 +17,27 @@ SKIP: {
                 "collection"=> "Foo"
             }
     ), 'create a store obj to handle docs' );
+
+    my $doc = {
+        id  => 1,
+        foo => 'bar',
+    };
+
     ok( $o->connect(), 'connect' );
+    ok( $o->connect(), 'should just get the collection obj from cache...' );
     ok( $o->drop(), 'drop' );
-    is( $o->find_by_id('1'), undef, 'doc with id 1 not found');
-    ok( $o->insert({ id => '1', foo => 'bar' }), 'insert doc with id 1');
-    ok( my $doc = $o->find_by_id('1'), 'doc with id 1 not found');
+    is( $o->find_by_id(1), undef, 'doc with id 1 not found');
+    ok( $o->insert( $doc ), 'insert doc with id 1');
+    ok( my $doc1 = $o->find_by_id(1), 'doc with id 1 found');
+    delete $doc1->{_id}; # get rid of MongoDB id...
+    is_deeply( $doc, $doc1, 'Got right data back...');
     is( $o->count(), 1, 'count' );
+    $doc1->{foo}='baz';
+    ok( $o->update( $doc1 ), 'update' );
+    ok( my $doc2 = $o->find_by_id(1), 'doc with id 1 found');
+    delete $doc2->{_id}; # get rid of MongoDB id...
+    is_deeply( $doc2, $doc1, 'Got right data back...');
+
 }
 
 done_testing
