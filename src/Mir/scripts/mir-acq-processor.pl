@@ -3,7 +3,7 @@
 #
 #         FILE: mir-acq-processor.pl
 #
-#        USAGE: ./mir-acq-processor.pl  <campaign>
+#        USAGE: ./mir-acq-processor.pl  --campaign <campaign>
 #
 #  DESCRIPTION: gets the next fetcher for the campaign and executes it in an endless loop. 
 #
@@ -28,8 +28,6 @@ use YAML                            qw( Load );
 use Getopt::Long                    qw( GetOptions );
 use Data::Dumper                    qw( Dumper );
 
-Log::Log4perl->easy_init( $DEBUG );
-my $log = Log::Log4perl->get_logger();
 my $config;
 
 {
@@ -41,24 +39,30 @@ my $config;
 # by default we consume queue items in chunks of 3 items
 # at a time and don't pause between sessions
 my ( $campaign, $chunk, $pause, $server, $port ) = ( undef, 3, 10, 'localhost', 6379 );
+my $log_config_params;
 
 GetOptions (
     "campaign=s"    => \$campaign,
     "chunk=i"       => \$chunk,
     "pause=i"       => \$pause,
     "server=s"      => \$server,
+    "log_config_params=s"   => \$log_config_params,
     "port=i"        => \$port
 ) or die <<EOT;
 
 Usage: $0 --campaign <campaign tag> 
-          [--chunk <number of items in chunk> ] 
-          [--pause <number of seconds to sleep between sessions> ] 
-          [--server <queue server IP address>] 
-          [--port <queue server port number>]
+          [--chunk <number of items in chunk>                     (defaults to 3)] 
+          [--pause <number of seconds to sleep between sessions> (defaults to 10)] 
+          [--server <queue server IP address>             (defaults to localhost)] 
+          [--port <queue server port number>                   (defaults to 6379)]
+          [--log_config_params <a Log::Log4perl config file> (defaults to stdout)]
 
 EOT
 
 die ("At least the campaign has to be passed via the --campaign input param\n") unless $campaign;
+
+( $log_config_params ) ? Log::Log4perl->init( $log_config_params ) : Log::Log4perl->easy_init( $INFO );
+my $log = Log::Log4perl->get_logger();
 
 my $pm = Parallel::ForkManager->new($chunk);
 
