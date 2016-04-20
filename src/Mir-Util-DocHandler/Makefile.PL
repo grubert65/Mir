@@ -10,6 +10,9 @@ WriteMakefile(
     ABSTRACT_FROM    => 'lib/Mir/Util/DocHandler.pm',
     LICENSE          => 'artistic_2',
     PL_FILES         => {},
+    EXE_FILES        => [
+        'scripts/docx2txt.pl',
+    ],
     MIN_PERL_VERSION => 5.006,
     CONFIGURE_REQUIRES => {
         'ExtUtils::MakeMaker' => 0,
