@@ -55,7 +55,7 @@ with 'Mir::Util::R::DocHandler';
 
 use Mir::Util::DocHandler;
 
-has 'confidence_threashold' => ( is => 'rw', isa => 'Int', default => 50 );
+has 'confidence_threashold' => ( is => 'rw', isa => 'Int', default => 40 );
 
 has 'pdf1_dh' => ( 
     is  => 'ro', 
