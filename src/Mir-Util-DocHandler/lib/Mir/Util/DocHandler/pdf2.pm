@@ -297,9 +297,6 @@ sub page_text {
     }
 
     $self->_delete_temp_files( $ENV{CACHE_DIR} );
-
-    $self->log->debug("Confidence: $confidence");
-    $self->log->debug("Text      :\n\n$text");
     return ($text, $confidence);
 }
 

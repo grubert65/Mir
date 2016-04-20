@@ -317,9 +317,6 @@ sub page_text
     }
 
     rmtree($temp_dir) if stat ($temp_dir);
-
-    $self->log->debug("Confidence: $confidence");
-    $self->log->debug("Text      :\n\n$text");
     return ($text, $confidence);
 }
 

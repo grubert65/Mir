@@ -146,7 +146,6 @@ sub page_text
     }
 
     # we suppose antiword saves text utf8-encoded...
-    $DB::single=1;
     # need to check if this is needed
 #    my $decoded = decode_utf8( $text );
     return ($text, $confidence);

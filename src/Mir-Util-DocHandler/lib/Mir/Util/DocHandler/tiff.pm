@@ -234,9 +234,6 @@ sub page_text
     $text .= "\n".$ocr_text if $ocr_OK;
 
     rmtree($temp_dir) if stat ($temp_dir);
-
-    $self->log->debug("Confidence: $confidence");
-    $self->log->debug("Text      :\n\n$text");
     return ($text, $confidence);
 }
 

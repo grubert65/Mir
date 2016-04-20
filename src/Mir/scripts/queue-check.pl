@@ -5,6 +5,7 @@ use utf8;
 use Redis;
 use Data::Printer;
 use JSON;
+use Encode;
 
 my $r = Redis->new()
     or die "Error: Redis server not running\n";
@@ -24,10 +25,14 @@ my $max = <>; chomp $max;
 
 my $range = ( $len > $max ) ? $max : $len;
 
+my $json_obj = JSON->new;
+
 foreach ( my $i=0;$i<$range;$i++) {
     print "\n---------- Item $i: ---------------\n";
     $DB::single=1;
-    my $item = decode_json( $r->lindex( $key, $i ) );
+    my $json_str = $r->lindex( $key, $i );
+    print "JSON string: \n$json_str\n";
+    my $item = $json_obj->decode( $json_str );
     p $item;
     print "\n";
 }
