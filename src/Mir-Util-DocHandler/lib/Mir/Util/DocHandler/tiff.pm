@@ -192,7 +192,7 @@ sub page_text
     my $ocr_OK = 1;
     my $confidence;
     my $ocr_text;
-    my @rot_angles = (90, 270);
+    my @rot_angles = (90, 180, 270);
     # If size is too small, skip it
     if (_checkSize($filepath, DPI, AREA)) {
         # TODO should we force text encoding here as well ?!?
@@ -311,7 +311,7 @@ sub _generateUUID
 
 =head2 DESCRIPTION
 
-    Checks area of image against providede area
+    Checks area of image against provided area
 
 =cut
 
@@ -356,10 +356,8 @@ sub ConvertToPDF
 {
     my ($self, $out_file) = @_;
 
-    if (not stat $self->{'DOC_PATH'}) {
-        $self->log->error("No input file was specified");
-        return 0;
-    }
+    my @tok = split( /\./, $self->{DOC_PATH} );
+    return 0 unless ( @tok && $tok[-1] eq 'tiff' );
 
     # Convert document using tiff2pdf
     my $cmd = "tiff2pdf -p A4 -o ".$out_file." ".$self->{'DOC_PATH'}." >/dev/null 2>&1";

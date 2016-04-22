@@ -33,16 +33,14 @@ usando il driver DocHandler passato in input \
 converte la pagina in immagine ed usa tesseract per estrarre \
 il testo della pagina).\n\nUsage: $0 <driver> < file > [< page number >]" 
     unless ( $driver && $file );
-die "File not found or not valid" unless -e $file;
+die "File not found or not valid" unless -e "$file";
 
 my $page_num = $ARGV[2];
 
 my $doc = Mir::Util::DocHandler->create( driver => $driver )
     or die "Error getting an obj for driver $driver";
 
-$doc->open_doc( $file );
-print "Tesseract version:";
-`tesseract -v`;
+$doc->open_doc( "$file" );
 print "\nPages: ".$doc->pages(). "\n";
 if ( $page_num ) {
     die "Page is not a digit!" unless ( $page_num =~ /(\d+)/ );

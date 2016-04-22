@@ -270,7 +270,6 @@ sub page_text {
     my ($filename, $suffix) = split(/\./, $path[-1]);
     my $img = $self->pdf_images_dir.'/'.$filename.$page.'.jpg';
     $self->log->debug("Going to extract text from image: $img");
-    $DB::single=1;
     if (! -e $img ) {
         try {
             $DB::single=1;
@@ -296,7 +295,9 @@ sub page_text {
         $text =~ s/average_doc_confidence:(\d{1,3})//g;
     }
 
-    $self->_delete_temp_files( $ENV{CACHE_DIR} );
+    # we need to take care of this, if more than one process is running
+    # they actually delete each other files...
+#    $self->_delete_temp_files( $ENV{CACHE_DIR} );
     return ($text, $confidence);
 }
 

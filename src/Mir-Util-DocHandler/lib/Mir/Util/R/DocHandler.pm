@@ -83,11 +83,6 @@ has 'params' => (
     default => sub { return {} },
 );
 
-#=============================================================
-# just stores doc path in object
-#=============================================================
-#requires 'open_doc';
-
 requires 'pages';
 
 #=============================================================
@@ -128,7 +123,7 @@ sub open_doc
         return 0;
     }
 
-    $self->{'DOC_PATH'} = $document;
+    $self->{DOC_PATH} = $document;
 
     return 1; 
 }

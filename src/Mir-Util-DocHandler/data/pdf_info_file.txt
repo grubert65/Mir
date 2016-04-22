@@ -1,0 +1,15 @@
+Creator:        TeX
+Producer:       MiKTeX pdfTeX-1.30.6
+CreationDate:   Mon Jun  4 00:25:09 2007
+Tagged:         no
+UserProperties: no
+Suspects:       no
+Form:           none
+JavaScript:     no
+Pages:          4
+Encrypted:      no
+Page size:      612 x 792 pts (letter)
+Page rot:       0
+File size:      105901 bytes
+Optimized:      no
+PDF version:    1.4
