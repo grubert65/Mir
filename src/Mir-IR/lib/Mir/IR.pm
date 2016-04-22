@@ -17,7 +17,9 @@ Mir::IR - frontend for the Elastic Search indexer.
 # 0.07 | 18.03.2016 | utf8 decoding of apspath commented out...
 # 0.08 | 22.03.2016 | got rid of issue on Mir::Doc::File->store sub...
 # 0.09 | 01.04.2016 | Now considering path instead of abspath...
-our $VERSION = '0.09';
+# 0.10 | 20.04.2016 | Logs added...
+# 0.11 | 22.04.2016 | Lowercase suffix...
+our $VERSION = '0.11';
 
 =head1 SYNOPSIS
 
@@ -309,7 +311,7 @@ sub get_text {
 
     my $dh;
     my $mean_confidence=0;
-    if ( $doc->{suffix} && ( $dh = Mir::Util::DocHandler->create( driver => get_driver ( $doc->{suffix} ) ) ) ) {
+    if ( $doc->{suffix} && ( $dh = Mir::Util::DocHandler->create( driver => get_driver ( lc $doc->{suffix} ) ) ) ) {
         $log->info("Opening doc $doc->{path}...");
         $dh->open_doc( "$doc->{path}" ) or return;
     
@@ -407,7 +409,7 @@ __DATA__
     "pdf":  "pdf3",
     "html": "html",
     "doc":  "doc",
-    "docx": "doc",
+    "docx": "docx",
     "rtf":  "rtf",
     "java": "txt",
     "js":   "txt",
