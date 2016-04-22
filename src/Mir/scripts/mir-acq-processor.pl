@@ -27,6 +27,7 @@ use Log::Log4perl                   qw( :easy );
 use YAML                            qw( Load );
 use Getopt::Long                    qw( GetOptions );
 use Data::Dumper                    qw( Dumper );
+use TryCatch;
 
 my $config;
 
@@ -61,7 +62,7 @@ EOT
 
 die ("At least the campaign has to be passed via the --campaign input param\n") unless $campaign;
 
-( $log_config_params ) ? Log::Log4perl->init( $log_config_params ) : Log::Log4perl->easy_init( $INFO );
+( $log_config_params ) ? Log::Log4perl->init( $log_config_params ) : Log::Log4perl->easy_init( $DEBUG );
 my $log = Log::Log4perl->get_logger();
 
 my $pm = Parallel::ForkManager->new($chunk);
@@ -87,20 +88,9 @@ sub run_fetchers {
     state $thread = 0;
     $log->debug( "CYCLE NUMBER: $called_times ------------\n" );
 
-    my $class;
-    foreach my $item ( @items ) {
-        if ( defined $item->{ns} ) {
-            $class= "Mir::Acq::Fetcher".'::'.$item->{ns};
-            eval "require $class";
-            if ( $@ ) {
-                $log->error ("Error, class $class not found\n");
-                next;
-            }
-        }
-    }
-
     FETCHER_LOOP:
     foreach my $item ( @items ) {
+        my $class;
         # TODO 
         # this should be removed from here...
     	$ENV{WUNDERGROUND_API} = $config->{WUNDERGROUND_API};
@@ -109,19 +99,23 @@ sub run_fetchers {
         $log->debug ("Thread: ".$thread."\n");
         $log->debug ("Received:\n");
         $log->debug (Dumper $item );
-        $class= "Mir::Acq::Fetcher".'::'.$item->{ns}
-            if ( defined $item->{ns} );
-        if ( defined $class ) {
+        try {
+            $class= "Mir::Acq::Fetcher".'::'.$item->{ns}
+                if ( defined $item->{ns} );
+            eval "require $class";
             $log->debug ("Going to create a $class fetcher...\n");
+            $log->debug ("With params:");
+            $log->debug ( Dumper ( $item->{params} ) );
             my $o = $class->new( %{$item->{params}} );
             $o->fetch();
-        } else {
-            $log->error ("ERROR, no class defined !!\n");
+        } catch( $err ) {
+            $log->error ( $err );
         }
         $pm->finish;
     }
+    $log->debug( "Waiting for all children to die...");
     $pm->wait_all_children;
-    print "All children ended\n";
+    $log->debug( "All children ended" );
     $called_times++;
 }
 
