@@ -16,7 +16,10 @@ Mir::IR - frontend for the Elastic Search indexer.
 # 0.06 | 17.03.2016 | Mean confidence added to store after indexing doc...
 # 0.07 | 18.03.2016 | utf8 decoding of apspath commented out...
 # 0.08 | 22.03.2016 | got rid of issue on Mir::Doc::File->store sub...
-our $VERSION = '0.08';
+# 0.09 | 01.04.2016 | Now considering path instead of abspath...
+# 0.10 | 20.04.2016 | Logs added...
+# 0.11 | 22.04.2016 | Lowercase suffix...
+our $VERSION = '0.11';
 
 =head1 SYNOPSIS
 
@@ -229,17 +232,12 @@ sub _index_item {
         return 0; 
     }
 
-    $item->{abspath} = decode_utf8( $item->{abspath} );
     $log->info( "Found NEW item -------------------------------------------");
     $log->info( $item->{id} );
     $log->debug( Dumper ( $item ) );
 
-    if ( $item->{abspath} =~ /citt/ ) {
-        $DB::single=1;
-    }
-
-    if ( not -f "$item->{abspath}" ) {
-        $log->error( "File $item->{abspath} not exists or not readable" );
+    if ( not -f "$item->{path}" ) {
+        $log->error( "File $item->{path} not exists or not readable" );
         return 0; 
     }
 
@@ -313,9 +311,9 @@ sub get_text {
 
     my $dh;
     my $mean_confidence=0;
-    if ( $doc->{suffix} && ( $dh = Mir::Util::DocHandler->create( driver => get_driver ( $doc->{suffix} ) ) ) ) {
-        $log->info("Opening doc $doc->{abspath}...");
-        $dh->open_doc( "$doc->{abspath}" ) or return;
+    if ( $doc->{suffix} && ( $dh = Mir::Util::DocHandler->create( driver => get_driver ( lc $doc->{suffix} ) ) ) ) {
+        $log->info("Opening doc $doc->{path}...");
+        $dh->open_doc( "$doc->{path}" ) or return;
     
         $doc->{num_pages} = $dh->pages();
         $log->info( "Doc has $doc->{num_pages} pages" );
@@ -324,15 +322,19 @@ sub get_text {
             # get page text and confidence
             # add them to item profile
             my ( $text, $confidence ) = $dh->page_text( $page, '/tmp' );
+            $log->debug("Confidence: $confidence");
+            $log->debug("Text      :\n\n$text");
             if ( ( $confidence > $confidence_threashold ) && 
                  ( $text ) ) {
                 push @{ $doc->{text} }, $text;
                 $mean_confidence += $confidence;
+            } else {
+                $log->warn("Text confidence under threashold...skipped");
             }
         }
         $doc->{mean_confidence} = $mean_confidence/$doc->{num_pages};
     } else {
-        $log->warn("WARNING: no Mir::Util::DocHandler driver for document $doc->{abspath}");
+        $log->warn("WARNING: no Mir::Util::DocHandler driver for document $doc->{path}");
         return 0;
     }
 
@@ -407,7 +409,7 @@ __DATA__
     "pdf":  "pdf3",
     "html": "html",
     "doc":  "doc",
-    "docx": "doc",
+    "docx": "docx",
     "rtf":  "rtf",
     "java": "txt",
     "js":   "txt",

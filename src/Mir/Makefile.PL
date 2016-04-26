@@ -10,6 +10,10 @@ WriteMakefile(
     ABSTRACT_FROM    => 'lib/Mir.pm',
     LICENSE          => 'artistic_2',
     PL_FILES         => {},
+    EXE_FILES        => [
+        'scripts/mir-acq-scheduler.pl',
+        'scripts/mir-acq-processor.pl'
+    ],
     MIN_PERL_VERSION => 5.006,
     CONFIGURE_REQUIRES => {
         'ExtUtils::MakeMaker' => 0,

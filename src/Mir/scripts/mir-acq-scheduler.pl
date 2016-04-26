@@ -57,6 +57,7 @@ use namespace::clean;
 use Log::Log4perl           qw( :easy );
 use Getopt::Long            qw( GetOptions );
 use Mir::Acq::Scheduler ();
+use JSON                    qw( decode_json );
 
 Log::Log4perl->easy_init( $DEBUG );
 

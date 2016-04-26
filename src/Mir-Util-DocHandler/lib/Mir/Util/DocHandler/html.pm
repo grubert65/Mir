@@ -157,8 +157,6 @@ sub page_text
 {
     my ($self, $page, $temp_dir) = @_;
 
-    my $confidence = 100;
-
     my $doc = $self->{'DOC_PATH'};
 
     my $text = undef;
@@ -185,7 +183,7 @@ sub page_text
         }
     }
 
-    return ($text, $confidence);
+    return (html2txt($text), 100);
 }
 
 #=============================================================

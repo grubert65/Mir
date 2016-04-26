@@ -10,6 +10,9 @@ WriteMakefile(
     ABSTRACT_FROM    => 'lib/Mir/IR.pm',
     LICENSE          => 'Artistic_2_0',
     PL_FILES         => {},
+    EXE_FILES        => [
+        'scripts/mir-ir.pl',
+    ],
     MIN_PERL_VERSION => 5.006,
     CONFIGURE_REQUIRES => {
         'ExtUtils::MakeMaker' => 0,

@@ -1,16 +1,17 @@
-package Mir::Util::DocHandler::doc;
+package Mir::Util::DocHandler::docx;
 #============================================================= -*-perl-*-
 
 =head1 NAME
 
-Mir::Util::DocHandler::doc - Driver class to handle 
-Microsoft Word documents
+Mir::Util::DocHandler::docx - Driver class to handle 
+Microsoft Word Office Open XML documents 
 
 =head2 SYNOPSIS
 
     use Mir::Util::DocHandler;
 
-    my $doc = Mir::Util::DocHandler->create( driver => 'doc' );
+    my $doc = Mir::Util::DocHandler->create( driver => 'docx' );
+    my $text = $doc->page_text();
 
 =head2 DESCRIPTION
 
@@ -33,12 +34,12 @@ You can find documentation for this module with the perldoc command:
 
 =head2 AUTHOR
 
-Andrea Poggi <andrea.poggi at softeco dot it>
+Marco Masetti <marco.masetti at softeco.it>
 
 =head2 COPYRIGHT and LICENSE
 
-Copyright (C) 2015 Andrea Poggi.  All Rights Reserved.
-Copyright (C) 2015 Softeco Sismat SpA.
+Copyright (C) 2016 Marco Masetti.  All Rights Reserved.
+Copyright (C) 2016 Softeco Sismat SpA.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -99,9 +100,8 @@ $temp_dir:              temp dir where text is stored
 
 $text:                  Text of document if successful, undef 
                         if not. Page number is ignored 
-$confidence:            Estimated accuracy of extracted text 
-                        (100 if antiword was successful, 0
-                        otherwise)
+$confidence:            Estimated accuracy of extracted text,
+                        100 by default
 
 =head3 DESCRIPTION
 
@@ -115,39 +115,15 @@ sub page_text
     my ($self, $page, $temp_dir) = @_;
 
     my $confidence = 100;
-    $temp_dir = $self->{TEMP_DIR} unless $temp_dir;
-    $temp_dir = '/tmp' unless $temp_dir;
-
     my $doc = $self->{'DOC_PATH'};
     if (not defined $doc) {
         $self->log->error("No document was ever opened");
         return undef;
     }
 
-    # Try antiword first
-    my $cmd = "antiword \"$doc\" > $temp_dir/page.txt";
-    my $ret = system($cmd);
+    my $cmd = "docx2txt.pl < \"$doc\"";
+    my $text = `$cmd`;
 
-    # If not successful, use catdoc
-    if ($ret != 0) {
-        $cmd = "catdoc \"$doc\" > $temp_dir/page.txt";
-        $ret = system($cmd);
-    }
-
-    my $text = undef;
-    if ($ret == 0) {
-        open SINGLE_PAGE, "< $temp_dir/page.txt";
-        read (SINGLE_PAGE, $text, (stat(SINGLE_PAGE))[7]);
-        close SINGLE_PAGE;
-        unlink "$temp_dir/page.txt";
-    } else {
-        $self->log->error("Unable to read page $page from document $doc");
-        return (undef, 0);
-    }
-
-    # we suppose antiword saves text utf8-encoded...
-    # need to check if this is needed
-#    my $decoded = decode_utf8( $text );
     return ($text, $confidence);
 }
 

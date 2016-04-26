@@ -3,7 +3,7 @@
 #
 #         FILE: mir-acq-processor.pl
 #
-#        USAGE: ./mir-acq-processor.pl  <campaign>
+#        USAGE: ./mir-acq-processor.pl  --campaign <campaign>
 #
 #  DESCRIPTION: gets the next fetcher for the campaign and executes it in an endless loop. 
 #
@@ -27,9 +27,8 @@ use Log::Log4perl                   qw( :easy );
 use YAML                            qw( Load );
 use Getopt::Long                    qw( GetOptions );
 use Data::Dumper                    qw( Dumper );
+use TryCatch;
 
-Log::Log4perl->easy_init( $DEBUG );
-my $log = Log::Log4perl->get_logger();
 my $config;
 
 {
@@ -41,24 +40,30 @@ my $config;
 # by default we consume queue items in chunks of 3 items
 # at a time and don't pause between sessions
 my ( $campaign, $chunk, $pause, $server, $port ) = ( undef, 3, 10, 'localhost', 6379 );
+my $log_config_params;
 
 GetOptions (
     "campaign=s"    => \$campaign,
     "chunk=i"       => \$chunk,
     "pause=i"       => \$pause,
     "server=s"      => \$server,
+    "log_config_params=s"   => \$log_config_params,
     "port=i"        => \$port
 ) or die <<EOT;
 
 Usage: $0 --campaign <campaign tag> 
-          [--chunk <number of items in chunk> ] 
-          [--pause <number of seconds to sleep between sessions> ] 
-          [--server <queue server IP address>] 
-          [--port <queue server port number>]
+          [--chunk <number of items in chunk>                     (defaults to 3)] 
+          [--pause <number of seconds to sleep between sessions> (defaults to 10)] 
+          [--server <queue server IP address>             (defaults to localhost)] 
+          [--port <queue server port number>                   (defaults to 6379)]
+          [--log_config_params <a Log::Log4perl config file> (defaults to stdout)]
 
 EOT
 
 die ("At least the campaign has to be passed via the --campaign input param\n") unless $campaign;
+
+( $log_config_params ) ? Log::Log4perl->init( $log_config_params ) : Log::Log4perl->easy_init( $DEBUG );
+my $log = Log::Log4perl->get_logger();
 
 my $pm = Parallel::ForkManager->new($chunk);
 
@@ -83,20 +88,9 @@ sub run_fetchers {
     state $thread = 0;
     $log->debug( "CYCLE NUMBER: $called_times ------------\n" );
 
-    my $class;
-    foreach my $item ( @items ) {
-        if ( defined $item->{ns} ) {
-            $class= "Mir::Acq::Fetcher".'::'.$item->{ns};
-            eval "require $class";
-            if ( $@ ) {
-                $log->error ("Error, class $class not found\n");
-                next;
-            }
-        }
-    }
-
     FETCHER_LOOP:
     foreach my $item ( @items ) {
+        my $class;
         # TODO 
         # this should be removed from here...
     	$ENV{WUNDERGROUND_API} = $config->{WUNDERGROUND_API};
@@ -105,19 +99,23 @@ sub run_fetchers {
         $log->debug ("Thread: ".$thread."\n");
         $log->debug ("Received:\n");
         $log->debug (Dumper $item );
-        $class= "Mir::Acq::Fetcher".'::'.$item->{ns}
-            if ( defined $item->{ns} );
-        if ( defined $class ) {
+        try {
+            $class= "Mir::Acq::Fetcher".'::'.$item->{ns}
+                if ( defined $item->{ns} );
+            eval "require $class";
             $log->debug ("Going to create a $class fetcher...\n");
+            $log->debug ("With params:");
+            $log->debug ( Dumper ( $item->{params} ) );
             my $o = $class->new( %{$item->{params}} );
             $o->fetch();
-        } else {
-            $log->error ("ERROR, no class defined !!\n");
+        } catch( $err ) {
+            $log->error ( $err );
         }
         $pm->finish;
     }
+    $log->debug( "Waiting for all children to die...");
     $pm->wait_all_children;
-    print "All children ended\n";
+    $log->debug( "All children ended" );
     $called_times++;
 }
 
