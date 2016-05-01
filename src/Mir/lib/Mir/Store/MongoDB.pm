@@ -38,6 +38,12 @@ our $VERSION='0.0.1';
     # find a document by its id...
     my $doc = $store->find_by_id('1');
 
+    # find all docs
+    my $docs = $store->find();
+
+    # find docs that match a filter
+    my $docs = $store->find( {"name" => "Joe"} );
+
     # insert a document in store
     my $doc_id = $store->insert({
         id => '1',
@@ -55,10 +61,13 @@ our $VERSION='0.0.1';
         die "Error updating document 1\n";
     }
     
+    # refer to L<Mir::R::Store> documentation 
+    # for the complete API 
 
 =head1 DESCRIPTION
 
 Driver class for the MongoDB data store.
+Implements the Mir::R::Store interface.
 
 =head1 AUTHOR
 
@@ -85,6 +94,8 @@ use namespace::autoclean;
 use MongoDB;
 use Log::Log4perl;
 use TryCatch;
+use Mir::Doc;
+use Data::Printer;
 
 with 'Mir::R::Store';
 
@@ -217,28 +228,158 @@ sub find_by_id {
     $self->coll->find_one({ id => $id } );
 }
 
+#=============================================================
+
+=head2 insert
+
+=head3 INPUT
+
+    $doc : the document to be inserted
+
+=head3 OUTPUT
+
+Returns the new document unique id.
+
+=head3 DESCRIPTION
+    
+Insert a new document into the store
+if a key attribute has been set,
+it first checks that no other document
+with the same key are present in the store.
+
+=cut
+
+#=============================================================
 sub insert {
     my ( $self, $doc ) = @_;
     my $key_attr = $self->key_attr;
-    my $key_val = $doc->{$key_attr};
+    my $key_val = ($key_attr) ? $doc->{$key_attr} : undef ;
 
     try {
-        return $self->coll->update( 
-            { $key_attr => $key_val }, 
-            $doc, 
-            { "safe" => 1, "upsert" => 1 } );
+        if ( $key_attr ) {
+            if ( $self->coll->find_one({$key_attr => $key_val}) ) {
+                $self->log->warn("A doc with same key $key_val has been found");
+                return undef;
+            }
+        }
+        my $ret = $self->coll->insert_one( $doc );
+        $self->log->debug("New document inserted, _id: $ret->{inserted_id}");
+        return $ret->{inserted_id};
     } catch {
         $self->log->error ("Error storing document: $_");
         return undef;
     };
 }
 
-sub update;
-*update = \&insert;
+sub update {
+    my ( $self, $filter, $update ) = @_;
+    try {
+        my $ret = $self->coll->update_one( $filter, $update );
+        $self->log->debug("Document with _id $filter->{_id} updated");
+        return $ret->{matched_count};
+    }
+    catch {
+        $self->log->error( "Error updating" );
+        return undef;
+    }
+}
 
+#=============================================================
+
+=head2 count
+
+=head3 INPUT
+
+    $filter : filter for document count
+    $options: options hashref as defined by MongoDB::Collections
+
+=head3 OUTPUT
+
+Returns the number of document matching the filter
+
+=head3 DESCRIPTION
+
+See MongoDB::Collection for details.
+
+=cut
+
+#=============================================================
 sub count {
-    my $self = shift;
-    return $self->coll->count();
+    my ($self, $filter, $options) = @_;
+    return $self->coll->count( $filter, $options );
+}
+
+#=============================================================
+
+=head2 find
+
+=head3 INPUT
+
+    $filter: a filter hashref
+
+=head3 OUTPUT
+
+A MongoDB::Cursor object or undef in case or error
+
+=head3 DESCRIPTION
+
+Performs the MongoDB::Collection find method
+
+=cut
+
+#=============================================================
+sub find {
+    my ( $self, $filter ) = @_;
+
+    return undef unless ( $self->coll );
+    return $self->coll->find( $filter );
+}
+
+#=============================================================
+
+=head2 get_new_doc
+
+=head3 INPUT
+
+    %options: an hash with options, as:
+        sort => 1: get the oldest new document
+        sort => 2: get the newest new document
+        mark_as_indexing => 1: if set, the document found is
+                               marked for indexing
+
+=head3 OUTPUT
+
+A Mir::Doc object or undef if no document found.
+
+=head3 DESCRIPTION
+
+Find and returns the next new document.
+If the sort option is set, returns the first document
+sorted by creation_time.
+If mark_as_indexing option is set, the document
+status is updated to INDEXING.
+
+=cut
+
+#=============================================================
+sub get_new_doc {
+    my ( $self, %options ) = @_;
+
+    try {
+        my $doc;
+        if ( $options{mark_as_indexing} ) {
+            $doc = $self->coll->find_one_and_update(
+                { status => Mir::Doc::NEW },
+                { '$set' => { status => Mir::Doc::INDEXING } }
+            );
+        } else {
+            $doc = $self->coll->find_one( { status => Mir::Doc::NEW } );
+        }
+        return $doc;
+    }
+    catch {
+        $self->log->error("Error getting a new doc: ".ref $_);
+    }
 }
 
 1;
