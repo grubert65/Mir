@@ -56,8 +56,7 @@ our $VERSION='0.0.1';
     # update a document in store
     unless ( $store->update({
         id => '1',
-        foo => 'baz'
-    }) ) {
+    }, {'$set' => {foo => 'baz'}}) ) {
         die "Error updating document 1\n";
     }
     
@@ -96,6 +95,8 @@ use Log::Log4perl;
 use TryCatch;
 use Mir::Doc;
 use Data::Printer;
+use JSON qw( encode_json );
+use Data::Dumper qw( Dumper );
 
 with 'Mir::R::Store';
 
@@ -271,15 +272,42 @@ sub insert {
     };
 }
 
+#=============================================================
+
+=head2 update
+
+=head3 INPUT
+
+    $filter: {"_id" => $id} the MongoDB::OID pointing to the doc to update
+    $update: the update clause (see L<MongoDB::Tutorial> for details)
+    $options: options for the update, (as {upsert => 1})
+
+=head3 OUTPUT
+
+1 or undef in case of errors.
+
+=head3 DESCRIPTION
+
+=cut
+
+#=============================================================
 sub update {
-    my ( $self, $filter, $update ) = @_;
+    my ( $self, $filter, $update, $options ) = @_;
     try {
-        my $ret = $self->coll->update_one( $filter, $update );
-        $self->log->debug("Document with _id $filter->{_id} updated");
+        my $ret = $self->coll->update_one( $filter, $update, $options );
+        if (defined $ret->{upserted_id} ) {
+            $self->log->warn("WARNING: document created while updating");
+            return 1;
+        } elsif ( ! $ret->{matched_count} ) {
+            $self->log->error("Error updating document, ret:");
+            $self->log->error( Dumper( $ret ) );
+            return undef;
+        }
+        $self->log->debug("Document updated");
         return $ret->{matched_count};
     }
     catch {
-        $self->log->error( "Error updating" );
+        $self->log->error( "Error updating: $@" );
         return undef;
     }
 }

@@ -41,7 +41,7 @@ our $VERSION = '0.11';
     $ir->process_items_in_queue();
 
     #...or goes polling for new documents in store...
-    $ir->process_new_items();
+    $ir->process_new_items( $polling_period );
 
 =head1 DESCRIPTION
 
@@ -67,6 +67,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 =cut
 
 #========================================================================
+use v5.10;
 use Moose;
 use Search::Elasticsearch;
 use namespace::clean;
@@ -108,7 +109,9 @@ has 'config_driver' => ( is => 'rw', isa => 'Str', default => sub { return 'Mong
 has 'config_params' => ( is => 'rw', isa => 'HashRef' );
 has 'config_params_json' => ( is => 'rw', isa => 'Str' );
 has 'queue'         => ( is => 'rw', isa => 'Queue::Q::ReliableFIFO::Redis' );
-has 'params'     => ( is => 'ro', isa => 'HashRef' );
+
+has 'params'     => ( is => 'rw', isa => 'HashRef' );
+has 'sleeping_time' => ( is => 'rw', isa => 'Int', default => sub { return 3600 } );
 
 #=============================================================
 
@@ -135,7 +138,6 @@ sub config {
     $self->config_params( decode_json( $self->config_params_json ) ) 
         if ( $self->config_params_json );
 
-    $DB::single=1;
     my $c = Mir::Config::Client->create( 
         driver => $self->config_driver,
         params => $self->config_params
@@ -143,10 +145,9 @@ sub config {
     
     $c->connect() or die "Error connecting to a Mir::Config data store\n";
     $self->params( $c->get_key({
-            tag         => 'campaign',
             campaign    => $self->campaign,
         }, { params => 1 }
-    )->[0]);
+    )->[0]->{params});
 
     $log->debug("Going to connect to idx queue:");
     $log->debug( Dumper $self->params->{idx_queue_params} );
@@ -173,12 +174,17 @@ sub config {
         select  => 10,
     );
 
-    $drivers_lut = $self->params->{doc_handlers_lut} if ( $self->params->{doc_handlers_lut} );
+    $drivers_lut = $self->params->{idx_server}->{doc_handlers_lut} if ( $self->params->{idx_server}->{doc_handlers_lut} );
     # if no threashold defined we take everything...
-    $confidence_threashold = $self->params->{confidence_threashold} || 0; 
+    $confidence_threashold = $self->params->{idx_server}->{confidence_threashold} || 0; 
 
-    if ( exists ( $self->params->{idx_server}->{mappings} ) ) {
-        @mapping_keys = keys %{ $self->params->{idx_server}->{mappings}->{docs}->{properties} };
+    my $mappings = $c->get_key(
+        { tag => 'elastic' }, 
+        { mappings => 1 }
+    )->[0]->{'mappings'};
+
+    if ( $mappings && exists $mappings->{docs}->{properties} ) {
+        @mapping_keys = keys %{ $mappings->{docs}->{properties} };
     }
 }
 
@@ -226,12 +232,13 @@ index, for the type and with the mapping configured.
 sub _index_item {
     my $item = (ref $_[0] eq 'HASH') ? $_[0] : $_[1];
 
+    $DB::single=1;
     unless ( $item ) {
         $log->error( "No item found!" );
         return 0; 
     }
 
-    $log->info( "iTEM -------------------------------------------");
+    $log->info( "ITEM -------------------------------------------");
     $log->info( $item->{id} );
     $log->debug( Dumper ( $item ) );
 
@@ -266,11 +273,15 @@ sub _index_item {
                     params => $item->{storage_io_params}->{io}->[1]
                 );
                 $store->connect();
-                $item->{idx_id}          = $ret->{_id};
-                $item->{num_pages}       = $item_to_index{num_pages};
-                $item->{mean_confidence} = $item_to_index{mean_confidence};
-                $item->{status}          = Mir::Doc::INDEXED; 
-                $store->update( $item );
+                $DB::single=1;
+                $store->update( { '_id' => $item->{_id} }, {'$set' => {
+                        idx_id          => $ret->{_id},
+                        status          => Mir::Doc::INDEXED,
+                        mean_confidence => $item_to_index{mean_confidence},
+                        num_pages       => $item_to_index{num_pages} 
+                        }
+                    }
+                );
             }
         } else {
             $log->error("Error indexing document $item_to_index{id}, no IDX ID");
@@ -407,6 +418,9 @@ sub exists {
 
 =head3 INPUT
 
+    $polling_period: number of seconds to sleep if no documents 
+                     to index are found.
+
 =head3 OUTPUT
 
 =head3 DESCRIPTION
@@ -415,13 +429,53 @@ Workflow:
     - get a new document from Store, otherwise sleep for a while
     - index it
 
+A store reference is defined for each fetcher configured for
+the campaign.
+We define a static index to loop for each store data source.
+
 =cut
 
 #=============================================================
 sub process_new_items {
-    my $self = shift;
+    my ( $self, $polling_period ) = @_;
 
     $log->debug("Start polling for new items");
+
+    my @store_params;
+    my @stores;
+    state $index = 0;
+    foreach my $fetcher ( @{ $self->params->{fetchers} } ) {
+        push @store_params, $fetcher->{params}->{storage_io_params}->{io};
+    }
+
+    foreach my $store_params ( @store_params ) {
+        try {
+            my $store = Mir::Store->create(
+                driver => $store_params->[0],
+                params => $store_params->[1]
+            );
+            $store->connect();
+            push @stores, $store;
+        } catch {
+            $log->error("Error getting a Mir::Store obj with params");
+            $log->error(Dumper($store_params));
+        }
+    }
+
+    # ...and finally the loop...
+    while (1) {
+        $index = 0 if ( $index == scalar @stores );
+        my $doc = $stores[$index]->get_new_doc(mark_as_indexing => 1);
+        unless ( $doc ) {
+            $log->info ("No new docs to index, going to sleep...");
+            return 1 if ( $ENV{TEST_FILE} || $ENV{HARNESS_ACTIVE} );
+            sleep ( $polling_period || $self->sleeping_time );
+            $index++;
+            next;
+        }
+        $self->_index_item( $doc );
+        $index++;
+    }
 }
 
 1;
@@ -435,5 +489,6 @@ __DATA__
     "rtf":  "rtf",
     "java": "txt",
     "js":   "txt",
-    "pm":   "txt"
+    "pm":   "txt",
+    "json": "txt"
 }
