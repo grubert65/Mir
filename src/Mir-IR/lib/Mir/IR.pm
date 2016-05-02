@@ -40,6 +40,9 @@ our $VERSION = '0.11';
     # and index it
     $ir->process_items_in_queue();
 
+    #...or goes polling for new documents in store...
+    $ir->process_new_items();
+
 =head1 DESCRIPTION
 
 This class extends the base Search::Elasticsearch to provides utility methods.
@@ -105,6 +108,7 @@ has 'config_driver' => ( is => 'rw', isa => 'Str', default => sub { return 'Mong
 has 'config_params' => ( is => 'rw', isa => 'HashRef' );
 has 'config_params_json' => ( is => 'rw', isa => 'Str' );
 has 'queue'         => ( is => 'rw', isa => 'Queue::Q::ReliableFIFO::Redis' );
+has 'params'     => ( is => 'ro', isa => 'HashRef' );
 
 #=============================================================
 
@@ -131,42 +135,37 @@ sub config {
     $self->config_params( decode_json( $self->config_params_json ) ) 
         if ( $self->config_params_json );
 
+    $DB::single=1;
     my $c = Mir::Config::Client->create( 
         driver => $self->config_driver,
         params => $self->config_params
     ) or die "No Mir::Config::Client object...\n";
     
     $c->connect() or die "Error connecting to a Mir::Config data store\n";
-    my $params = $c->get_key({
-            tag         => 'IR',
+    $self->params( $c->get_key({
+            tag         => 'campaign',
             campaign    => $self->campaign,
-        },
-        {
-            idx_queue_params => 1,
-            idx_server       => 1,
-            doc_handlers_lut => 1,
-            confidence_threashold => 1
-        }
-    )->[0];
+        }, { params => 1 }
+    )->[0]);
 
     $log->debug("Going to connect to idx queue:");
-    $log->debug( Dumper $params->{idx_queue_params} );
+    $log->debug( Dumper $self->params->{idx_queue_params} );
     $log->debug("Going to connect to Search Text Engine:");
-    $log->debug( Dumper $params->{idx_server}->{ir_params} );
+    $log->debug( Dumper $self->params->{idx_server}->{ir_params} );
 
-    $index = $params->{idx_server}->{index};
-    $type  = $params->{idx_server}->{type};
+    $index = $self->params->{idx_server}->{index};
+    $type  = $self->params->{idx_server}->{type};
     $log->info("Going to index docs of type $type into index $index");
 
     $log->info("Opening queue:");
-    $log->info( Dumper $params->{idx_queue_params} );
+    $log->info( Dumper $self->params->{idx_queue_params} );
 
-    $self->queue( Queue::Q::ReliableFIFO::Redis->new( %{ $params->{idx_queue_params} } ) )
+    $self->queue( Queue::Q::ReliableFIFO::Redis->new( %{ $self->params->{idx_queue_params} } ) )
         or die "Error getting a Queue::Q::ReliableFIFO::Redis object\n";
 
     $log->debug("Getting a Search::Elasticsearch object with params:");
-    $log->debug( Dumper $params->{idx_server}->{ir_params} );
-    $e = Search::Elasticsearch->new( %{ $params->{idx_server}->{ir_params} } );
+    $log->debug( Dumper $self->params->{idx_server}->{ir_params} );
+    $e = Search::Elasticsearch->new( %{ $self->params->{idx_server}->{ir_params} } );
 
     $log->debug( "Getting a Mir::Stat object for counter $self->{campaign}" );
     $stat = Mir::Stat->new(
@@ -174,12 +173,12 @@ sub config {
         select  => 10,
     );
 
-    $drivers_lut = $params->{doc_handlers_lut} if ( $params->{doc_handlers_lut} );
+    $drivers_lut = $self->params->{doc_handlers_lut} if ( $self->params->{doc_handlers_lut} );
     # if no threashold defined we take everything...
-    $confidence_threashold = $params->{confidence_threashold} || 0; 
+    $confidence_threashold = $self->params->{confidence_threashold} || 0; 
 
-    if ( exists ( $params->{idx_server}->{mappings} ) ) {
-        @mapping_keys = keys %{ $params->{idx_server}->{mappings}->{docs}->{properties} };
+    if ( exists ( $self->params->{idx_server}->{mappings} ) ) {
+        @mapping_keys = keys %{ $self->params->{idx_server}->{mappings}->{docs}->{properties} };
     }
 }
 
@@ -232,7 +231,7 @@ sub _index_item {
         return 0; 
     }
 
-    $log->info( "Found NEW item -------------------------------------------");
+    $log->info( "iTEM -------------------------------------------");
     $log->info( $item->{id} );
     $log->debug( Dumper ( $item ) );
 
@@ -400,6 +399,29 @@ sub exists {
         return undef;
     }
     return $res->{hits}->{total};
+}
+
+#=============================================================
+
+=head2 process_new_items
+
+=head3 INPUT
+
+=head3 OUTPUT
+
+=head3 DESCRIPTION
+
+Workflow:
+    - get a new document from Store, otherwise sleep for a while
+    - index it
+
+=cut
+
+#=============================================================
+sub process_new_items {
+    my $self = shift;
+
+    $log->debug("Start polling for new items");
 }
 
 1;

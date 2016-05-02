@@ -29,7 +29,6 @@ use JSON                    qw( decode_json );
 
 use Mir::IR ();
 
-
 my $campaign;
 my $config_driver = 'Mongo';
 my $config_params = { section => 'system' };
