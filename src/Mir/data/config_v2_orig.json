@@ -1,0 +1,63 @@
+[
+  {
+    "tag":"campaign",
+    "campaign":"IR-test",
+    "params":{
+      "fetchers":[{
+        "ns":"FS",
+        "params":{
+          "node":"localhost",
+          "root_dir":".",
+          "suffixes":["pm","t", "txt"],
+          "browse_func":"dir_walk",
+          "cache_params":{
+              "server":"127.0.0.1:6379",
+              "db":2
+          },
+          "storage_io_params":{
+              "io": [ 
+                  "MongoDB",
+                  {
+                      "key_attr": "id",
+                      "host":     "localhost",
+                      "database": "MIR",
+                      "collection":"IR_test"
+                  }
+              ]
+          },
+          "idx_queue_params": {
+              "server":     "localhost",
+              "port":       6379,
+              "queue_name": "IDX-IR-Test"
+          }
+        }
+      }],
+      "idx_queue_params": {
+          "server":     "localhost",
+          "port":       6379,
+          "queue_name": "IDX-IR-Test"
+      },
+      "idx_server":{
+          "index":"ir-test",
+          "type":"doc",
+          "ir_params": {
+            "nodes": "localhost:9200"
+          },
+          "confidence_threashold": 40,
+          "doc_handlers_lut": {
+              "pdf": "pdf3",
+              "html": "html",
+              "doc": "doc",
+              "docx": "doc",
+              "rtf": "rtf",
+              "java": "txt",
+              "js": "txt",
+              "pm": "txt"
+          }
+      }, 
+      "ui": {
+        "repository": "test"
+      }
+    }
+  }
+]

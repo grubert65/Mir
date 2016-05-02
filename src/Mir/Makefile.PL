@@ -15,6 +15,7 @@ WriteMakefile(
         'scripts/mir-acq-processor.pl'
     ],
     MIN_PERL_VERSION => 5.006,
+    test => {RECURSIVE_TEST_FILES=>1},
     CONFIGURE_REQUIRES => {
         'ExtUtils::MakeMaker' => 0,
     },
