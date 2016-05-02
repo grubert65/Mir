@@ -19,7 +19,7 @@ my $docs;
 my $data;
 {
     local $/;
-    open my $fh, "<./data/config_1.json";
+    open my $fh, "<./data/config_v1.json";
     $data = <$fh>;
     close $fh;
 }
@@ -29,7 +29,7 @@ $docs = decode_json $data;
 # test first format for configuration params...
 ok( my $o = Mir::Config::Client->create(
         driver  => 'JSON',
-        params  => { path => './data/config_1.json' }
+        params  => { path => './data/config_v1.json' }
     ), 'create'
 );
 
@@ -55,7 +55,7 @@ is_deeply( $doc->{idx_queue_params}, $docs->[1]->{idx_queue_params}, 'got right 
 # test second format for configuration params...
 ok( my $o2 = Mir::Config::Client->create(
         driver  => 'JSON',
-        params  => { path => './data/config_2.json' }
+        params  => { path => './data/config_v2.json' }
     ), 'create'
 );
 
