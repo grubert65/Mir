@@ -6,11 +6,11 @@ Mir - Media Indexer and Retriever
 
 =head1 VERSION
 
-Version 0.09
+Version 0.11
 
 =cut
 
-our $VERSION = '0.09';
+our $VERSION = '0.11';
 
 
 =head1 SYNOPSIS

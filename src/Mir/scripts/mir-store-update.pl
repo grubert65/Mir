@@ -45,6 +45,19 @@ GetOptions(
 
 EOT
 
+unless ( $database && $collection && $update_json ) {
+    die <<EOT;
+
+        USAGE: ./mir-store-update-status.pl  
+                   --host       <MongoDB host> defaults to localhost
+                   --database   <MongoDB database>
+                   --collection <MongoDB collection>
+                   --update     <update json string as '{"\$set":{"field":"value"}}'
+
+EOT
+
+}
+
 my $update = decode_json( $update_json );
 
 my $store = Mir::Store->create(

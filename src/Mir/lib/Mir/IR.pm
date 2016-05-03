@@ -251,6 +251,15 @@ sub _index_item {
         return 0; 
     }
 
+    my $store;
+    if ( exists ( $item->{storage_io_params} ) ) {
+        $store = Mir::Store->create(
+            driver => $item->{storage_io_params}->{io}->[0],
+            params => $item->{storage_io_params}->{io}->[1]
+        );
+        $store->connect();
+    }
+
     my %item_to_index;
     @item_to_index{@mapping_keys} = @$item{@mapping_keys};
 
@@ -266,6 +275,11 @@ sub _index_item {
         unless ( $item_to_index{text} && ( $item_to_index{mean_confidence} >
                  $confidence_threashold ) ) {
             $log->error("Error getting proper text or mean confidence under threashold, not indexing...");
+            $store->update( { '_id' => $item->{_id} }, {'$set' => {
+                    status          => Mir::Doc::IDX_FAILED,
+                    }
+                }
+            ) if ( $store );
             return undef;
         }
 
@@ -279,12 +293,7 @@ sub _index_item {
             $log->info("Indexed document $item_to_index{id}, IDX id: $ret->{_id}");
             $stat->incrBy();
 
-            if ( exists ( $item->{storage_io_params} ) ) {
-                my $store = Mir::Store->create(
-                    driver => $item->{storage_io_params}->{io}->[0],
-                    params => $item->{storage_io_params}->{io}->[1]
-                );
-                $store->connect();
+            if ( $store ) {
                 $store->update( { '_id' => $item->{_id} }, {'$set' => {
                         idx_id          => $ret->{_id},
                         status          => Mir::Doc::INDEXED,
@@ -293,12 +302,24 @@ sub _index_item {
                         }
                     }
                 );
+            } else {
+                $log->error("NO store defined for this doc");
             }
         } else {
             $log->error("Error indexing document $item_to_index{id}, no IDX ID");
+            $store->update( { '_id' => $item->{_id} }, {'$set' => {
+                    status          => Mir::Doc::IDX_FAILED,
+                    }
+                }
+            ) if ( $store );
         }
     } catch ( $err ) {
         $log->error("Error indexing document $item->{id}: $err");
+        $store->update( { '_id' => $item->{_id} }, {'$set' => {
+                status          => Mir::Doc::IDX_FAILED,
+                }
+            }
+        ) if ( $store );
     };
     return ( $ret );
 }
