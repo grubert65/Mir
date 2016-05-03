@@ -183,6 +183,9 @@ sub config {
         { mappings => 1 }
     )->[0]->{'mappings'};
 
+    $log->warn("WARNING: NO MAPPINGS SECTION FOUND IN CONFIG")
+        unless $mappings;
+
     if ( $mappings && exists $mappings->{docs}->{properties} ) {
         @mapping_keys = keys %{ $mappings->{docs}->{properties} };
     }

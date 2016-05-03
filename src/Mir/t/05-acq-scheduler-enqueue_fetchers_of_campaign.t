@@ -5,35 +5,17 @@ use MongoDB;
 use Data::Printer;
 Log::Log4perl->easy_init( $DEBUG );
 
-use_ok(
-    'Mir::Acq::Scheduler',
-    'Mir::Config::Client'
-);
+use_ok( 'Mir::Acq::Scheduler');
 
 my $data;
-my $params;
-{
-    local $/;
-    my $data = <DATA>;
-    $params = decode_json( $data );
-}
-
-my $client     = MongoDB::MongoClient->new(host => 'localhost', port => 27017);
-my $database   = $client->get_database( 'MIR' );
-my $collection = $database->get_collection( 'system' );
-my $cursor     = $collection->find({ campaign => 'weather' });
-my $id = $collection->insert( $params->[0] ) unless $cursor->count;
 
 # configure the Mir::Config to host the
 # right fetchers list...
 ok(my $o=Mir::Acq::Scheduler->new(
-        campaigns       => [ 'weather' ],
-        config_driver   => 'Mongo',
-        config_params   => {
-            host    => 'localhost',
-            port    => 27017,
-            dbname  => 'MIR',
-            section => 'system'
+        campaigns       => [ 'CV_local' ],
+        config_driver   => 'JSON',
+        config_params   => { 
+            path => './scripts/cv-local-new-format.json'
         }
     ), 'new');
 
@@ -46,21 +28,23 @@ done_testing;
 
 __DATA__
 [{
-  "tag":"ACQ",
+  "tag":"campaign",
   "campaign":"weather",
-  "fetchers":[{
-    "ns":"WU",
-    "params":{
-      "city":"Genoa",
-      "country":"IT"
-    }
-  },{
-    "ns":"Netatmo",
-    "params":{
-      "lat_ne": "44.460881",
-      "lon_ne": "9.041340",
-      "lat_sw": "44.378735",
-      "lon_sw": "8.746082"
-    }
-  }]
+  "params":{
+      "fetchers":[{
+        "ns":"WU",
+        "params":{
+          "city":"Genoa",
+          "country":"IT"
+        }
+      },{
+        "ns":"Netatmo",
+        "params":{
+          "lat_ne": "44.460881",
+          "lon_ne": "9.041340",
+          "lat_sw": "44.378735",
+          "lon_sw": "8.746082"
+        }
+      }]
+  }
 }]

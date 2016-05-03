@@ -29,7 +29,6 @@ my $json_obj = JSON->new;
 
 foreach ( my $i=0;$i<$range;$i++) {
     print "\n---------- Item $i: ---------------\n";
-    $DB::single=1;
     my $json_str = $r->lindex( $key, $i );
     print "JSON string: \n$json_str\n";
     my $item = $json_obj->decode( $json_str );

@@ -138,17 +138,13 @@ sub enqueue_fetchers_of_campaign {
     $c->connect() or die "Error connecting to a Mir::Config data store\n";
 
     my @fetchers;
-    $DB::single=1;
     foreach my $campaign ( @{ $self->campaigns } ) {
         try {
             push @fetchers, @{ 
                 $c->get_key(
-                    {
-                        campaign => $campaign,
-                        tag      => 'ACQ'
-                    },
-                    { 'fetchers' => 1 }
-                )->[0]->{ fetchers };
+                    { campaign => $campaign },
+                    { 'params' => 1 }
+                )->[0]->{ params }->{fetchers};
             };
         } catch {
             $self->log->warn("Key not found in Config data store");
