@@ -12,7 +12,13 @@ WriteMakefile(
     PL_FILES         => {},
     EXE_FILES        => [
         'scripts/mir-acq-scheduler.pl',
-        'scripts/mir-acq-processor.pl'
+        'scripts/mir-acq-processor.pl',
+        'scripts/mir-store-update.pl',
+        'scripts/queue-check.pl',
+        'scripts/dh.pl',
+        'scripts/mir-ir.pl',
+        'scripts/mir-ir-polling.pl',
+        'scripts/mir-ir-search.pl'
     ],
     MIN_PERL_VERSION => 5.006,
     test => {RECURSIVE_TEST_FILES=>1},

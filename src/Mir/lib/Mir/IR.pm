@@ -169,7 +169,9 @@ sub config {
     $e = Search::Elasticsearch->new( %{ $self->params->{idx_server}->{ir_params} } );
 
     $log->debug( "Getting a Mir::Stat object for counter $self->{campaign}" );
+    # NOTE : we assume served by the same Redis server as the idx queues...
     $stat = Mir::Stat->new(
+        server  => $self->params->{idx_queue_params}->{server}.':6379',
         counter => $self->{campaign}.'_indexed',
         select  => 10,
     );
@@ -235,7 +237,6 @@ index, for the type and with the mapping configured.
 sub _index_item {
     my $item = (ref $_[0] eq 'HASH') ? $_[0] : $_[1];
 
-    $DB::single=1;
     unless ( $item ) {
         $log->error( "No item found!" );
         return 0; 
@@ -261,11 +262,19 @@ sub _index_item {
         $log->info("Indexing document: $item_to_index{id}");
         $log->debug( Dumper \%item_to_index );
 
+        $DB::single=1;
+        unless ( $item_to_index{text} && ( $item_to_index{mean_confidence} >
+                 $confidence_threashold ) ) {
+            $log->error("Error getting proper text or mean confidence under threashold, not indexing...");
+            return undef;
+        }
+
         $ret = $e->index( 
             index   => $index,
             type    => $type,
             body    => \%item_to_index 
         );
+
         if ( $ret->{_id} ) {
             $log->info("Indexed document $item_to_index{id}, IDX id: $ret->{_id}");
             $stat->incrBy();
@@ -276,7 +285,6 @@ sub _index_item {
                     params => $item->{storage_io_params}->{io}->[1]
                 );
                 $store->connect();
-                $DB::single=1;
                 $store->update( { '_id' => $item->{_id} }, {'$set' => {
                         idx_id          => $ret->{_id},
                         status          => Mir::Doc::INDEXED,
@@ -322,33 +330,39 @@ sub get_text {
     $doc->{text} = [];
     $doc->{mean_confidence} = 0;
 
-    my $dh;
-    my $mean_confidence=0;
-    if ( $doc->{suffix} && ( $dh = Mir::Util::DocHandler->create( driver => get_driver ( lc $doc->{suffix} ) ) ) ) {
-        $log->info("Opening doc $doc->{path}...");
-        $dh->open_doc( "$doc->{path}" ) or return;
-    
-        $doc->{num_pages} = $dh->pages();
-        $log->info( "Doc has $doc->{num_pages} pages" );
-    
-        foreach( my $page=1;$page<=$doc->{num_pages};$page++ ) {
-            # get page text and confidence
-            # add them to item profile
-            my ( $text, $confidence ) = $dh->page_text( $page, '/tmp' );
-            $log->debug("Confidence: $confidence");
-            $log->debug("Text      :\n\n$text");
-            if ( ( $confidence > $confidence_threashold ) && 
-                 ( $text ) ) {
-                push @{ $doc->{text} }, $text;
-                $mean_confidence += $confidence;
-            } else {
-                $log->warn("Text confidence under threashold...skipped");
+    try {
+        my $dh;
+        my $mean_confidence=0;
+        if ( $doc->{suffix} && ( $dh = Mir::Util::DocHandler->create( driver => get_driver ( lc $doc->{suffix} ) ) ) ) {
+            $log->info("Opening doc $doc->{path}...");
+            $dh->open_doc( "$doc->{path}" ) or return;
+        
+            $doc->{num_pages} = $dh->pages();
+            $log->info( "Doc has $doc->{num_pages} pages" );
+        
+            foreach( my $page=1;$page<=$doc->{num_pages};$page++ ) {
+                # get page text and confidence
+                # add them to item profile
+                my ( $text, $confidence ) = $dh->page_text( $page, '/tmp' );
+                $log->debug("Confidence: $confidence");
+                $log->debug("Text      :\n\n$text");
+                $DB::single=1;
+                if ( $text && $confidence ) {
+                    push @{ $doc->{text} }, $text;
+                    $mean_confidence += $confidence;
+                } else {
+                    $log->warn("Text or confidence undefined, skipping text");
+                }
             }
+            $doc->{mean_confidence} = $mean_confidence/$doc->{num_pages};
+        } else {
+            $log->warn("WARNING: no Mir::Util::DocHandler driver for document $doc->{path}");
+            return 0;
         }
-        $doc->{mean_confidence} = $mean_confidence/$doc->{num_pages};
-    } else {
-        $log->warn("WARNING: no Mir::Util::DocHandler driver for document $doc->{path}");
-        return 0;
+    } catch {
+        $log->error("Error getting text for document:");
+        $log->error( $doc->{path} );
+        $log->error($@);
     }
 
     return 1;

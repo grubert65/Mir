@@ -71,7 +71,6 @@ has 'select'    => ( is => 'rw', isa => 'Int', default => sub { return 0 } );
 has 'value'     => ( is => 'ro', isa => 'Int', lazy => 1, builder => 'get_value', writer => 'set_value' );
 has 'redis'     => ( is => 'ro', isa => 'Redis', lazy => 1, builder => '_get_redis' );
 
-
 #=============================================================
 
 =head2 setCount
@@ -166,7 +165,7 @@ Internal method to get a new Redis object.
 #=============================================================
 sub _get_redis {
     my $self = shift;
-    my $r = Redis->new( server  => $self->server );
+    my $r = Redis->new( server => $self->server );
     $r->select( $self->select );
     return $r;
 }
