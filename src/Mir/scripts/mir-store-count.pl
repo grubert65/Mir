@@ -17,33 +17,43 @@
 #      CREATED: 05/01/2016 03:41:07 PM
 #     REVISION: ---
 #===============================================================================
-use Moose;
-use MongoDB;
-use Mir::Doc qw( NEW INDEXED );
-use utf8;
+use strict;
+use warnings;
+use Mir::Doc;
+use Mir::Store;
 use JSON;
-use Data::Printer;
+
+use Log::Log4perl qw(:easy);
+Log::Log4perl->easy_init($DEBUG);
+
+my $host = $ARGV[0] || 'localhost';
 
 my $json_str;
 
 {
-    undef $/;
+    local $/;
     $json_str = <DATA>
 }
+
 my $params = decode_json( $json_str );
 
-p $params;
-
-my $client = MongoDB::MongoClient->new();
-my $db = $client->get_database('MIR');
-
 foreach my $collection ( @{ $params->{collections} } ) {
-    my $c = $db->get_collection( $collection )
-        or die "Error getting collection obj for collection $collection";
 
-    foreach my $status ( (NEW INDEXED) ) {
+    print "\n------------------ $collection ----------------------\n";
+    my $client = Mir::Store->create(
+        driver  => 'MongoDB',
+        params  => {
+            host        => $host,
+            database    => 'MIR',
+            collection  => $collection,
+        }) or die "Error getting a Mir::Store object: $@\n";
+    
+    $client->connect();
+
+    foreach my $status ( 0..4 ) {
         print "Number of docs in status $status: ";
-        print $c->count({status => $status}); print "\n";
+        my $num = $client->count({status => $status});
+        print "$num\n";
     }
 }
 

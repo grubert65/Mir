@@ -32,7 +32,7 @@ SKIP: {
     ok( my $doc1 = $o->find_by_id(1), 'doc with id 1 found');
     delete $doc1->{_id}; # get rid of MongoDB id...
     is_deeply( $doc, $doc1, 'Got right data back...');
-    is( $o->count(), 1, 'count' );
+    is( $o->count({status => 0}), 1, 'counted 1 document with status NEW' );
     ok( my $doc2 = $o->get_new_doc('mark_as_indexing'=>1), 'get_new_doc');
     ok( my $doc3 = $o->find_by_id(1), 'doc with id 1 found');
     is( $doc3->{status}, Mir::Doc::INDEXING, 'status ok');

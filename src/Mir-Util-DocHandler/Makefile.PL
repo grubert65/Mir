@@ -28,6 +28,7 @@ WriteMakefile(
         'File::Basename'        => 0,
         'File::Path'            => 0,
         'File::Type'            => 0,
+        'File::Remove'          => 0,
         'Encode'                => 0,
         'LEOCHARRE::HTML::Text' => 0,
         'PDF::API2'             => 0,
