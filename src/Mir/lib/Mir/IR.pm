@@ -7,7 +7,7 @@ Mir::IR - frontend for the Elastic Search indexer.
 
 =head1 VERSION
 
-0.06
+0.12
 
 =cut
 
@@ -19,7 +19,8 @@ Mir::IR - frontend for the Elastic Search indexer.
 # 0.09 | 01.04.2016 | Now considering path instead of abspath...
 # 0.10 | 20.04.2016 | Logs added...
 # 0.11 | 22.04.2016 | Lowercase suffix...
-our $VERSION = '0.11';
+# 0.12 | 04.05.2016 | Properly handling of not valid suffix
+our $VERSION = '0.12';
 
 =head1 SYNOPSIS
 
@@ -263,7 +264,15 @@ sub _index_item {
     my %item_to_index;
     @item_to_index{@mapping_keys} = @$item{@mapping_keys};
 
-    get_text( \%item_to_index );
+    if ( get_text( \%item_to_index ) == Mir::Doc::INVALID_SUFFIX ) {
+        $log->error("Suffix $item->{suffix} NOT VALID");
+        $store->update( { '_id' => $item->{_id} }, {'$set' => {
+                status => Mir::Doc::INVALID_SUFFIX
+                }
+            }
+        ) if ( $store );
+        return undef;
+    }
 
     my $ret;
     try {
@@ -271,12 +280,11 @@ sub _index_item {
         $log->info("Indexing document: $item_to_index{id}");
         $log->debug( Dumper \%item_to_index );
 
-        $DB::single=1;
         unless ( $item_to_index{text} && ( $item_to_index{mean_confidence} >
                  $confidence_threashold ) ) {
             $log->error("Error getting proper text or mean confidence under threashold, not indexing...");
             $store->update( { '_id' => $item->{_id} }, {'$set' => {
-                    status          => Mir::Doc::IDX_FAILED,
+                    status => Mir::Doc::IDX_FAILED,
                     }
                 }
             ) if ( $store );
@@ -367,7 +375,6 @@ sub get_text {
                 my ( $text, $confidence ) = $dh->page_text( $page, '/tmp' );
                 $log->debug("Confidence: $confidence");
                 $log->debug("Text      :\n\n$text");
-                $DB::single=1;
                 if ( $text && $confidence ) {
                     push @{ $doc->{text} }, $text;
                     $mean_confidence += $confidence;
@@ -378,12 +385,13 @@ sub get_text {
             $doc->{mean_confidence} = $mean_confidence/$doc->{num_pages};
         } else {
             $log->warn("WARNING: no Mir::Util::DocHandler driver for document $doc->{path}");
-            return 0;
+            return Mir::Doc::INVALID_SUFFIX;
         }
     } catch {
         $log->error("Error getting text for document:");
         $log->error( $doc->{path} );
         $log->error($@);
+        return Mir::Doc::INVALID_SUFFIX;
     }
 
     return 1;
