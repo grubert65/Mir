@@ -28,12 +28,13 @@ use JSON;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init($DEBUG);
 
-my ($host, $database, $collection, $update_json) = ('localhost');
+my ($host, $database, $collection, $update_json, $filter_json) = ('localhost');
 
 GetOptions(
-    "host=s"    => \$host,
-    "database=s"=> \$database,
+    "host=s"        => \$host,
+    "database=s"    => \$database,
     "collection=s"  => \$collection,
+    "filter=s"      => \$filter_json,
     "update=s"      => \$update_json
 ) or die <<EOT;
 
@@ -41,7 +42,8 @@ GetOptions(
                    --host       <MongoDB host> defaults to localhost
                    --database   <MongoDB database>
                    --collection <MongoDB collection>
-                   --update     <update json string as '{"\$set":{"field":"value"}}'
+                   --filter     filter json string as '{"status":3}'
+                   --update     update json string as '{"\$set":{"field":"value"}}'
 
 EOT
 
@@ -52,13 +54,15 @@ unless ( $database && $collection && $update_json ) {
                    --host       <MongoDB host> defaults to localhost
                    --database   <MongoDB database>
                    --collection <MongoDB collection>
-                   --update     <update json string as '{"\$set":{"field":"value"}}'
+                   --filter     filter json string as '{"status":3}'
+                   --update     update json string as '{"\$set":{"field":"value"}}'
 
 EOT
 
 }
 
 my $update = decode_json( $update_json );
+my $filter = decode_json( $filter_json );
 
 my $store = Mir::Store->create(
     driver => 'MongoDB',
@@ -70,7 +74,7 @@ my $store = Mir::Store->create(
 
 $store->connect() or die "Error connecting to store\n";
 
-my $cursor = $store->find();
+my $cursor = $store->find( $filter );
 
 while ( my $doc = $cursor->next ) {
     unless ( $store->update( { '_id' => $doc->{_id} }, $update ) ) {
