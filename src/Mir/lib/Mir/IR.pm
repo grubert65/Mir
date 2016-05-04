@@ -372,7 +372,8 @@ sub get_text {
             foreach( my $page=1;$page<=$doc->{num_pages};$page++ ) {
                 # get page text and confidence
                 # add them to item profile
-                my ( $text, $confidence ) = $dh->page_text( $page, '/tmp' );
+                $DB::single=1;
+                my ( $text, $confidence ) = $dh->page_text( $page, $ENV{MIR_TEMP}||'/tmp' );
                 $log->debug("Confidence: $confidence");
                 $log->debug("Text      :\n\n$text");
                 if ( $text && $confidence ) {

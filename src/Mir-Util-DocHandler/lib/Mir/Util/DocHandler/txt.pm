@@ -76,12 +76,12 @@ sub open_doc
         return 0;
     }
 
-    if (not stat ($document)) {
+    if (not stat ("$document")) {
         $self->log->error("Cannot find document $document");
         return 0;
     }
 
-    $self->{'DOC_PATH'} = $document;
+    $self->{DOC_PATH} = "$document";
 
     return 1; 
 }
@@ -134,10 +134,10 @@ Currently implemented by each driver.
 sub page_text {
     my ($self, $page, $temp_dir) = @_;
     my $text;
-    if ( -T $self->{DOC_PATH} ) {
+    if ( -T "$self->{DOC_PATH}" ) {
         local $/;
         my $fh;
-        open ($fh, "<", $self->{DOC_PATH} );
+        open ($fh, "<", "$self->{DOC_PATH}" );
         $text = <$fh>;
         if ( $text ) {
         }

@@ -12,6 +12,7 @@ Log::Log4perl->easy_init( $INFO );
 
 BEGIN {
     use_ok( 'Mir::IR' ) || print "Bail out!\n";
+    $ENV{MIR_TEMP}='./data/temp';
 }
 
 diag( "Testing Mir::IR $Mir::IR::VERSION, Perl $], $^X" );
