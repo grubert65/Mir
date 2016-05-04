@@ -50,7 +50,7 @@ foreach my $collection ( @{ $params->{collections} } ) {
     
     $client->connect();
 
-    foreach my $status ( 0..4 ) {
+    foreach my $status ( 0..5 ) {
         print "Number of docs in status $status: ";
         my $num = $client->count({status => $status});
         print "$num\n";

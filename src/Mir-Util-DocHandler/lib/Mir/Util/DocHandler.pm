@@ -7,11 +7,11 @@ Mir::Util::DocHandler - A class to handle a good range of doc types.
 
 =head1 VERSION
 
-0.09
+0.10
 
 =cut
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 =head1 SYNOPSIS
 
