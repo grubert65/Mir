@@ -261,38 +261,38 @@ sub _index_item {
         $store->connect();
     }
 
+    my $ret;
     my %item_to_index;
+    my $new_status = Mir::Doc::INDEXED; # think positive...
     @item_to_index{@mapping_keys} = @$item{@mapping_keys};
 
     if ( get_text( \%item_to_index ) == Mir::Doc::INVALID_SUFFIX ) {
         $log->error("Suffix $item->{suffix} NOT VALID");
-        $store->update( { '_id' => $item->{_id} }, {'$set' => {
-                status => Mir::Doc::INVALID_SUFFIX
-                }
-            }
-        ) if ( $store );
-        return undef;
+        $new_status = Mir::Doc::INVALID_SUFFIX;
     }
 
-    my $ret;
+    # if no text is found we index as well but mark indexed document as NO_TEXT
+    unless ( scalar @{$item_to_index{text}} ) {
+        $log->error("Doc. $item->{path}");
+        $log->error("No text found, indexing metadata...");
+        $new_status = Mir::Doc::NO_TEXT;
+    }
+
+    if ( scalar @{$item_to_index{text}} && 
+        ( $item_to_index{mean_confidence} < $confidence_threashold ) ) {
+        $log->error("Doc. $item->{path}");
+        $log->error("Mean confidence under threashold, indexing metadata...");
+        $new_status = Mir::Doc::CONF_TOO_LOW;
+    }
+
     try {
         # index item in the proper index...
         $log->info("Indexing document: $item_to_index{id}");
         $log->debug( Dumper \%item_to_index );
 
-        unless ( $item_to_index{text} && ( $item_to_index{mean_confidence} >
-                 $confidence_threashold ) ) {
-            $log->error("Error getting proper text or mean confidence under threashold, not indexing...");
-            $store->update( { '_id' => $item->{_id} }, {'$set' => {
-                    status => Mir::Doc::IDX_FAILED,
-                    }
-                }
-            ) if ( $store );
-            return undef;
-        }
-
         $ret = $e->index( 
             index   => $index,
+            id      => $item->{idx_id}, # in case this item has been already indexed...
             type    => $type,
             body    => \%item_to_index 
         );
@@ -304,7 +304,7 @@ sub _index_item {
             if ( $store ) {
                 $store->update( { '_id' => $item->{_id} }, {'$set' => {
                         idx_id          => $ret->{_id},
-                        status          => Mir::Doc::INDEXED,
+                        status          => $new_status,
                         mean_confidence => $item_to_index{mean_confidence},
                         num_pages       => $item_to_index{num_pages} 
                         }
@@ -372,7 +372,6 @@ sub get_text {
             foreach( my $page=1;$page<=$doc->{num_pages};$page++ ) {
                 # get page text and confidence
                 # add them to item profile
-                $DB::single=1;
                 my ( $text, $confidence ) = $dh->page_text( $page, $ENV{MIR_TEMP}||'/tmp' );
                 $log->debug("Confidence: $confidence");
                 $log->debug("Text      :\n\n$text");
@@ -383,6 +382,7 @@ sub get_text {
                     $log->warn("Text or confidence undefined, skipping text");
                 }
             }
+            $dh->delete_temp_files();
             $doc->{mean_confidence} = $mean_confidence/$doc->{num_pages};
         } else {
             $log->warn("WARNING: no Mir::Util::DocHandler driver for document $doc->{path}");
