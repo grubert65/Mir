@@ -76,11 +76,13 @@ of the License, or (at your option) any later version.
 use Moose;
 with 'Mir::Util::R::DocHandler';
 
+use feature 'unicode_strings';
 use namespace::autoclean;
-use Image::OCR::Tesseract       qw( get_ocr );
-use File::Path                  qw( rmtree );
-use File::Basename              qw( basename dirname );
-use Image::Size                 qw( imgsize );
+use Image::OCR::Tesseract   qw( get_ocr );
+use File::Path              qw( make_path rmtree );
+use File::Basename          qw( basename dirname );
+use File::Remove            qw( remove );
+use Image::Size             qw( imgsize );
 use Imager;
 use PDF::Extract;
 use DirHandle;
@@ -98,8 +100,6 @@ use vars qw( $VERSION );
 # 0.05 : bug fixing...
 $VERSION = '0.05';
 
-#binmode(STDOUT, ':utf8');
-
 # tesseract confidence on extraction
 has 'confidence' => ( 
     is      => 'rw', 
@@ -111,6 +111,8 @@ has 'confidence' => (
 # the pdf document and where everything get stored...
 has 'pdf'           => ( is => 'rw', isa => 'Str' );
 has 'page_num'      => ( is => 'rw', isa => 'Int' );
+
+has 'basedir'       => ( is => 'rw', isa => 'Str' );
 has 'pdf_pages_dir' => ( is => 'rw', isa => 'Str' );
 has 'pdf_images_dir'=> ( is => 'rw', isa => 'Str' );
 has 'pdf_text_dir'  => ( is => 'rw', isa => 'Str' );
@@ -152,22 +154,22 @@ sub open_doc {
         return 0;
     }
 
-    $DB::single=1;
-    mkdir ( $ENV{CACHE_DIR} ) unless ( -d $ENV{CACHE_DIR} );
-    my $basedir = $ENV{CACHE_DIR};
-    $self->pdf_pages_dir("$basedir/pages");
-    $self->pdf_images_dir("$basedir/images");
-    $self->pdf_text_dir("$basedir/text");
+    my $ug = Data::UUID->new; my $uuid=$ug->create();
+    $self->basedir( $ENV{CACHE_DIR}.'/'.$ug->to_string( $uuid ) );
+    make_path( $self->basedir );
+    $self->pdf_pages_dir("$self->{basedir}/pages");
+    $self->pdf_images_dir("$self->{basedir}/images");
+    $self->pdf_text_dir("$self->{basedir}/text");
 
     $self->{filename} =  basename ( $self->pdf );
     ($self->{basename}, $self->{suffix}) = split(/\./, $self->{filename});
 
     my $infos;
-    my $cmd = "pdfinfo \"$pdf\" > $basedir/pdf_info_file.txt 2>&1";
+    my $cmd = "pdfinfo \"$pdf\" > $self->{basedir}/pdf_info_file.txt 2>&1";
     my $ret = system($cmd);
     if ($ret == 0) {
         # Get infos and delete temp dir...
-        open (PDF_INFO, "<:encoding(utf8)", "$basedir/pdf_info_file.txt");
+        open (PDF_INFO, "<:encoding(utf8)", "$self->{basedir}/pdf_info_file.txt");
         read (PDF_INFO, $infos, (stat(PDF_INFO))[7]);
         close (PDF_INFO);
         
@@ -183,10 +185,10 @@ sub open_doc {
     return 1 if ( -d $self->pdf_pages_dir && 
                   -d $self->pdf_images_dir &&
                   -d $self->pdf_text_dir
-              );
+    );
 
     foreach ( qw( pdf_pages_dir pdf_images_dir pdf_text_dir ) ) {
-        mkdir ($self->{$_}) if ( ! -d $self->{$_} );
+        make_path ($self->{$_}) if ( ! -d $self->{$_} );
     }
     
     return 1; 
@@ -272,7 +274,6 @@ sub page_text {
     $self->log->debug("Going to extract text from image: $img");
     if (! -e $img ) {
         try {
-            $DB::single=1;
             $self->log->debug("Image $img not existent, going to extract page and convert...");
             my $pdf_page = $self->extractPage( $page )
                 or die "Error extracting page $page\n";
@@ -289,7 +290,7 @@ sub page_text {
         return ( "", 0 );
     }
 
-    $text = get_ocr( $img, $ENV{CACHE_DIR}, 'ita' );
+    $text = get_ocr( $img, $self->basedir, 'ita' );
     if ( $text =~ /average_doc_confidence:(\d{1,3})/ ) {
         $confidence = $1;
         $text =~ s/average_doc_confidence:(\d{1,3})//g;
@@ -297,46 +298,7 @@ sub page_text {
 
     # we need to take care of this, if more than one process is running
     # they actually delete each other files...
-#    $self->_delete_temp_files( $ENV{CACHE_DIR} );
     return ($text, $confidence);
-}
-
-#=============================================================
-
-=head2 _delete_temp_files
-
-=head3 INPUT
-
-    $temp_dir: the temporary folder
-
-=head3 OUTPUT
-
-=head3 DESCRIPTION
-
-Deletes all .jpg, .tif and .txt from the temp folder.
-
-=cut
-
-#=============================================================
-sub _delete_temp_files {
-    my ( $self, $temp_dir ) = @_;
-
-    my @files=plainfiles($temp_dir, 'jpg');
-    foreach ( @files ) {
-        unlink $_;
-    }
-}
-
-sub plainfiles {
-    my ($dir, $pattern) = @_;
-    my $dh = DirHandle->new($dir)   or die "can't opendir $dir: $!";
-
-    return sort { -M $a cmp -M $b }  # sort pathnames by last mod date...
-           grep { /(\w+)\.$pattern/ }
-           grep {    -f       }      # choose only "plain" files
-           map  { "$dir/$_"   }      # create full paths
-           grep { !/^\./      }      # (eventually) filter out dot files
-           $dh->read();              # read all entries
 }
 
 #=============================================================
@@ -362,7 +324,6 @@ pdf with file name <base filename>-<page_num>.pdf
 sub extractPage {
     my ( $self, $page_num ) = @_;
 
-    $DB::single=1;
     my $pdf_page=$self->{pdf_pages_dir}.'/'.$self->{basename}.$page_num.'.'.$self->{suffix};
     return $pdf_page if (-e $pdf_page );
     try {
@@ -466,6 +427,7 @@ sub crop {
         return undef;
     }
 
+# TODO why  doesn't store cropped image in a new file ?
 #    my ( $dirname, $basename ) = (dirname ($img_file), basename ($img_file));
 #    my ( $filename, $suffix ) = split(/\./, $basename);
 #    my $cropped_file = $dirname.'/'.$filename.'-cropped'.'.'.$suffix;
@@ -477,6 +439,27 @@ sub crop {
     }
 
     return $img_file;
+}
+
+#=============================================================
+
+=head2 delete_temp_files
+
+=head3 INPUT
+
+=head3 OUTPUT
+
+=head3 DESCRIPTION
+
+Deletes the basedir folder
+
+=cut
+
+#=============================================================
+sub delete_temp_files {
+    my $self = shift;
+    rmtree($self->basedir);
+    return 1;
 }
 
 no Moose;

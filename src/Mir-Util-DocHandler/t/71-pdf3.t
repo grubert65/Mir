@@ -12,7 +12,7 @@ BEGIN {
     use_ok('Mir::Util::DocHandler::pdf3');
 }
 
-$ENV{CACHE_DIR} = './data';
+$ENV{CACHE_DIR} = './data/temp';
 remove_tree( './data/pages' ) if (-d './data/pages');
 remove_tree( './data/images') if (-d './data/images');
 

@@ -1,15 +1,17 @@
-Creator:        TeX
-Producer:       MiKTeX pdfTeX-1.30.6
-CreationDate:   Mon Jun  4 00:25:09 2007
+Title:          Piano attività.mpp
+Author:         itfrrut
+Creator:        Microsoft Project - Piano attività.mpp
+Producer:       Acrobat PDFWriter 5.0 for Windows NT
+CreationDate:   Tue Feb 21 11:26:00 2006
 Tagged:         no
 UserProperties: no
 Suspects:       no
 Form:           none
 JavaScript:     no
-Pages:          4
+Pages:          1
 Encrypted:      no
-Page size:      612 x 792 pts (letter)
+Page size:      1701 x 842 pts
 Page rot:       0
-File size:      105901 bytes
+File size:      21922 bytes
 Optimized:      no
-PDF version:    1.4
+PDF version:    1.2

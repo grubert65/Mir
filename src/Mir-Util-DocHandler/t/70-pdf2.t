@@ -12,9 +12,9 @@ BEGIN {
     use_ok('Mir::Util::DocHandler::pdf2');
 }
 
-$ENV{CACHE_DIR} = './data';
-remove_tree( './data/pages' ) if (-d './data/pages');
-remove_tree( './data/images') if (-d './data/images');
+$ENV{CACHE_DIR} = './data/temp';
+remove_tree( './data/temp/pages' ) if (-d './data/pages');
+remove_tree( './data/temp/images') if (-d './data/images');
 
 ok (my $doc = Mir::Util::DocHandler->create(driver => 'pdf2'), "new"); 
 ok ($doc->open_doc("./data/Piano attività.pdf"), "open_doc");
@@ -32,21 +32,33 @@ SKIP: {
         bottom  => 1790
     }), 'crop image');
     ok(-e $cropped_img, "cropped image exists...");
-    diag("Image cropped: $cropped_img");
+    note("Image cropped: $cropped_img");
 }
 ok (my ($text,$conf)=$doc->page_text(1), 'page_text');
-
-ok (my $doc2 = Mir::Util::DocHandler->create(driver => 'pdf2'), "new"); 
-ok ($doc2->open_doc("./data/Piano attività.pdf"), "open_doc");
-is ( ($doc2->page_text(1))[0], $text, "got same text...");
+ok ( $doc->delete_temp_files(), 'delete_temp_files');
 
 # now tries to extract text from all pages...
-ok ($doc->open_doc("./data/Jaae-is2007.pdf"), "open_doc");
-ok (my $num_pages = $doc->pages(), 'pages' );
+ok (my $doc3 = Mir::Util::DocHandler->create(driver => 'pdf2'), "new"); 
+ok ($doc3->open_doc("./data/Jaae-is2007.pdf"), "open_doc");
+ok (my $num_pages = $doc3->pages(), 'pages' );
 is ( $num_pages, 4, 'got right number of pages');
 for( my $num_page=1;$num_page<=$num_pages;$num_page++) {
-    ok( ($text,$conf) = $doc->page_text( $num_page ) );
-    diag "Confidence on text for page $num_page: $conf";
+    ok( ($text,$conf) = $doc3->page_text( $num_page ) );
+    note "Confidence on text for page $num_page: $conf";
+    note "TEXT:\n$text\n";
 }
+ok ( $doc3->delete_temp_files(), 'delete_temp_files');
 
-done_testing;
+# now tries with UTF-8 chars...
+ok (my $doc4 = Mir::Util::DocHandler->create(driver => 'pdf2'), "new"); 
+ok ($doc4->open_doc("./data/test_utf8.pdf"), "open_doc");
+ok (my $num_pages = $doc4->pages(), 'pages' );
+is ( $num_pages, 1, 'got right number of pages');
+for( my $num_page=1;$num_page<=$num_pages;$num_page++) {
+    ok( ($text,$conf) = $doc4->page_text( $num_page ) );
+    note "Confidence on text for page $num_page: $conf";
+    note "TEXT:\n$text\n";
+}
+ok ( $doc4->delete_temp_files(), 'delete_temp_files');
+
+done_testing ();
