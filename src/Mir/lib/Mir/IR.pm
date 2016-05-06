@@ -7,7 +7,7 @@ Mir::IR - frontend for the Elastic Search indexer.
 
 =head1 VERSION
 
-0.06
+0.12
 
 =cut
 
@@ -19,7 +19,8 @@ Mir::IR - frontend for the Elastic Search indexer.
 # 0.09 | 01.04.2016 | Now considering path instead of abspath...
 # 0.10 | 20.04.2016 | Logs added...
 # 0.11 | 22.04.2016 | Lowercase suffix...
-our $VERSION = '0.11';
+# 0.12 | 04.05.2016 | Properly handling of not valid suffix
+our $VERSION = '0.12';
 
 =head1 SYNOPSIS
 
@@ -39,6 +40,9 @@ our $VERSION = '0.11';
     # for each document profile, get document text 
     # and index it
     $ir->process_items_in_queue();
+
+    #...or goes polling for new documents in store...
+    $ir->process_new_items( $polling_period );
 
 =head1 DESCRIPTION
 
@@ -64,6 +68,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 =cut
 
 #========================================================================
+use v5.10;
 use Moose;
 use Search::Elasticsearch;
 use namespace::clean;
@@ -106,6 +111,9 @@ has 'config_params' => ( is => 'rw', isa => 'HashRef' );
 has 'config_params_json' => ( is => 'rw', isa => 'Str' );
 has 'queue'         => ( is => 'rw', isa => 'Queue::Q::ReliableFIFO::Redis' );
 
+has 'params'     => ( is => 'rw', isa => 'HashRef' );
+has 'sleeping_time' => ( is => 'rw', isa => 'Int', default => sub { return 3600 } );
+
 #=============================================================
 
 =head2 config
@@ -137,49 +145,52 @@ sub config {
     ) or die "No Mir::Config::Client object...\n";
     
     $c->connect() or die "Error connecting to a Mir::Config data store\n";
-    my $params = $c->get_key({
-            tag         => 'IR',
+    $self->params( $c->get_key({
             campaign    => $self->campaign,
-        },
-        {
-            idx_queue_params => 1,
-            idx_server       => 1,
-            doc_handlers_lut => 1,
-            confidence_threashold => 1
-        }
-    )->[0];
+        }, { params => 1 }
+    )->[0]->{params});
 
     $log->debug("Going to connect to idx queue:");
-    $log->debug( Dumper $params->{idx_queue_params} );
+    $log->debug( Dumper $self->params->{idx_queue_params} );
     $log->debug("Going to connect to Search Text Engine:");
-    $log->debug( Dumper $params->{idx_server}->{ir_params} );
+    $log->debug( Dumper $self->params->{idx_server}->{ir_params} );
 
-    $index = $params->{idx_server}->{index};
-    $type  = $params->{idx_server}->{type};
+    $index = $self->params->{idx_server}->{index};
+    $type  = $self->params->{idx_server}->{type};
     $log->info("Going to index docs of type $type into index $index");
 
     $log->info("Opening queue:");
-    $log->info( Dumper $params->{idx_queue_params} );
+    $log->info( Dumper $self->params->{idx_queue_params} );
 
-    $self->queue( Queue::Q::ReliableFIFO::Redis->new( %{ $params->{idx_queue_params} } ) )
+    $self->queue( Queue::Q::ReliableFIFO::Redis->new( %{ $self->params->{idx_queue_params} } ) )
         or die "Error getting a Queue::Q::ReliableFIFO::Redis object\n";
 
     $log->debug("Getting a Search::Elasticsearch object with params:");
-    $log->debug( Dumper $params->{idx_server}->{ir_params} );
-    $e = Search::Elasticsearch->new( %{ $params->{idx_server}->{ir_params} } );
+    $log->debug( Dumper $self->params->{idx_server}->{ir_params} );
+    $e = Search::Elasticsearch->new( %{ $self->params->{idx_server}->{ir_params} } );
 
     $log->debug( "Getting a Mir::Stat object for counter $self->{campaign}" );
+    # NOTE : we assume served by the same Redis server as the idx queues...
     $stat = Mir::Stat->new(
+        server  => $self->params->{idx_queue_params}->{server}.':6379',
         counter => $self->{campaign}.'_indexed',
         select  => 10,
     );
 
-    $drivers_lut = $params->{doc_handlers_lut} if ( $params->{doc_handlers_lut} );
+    $drivers_lut = $self->params->{idx_server}->{doc_handlers_lut} if ( $self->params->{idx_server}->{doc_handlers_lut} );
     # if no threashold defined we take everything...
-    $confidence_threashold = $params->{confidence_threashold} || 0; 
+    $confidence_threashold = $self->params->{idx_server}->{confidence_threashold} || 0; 
 
-    if ( exists ( $params->{idx_server}->{mappings} ) ) {
-        @mapping_keys = keys %{ $params->{idx_server}->{mappings}->{docs}->{properties} };
+    my $mappings = $c->get_key(
+        { tag => 'elastic' }, 
+        { mappings => 1 }
+    )->[0]->{'mappings'};
+
+    $log->warn("WARNING: NO MAPPINGS SECTION FOUND IN CONFIG")
+        unless $mappings;
+
+    if ( $mappings && exists $mappings->{docs}->{properties} ) {
+        @mapping_keys = keys %{ $mappings->{docs}->{properties} };
     }
 }
 
@@ -232,7 +243,7 @@ sub _index_item {
         return 0; 
     }
 
-    $log->info( "Found NEW item -------------------------------------------");
+    $log->info( "ITEM -------------------------------------------");
     $log->info( $item->{id} );
     $log->debug( Dumper ( $item ) );
 
@@ -241,12 +252,39 @@ sub _index_item {
         return 0; 
     }
 
-    my %item_to_index;
-    @item_to_index{@mapping_keys} = @$item{@mapping_keys};
-
-    get_text( \%item_to_index );
+    my $store;
+    if ( exists ( $item->{storage_io_params} ) ) {
+        $store = Mir::Store->create(
+            driver => $item->{storage_io_params}->{io}->[0],
+            params => $item->{storage_io_params}->{io}->[1]
+        );
+        $store->connect();
+    }
 
     my $ret;
+    my %item_to_index;
+    my $new_status = Mir::Doc::INDEXED; # think positive...
+    @item_to_index{@mapping_keys} = @$item{@mapping_keys};
+
+    if ( get_text( \%item_to_index ) == Mir::Doc::INVALID_SUFFIX ) {
+        $log->error("Suffix $item->{suffix} NOT VALID");
+        $new_status = Mir::Doc::INVALID_SUFFIX;
+    }
+
+    # if no text is found we index as well but mark indexed document as NO_TEXT
+    unless ( scalar @{$item_to_index{text}} ) {
+        $log->error("Doc. $item->{path}");
+        $log->error("No text found, indexing metadata...");
+        $new_status = Mir::Doc::NO_TEXT;
+    }
+
+    if ( scalar @{$item_to_index{text}} && 
+        ( $item_to_index{mean_confidence} < $confidence_threashold ) ) {
+        $log->error("Doc. $item->{path}");
+        $log->error("Mean confidence under threashold, indexing metadata...");
+        $new_status = Mir::Doc::CONF_TOO_LOW;
+    }
+
     try {
         # index item in the proper index...
         $log->info("Indexing document: $item_to_index{id}");
@@ -254,30 +292,42 @@ sub _index_item {
 
         $ret = $e->index( 
             index   => $index,
+            id      => $item->{idx_id}, # in case this item has been already indexed...
             type    => $type,
             body    => \%item_to_index 
         );
+
         if ( $ret->{_id} ) {
             $log->info("Indexed document $item_to_index{id}, IDX id: $ret->{_id}");
             $stat->incrBy();
 
-            if ( exists ( $item->{storage_io_params} ) ) {
-                my $store = Mir::Store->create(
-                    driver => $item->{storage_io_params}->{io}->[0],
-                    params => $item->{storage_io_params}->{io}->[1]
+            if ( $store ) {
+                $store->update( { '_id' => $item->{_id} }, {'$set' => {
+                        idx_id          => $ret->{_id},
+                        status          => $new_status,
+                        mean_confidence => $item_to_index{mean_confidence},
+                        num_pages       => $item_to_index{num_pages} 
+                        }
+                    }
                 );
-                $store->connect();
-                $item->{idx_id}          = $ret->{_id};
-                $item->{num_pages}       = $item_to_index{num_pages};
-                $item->{mean_confidence} = $item_to_index{mean_confidence};
-                $item->{status}          = Mir::Doc::INDEXED; 
-                $store->update( $item );
+            } else {
+                $log->error("NO store defined for this doc");
             }
         } else {
             $log->error("Error indexing document $item_to_index{id}, no IDX ID");
+            $store->update( { '_id' => $item->{_id} }, {'$set' => {
+                    status          => Mir::Doc::IDX_FAILED,
+                    }
+                }
+            ) if ( $store );
         }
     } catch ( $err ) {
         $log->error("Error indexing document $item->{id}: $err");
+        $store->update( { '_id' => $item->{_id} }, {'$set' => {
+                status          => Mir::Doc::IDX_FAILED,
+                }
+            }
+        ) if ( $store );
     };
     return ( $ret );
 }
@@ -309,33 +359,40 @@ sub get_text {
     $doc->{text} = [];
     $doc->{mean_confidence} = 0;
 
-    my $dh;
-    my $mean_confidence=0;
-    if ( $doc->{suffix} && ( $dh = Mir::Util::DocHandler->create( driver => get_driver ( lc $doc->{suffix} ) ) ) ) {
-        $log->info("Opening doc $doc->{path}...");
-        $dh->open_doc( "$doc->{path}" ) or return;
-    
-        $doc->{num_pages} = $dh->pages();
-        $log->info( "Doc has $doc->{num_pages} pages" );
-    
-        foreach( my $page=1;$page<=$doc->{num_pages};$page++ ) {
-            # get page text and confidence
-            # add them to item profile
-            my ( $text, $confidence ) = $dh->page_text( $page, '/tmp' );
-            $log->debug("Confidence: $confidence");
-            $log->debug("Text      :\n\n$text");
-            if ( ( $confidence > $confidence_threashold ) && 
-                 ( $text ) ) {
-                push @{ $doc->{text} }, $text;
-                $mean_confidence += $confidence;
-            } else {
-                $log->warn("Text confidence under threashold...skipped");
+    try {
+        my $dh;
+        my $mean_confidence=0;
+        if ( $doc->{suffix} && ( $dh = Mir::Util::DocHandler->create( driver => get_driver ( lc $doc->{suffix} ) ) ) ) {
+            $log->info("Opening doc $doc->{path}...");
+            $dh->open_doc( "$doc->{path}" ) or return;
+        
+            $doc->{num_pages} = $dh->pages();
+            $log->info( "Doc has $doc->{num_pages} pages" );
+        
+            foreach( my $page=1;$page<=$doc->{num_pages};$page++ ) {
+                # get page text and confidence
+                # add them to item profile
+                my ( $text, $confidence ) = $dh->page_text( $page, $ENV{MIR_TEMP}||'/tmp' );
+                $log->debug("Confidence: $confidence");
+                $log->debug("Text      :\n\n$text");
+                if ( $text && $confidence ) {
+                    push @{ $doc->{text} }, $text;
+                    $mean_confidence += $confidence;
+                } else {
+                    $log->warn("Text or confidence undefined, skipping text");
+                }
             }
+            $dh->delete_temp_files();
+            $doc->{mean_confidence} = $mean_confidence/$doc->{num_pages};
+        } else {
+            $log->warn("WARNING: no Mir::Util::DocHandler driver for document $doc->{path}");
+            return Mir::Doc::INVALID_SUFFIX;
         }
-        $doc->{mean_confidence} = $mean_confidence/$doc->{num_pages};
-    } else {
-        $log->warn("WARNING: no Mir::Util::DocHandler driver for document $doc->{path}");
-        return 0;
+    } catch {
+        $log->error("Error getting text for document:");
+        $log->error( $doc->{path} );
+        $log->error($@);
+        return Mir::Doc::INVALID_SUFFIX;
     }
 
     return 1;
@@ -402,6 +459,72 @@ sub exists {
     return $res->{hits}->{total};
 }
 
+#=============================================================
+
+=head2 process_new_items
+
+=head3 INPUT
+
+    $polling_period: number of seconds to sleep if no documents 
+                     to index are found.
+
+=head3 OUTPUT
+
+=head3 DESCRIPTION
+
+Workflow:
+    - get a new document from Store, otherwise sleep for a while
+    - index it
+
+A store reference is defined for each fetcher configured for
+the campaign.
+We define a static index to loop for each store data source.
+
+=cut
+
+#=============================================================
+sub process_new_items {
+    my ( $self, $polling_period ) = @_;
+
+    $log->debug("Start polling for new items");
+
+    my @store_params;
+    my @stores;
+    state $index = 0;
+    foreach my $fetcher ( @{ $self->params->{fetchers} } ) {
+        push @store_params, $fetcher->{params}->{storage_io_params}->{io};
+    }
+
+    foreach my $store_params ( @store_params ) {
+        try {
+            my $store = Mir::Store->create(
+                driver => $store_params->[0],
+                params => $store_params->[1]
+            );
+            $store->connect();
+            push @stores, $store;
+        } catch {
+            $log->error("Error getting a Mir::Store obj with params");
+            $log->error(Dumper($store_params));
+        }
+    }
+
+    # ...and finally the loop...
+    while (1) {
+        $index = 0 if ( $index == scalar @stores );
+        my $doc = $stores[$index]->get_new_doc(mark_as_indexing => 1);
+        unless ( $doc ) {
+            $log->info ("No new docs to index, going to sleep...");
+            return 1 if ( $ENV{TEST_FILE} || $ENV{HARNESS_ACTIVE} );
+            sleep ( $polling_period || $self->sleeping_time );
+            $index++;
+            next;
+        }
+        $self->_index_item( $doc );
+        $index++;
+    }
+}
+
 1;
 
 __DATA__
@@ -413,5 +536,6 @@ __DATA__
     "rtf":  "rtf",
     "java": "txt",
     "js":   "txt",
-    "pm":   "txt"
+    "pm":   "txt",
+    "json": "txt"
 }

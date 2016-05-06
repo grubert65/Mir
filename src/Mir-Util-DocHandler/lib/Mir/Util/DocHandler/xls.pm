@@ -54,6 +54,12 @@ use Moose;
 with 'Mir::Util::R::DocHandler';
 extends 'Mir::Util::DocHandler::Office';
 
+use feature 'unicode_strings';
+use File::Copy qw( copy );
+use File::Remove qw( remove );
+use Data::UUID;
+use Encode;
+
 #=============================================================
 
 =head2 pages
@@ -76,11 +82,10 @@ sub pages
 {
     my ($self) = shift;
 
-    $self->log->error("Number of pages cannot be determined for Excel
-                files, try converting it to PDF format using
-                ConvertToPDF method");
+    $self->log->warn("Number of pages cannot be determined for Excel
+                files, returning 1 page for any spreadsheet");
 
-    return undef;
+    return 1;
 }
 
 #=============================================================
@@ -105,15 +110,50 @@ to PDF format using ConvertToPDF method.
 =cut
 
 #=============================================================
-sub page_text
-{
+sub page_text {
     my ($self, $page, $temp_dir) = @_;
 
-    $self->log->error("Text cannot be extracted for Excel
-                files, try converting it to PDF format using
-                ConvertToPDF method");
+    my ($text, $confidence) = (undef, undef);
 
-    return (undef, undef);
+    my $temp = $temp_dir || '/tmp';
+
+    my $ug=Data::UUID->new;my $u=$ug->create();
+    my $outfilename = $ug->to_string($u);
+
+    $self->log->debug("Copying file $self->{DOC_PATH} to $temp/$outfilename.xls");
+
+    my $ret = copy( $self->{DOC_PATH}, "$temp/$outfilename.xls" );
+    unless ( $ret ) {
+        $self->log->error("Error copying file, no text extracted");
+        return ($text, $confidence);
+    }
+    
+    $self->log->info("Trying to extract text with libreoffice...");
+
+    if ( `which libreoffice` ) {
+        my $cmd = "libreoffice --headless --convert-to csv $temp/$outfilename.xls --outdir $temp";
+        my $ret = system( $cmd );
+        if ( $ret != 0 ) {
+            $self->log->error("Error converting to csv: $!");
+            return ($text, $confidence);
+        }
+        my $outfile = "$temp/$outfilename.csv";
+        if ( -e $outfile ) {
+            local $/;
+            open(my $fh, "<", $outfile);
+            $text = <$fh>;
+            $text = encode( 'UTF-8', $text );
+            $confidence=100;
+            close $fh;
+            $DB::single=1;
+            remove $outfile;
+            remove "$temp/$outfilename.xls";
+            return ($text, $confidence);
+        }
+    } else {
+        $self->log->error("Error: no libreoffice found, no text extracted");
+        return ($text, $confidence);
+    }
 }
 
 #=============================================================

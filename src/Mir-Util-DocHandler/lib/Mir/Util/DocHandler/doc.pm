@@ -51,6 +51,7 @@ of the License, or (at your option) any later version.
 
 #========================================================================
 use Moose;
+use feature 'unicode_strings';
 with 'Mir::Util::R::DocHandler';
 use Encode;
 
@@ -125,7 +126,7 @@ sub page_text
     }
 
     # Try antiword first
-    my $cmd = "antiword \"$doc\" > $temp_dir/page.txt";
+    my $cmd = "antiword -m UTF-8.txt \"$doc\" > $temp_dir/page.txt";
     my $ret = system($cmd);
 
     # If not successful, use catdoc
@@ -136,7 +137,7 @@ sub page_text
 
     my $text = undef;
     if ($ret == 0) {
-        open SINGLE_PAGE, "< $temp_dir/page.txt";
+        open (SINGLE_PAGE, "<:encoding(UTF-8)", "$temp_dir/page.txt");
         read (SINGLE_PAGE, $text, (stat(SINGLE_PAGE))[7]);
         close SINGLE_PAGE;
         unlink "$temp_dir/page.txt";
@@ -145,9 +146,6 @@ sub page_text
         return (undef, 0);
     }
 
-    # we suppose antiword saves text utf8-encoded...
-    # need to check if this is needed
-#    my $decoded = decode_utf8( $text );
     return ($text, $confidence);
 }
 

@@ -19,16 +19,17 @@ my $docs;
 my $data;
 {
     local $/;
-    open my $fh, "<./data/config.json";
+    open my $fh, "<./data/config_v1.json";
     $data = <$fh>;
     close $fh;
 }
 
 $docs = decode_json $data;
 
+# test first format for configuration params...
 ok( my $o = Mir::Config::Client->create(
         driver  => 'JSON',
-        params  => { path => './data/config.json' }
+        params  => { path => './data/config_v1.json' }
     ), 'create'
 );
 
@@ -50,5 +51,19 @@ is(ref $params, 'ARRAY', 'got right data type back');
 my $doc = $params->[0]; # we only need the first doc found...
 is_deeply( $doc->{idx_server}, $docs->[1]->{idx_server}, 'got right data back...');
 is_deeply( $doc->{idx_queue_params}, $docs->[1]->{idx_queue_params}, 'got right data back...');
+
+# test second format for configuration params...
+ok( my $o2 = Mir::Config::Client->create(
+        driver  => 'JSON',
+        params  => { path => './data/config_v2.json' }
+    ), 'create'
+);
+
+ok( $o2->connect(), 'connect' );
+diag "The complete configuration file content:";
+p $o2->config;
+
+ok($params = $o2->get_key({campaign=>'IR-test'},{params=>1}), 'get_key');
+p $params;
 
 done_testing;

@@ -126,7 +126,7 @@ sub page_text {
 
     my $text = undef;
     if ($ret == 0) {
-        open SINGLE_PAGE, "< $temp_dir/page.txt";
+        open (SINGLE_PAGE, "<:encoding(UTF-8)",  "$temp_dir/page.txt");
         read (SINGLE_PAGE, $text, (stat(SINGLE_PAGE))[7]);
         close SINGLE_PAGE;
         unlink "$temp_dir/page.txt";

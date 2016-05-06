@@ -6,29 +6,42 @@ Mir - Media Indexer and Retriever
 
 =head1 VERSION
 
-Version 0.04
+Version 0.14
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.14';
 
 
 =head1 SYNOPSIS
 
-To fetch a bunch of web sites related by a topic
-------------------------------------------------
-- design your data extending the Mir::Doc role
-- build and deploy a class that consumes the Mir::Acq::Role::Fetch role for each source
-- Startup the Mir Acq subsystem (mir-acq start)
-- add and configure all the sources via cmd script mir-acq-add-source or Mir-Acq web site
-- configure the fetching campaign via mir-acq-add-campaign or mir-acq web site
-- let it play...
+=head2 To fetch and index documents 
 
-To view the extracted information
----------------------------------
-- login to the mir web site
-- select the fetching campaign
-- browse indexed data and perform searches
+=over 
+
+=item Design your data extending the Mir::Doc role
+
+=item Configure your campaign, either with a JSON file or uploading configuration to a system Mongo collection
+
+=item Build a fetcher that consumes the Mir::R::Acq::Fetch role
+
+=item Startup the Mir Acq subsystem
+
+=item Startup the mir-ir.pl (or mir-ir-polling.pl if you don't like queues)
+
+=back
+
+=head2 To view the extracted information
+
+=over 
+
+=item login to the mir web site
+
+=item select the fetching campaign
+
+=item browse indexed data and perform searches
+
+=back
 
 You can always build a dedicated delivery system on top of the
 Mir MongoDB data store.

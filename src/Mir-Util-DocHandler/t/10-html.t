@@ -14,6 +14,7 @@ ok ($doc->open_doc("./data/Storo.html"), "open_doc");
 ok ($doc->pages(), "pages");
 ok ($doc->page_text(1, "./data"), "page_text");
 ok ($doc->ConvertToPDF('./data/Storo.pdf'), "ConvertToPDF");
+ok ($doc->delete_temp_files(), 'delete_temp_files' );
 unlink('./data/Storo.pdf') if stat ('./data/Storo.pdf');
 
 done_testing;

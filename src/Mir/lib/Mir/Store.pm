@@ -17,16 +17,12 @@ our $VERSION='0.01';
 
 =head1 SYNOPSIS
 
-    package Mir::Store;
-    use Moose;
-    with 'Mir::R::Store', 'DriverRole';
-
     # handling something...
+    use Mir::Store;
     my $store = Mir::Store->create( driver => 'Something' );
     my $dh = $store->connect( $connect_params );
     my $doc = $dh->find_by_id('....');
     $dh->insert( $doc ) or die;
-    $dh->delete_all_docs();
 
 =head1 DESCRIPTION
 
