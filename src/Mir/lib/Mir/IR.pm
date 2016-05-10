@@ -272,11 +272,12 @@ sub _index_item {
     }
 
     # if no text is found we index as well but mark indexed document as NO_TEXT
-    unless ( scalar @{$item_to_index{text}} ) {
-        $log->error("Doc. $item->{path}");
-        $log->error("No text found, indexing metadata...");
-        $new_status = Mir::Doc::NO_TEXT;
-    }
+    # actually any invalid suffix gets this...
+#    unless ( scalar @{$item_to_index{text}} ) {
+#        $log->error("Doc. $item->{path}");
+#        $log->error("No text found, indexing metadata...");
+#        $new_status = Mir::Doc::NO_TEXT;
+#    }
 
     if ( scalar @{$item_to_index{text}} && 
         ( $item_to_index{mean_confidence} < $confidence_threashold ) ) {
