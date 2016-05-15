@@ -1,5 +1,4 @@
 # ABSTRACT: A module to handle files and folders...
-
 package Mir::FileHandler;
 
 use 5.010;
@@ -23,11 +22,10 @@ Version 0.01
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 our @rec_files = ();
 our $files_as_hash = {};
 our @types = ();
-our $log = Log::Log4perl->get_logger( __PACKAGE__ );
 
 =head1 SYNOPSIS
 
@@ -47,7 +45,6 @@ our $log = Log::Log4perl->get_logger( __PACKAGE__ );
     my $list = $o->plainfiles_recursive( $path, $suffix, \&found );
 
     # Traverses a directory tree and exec code for each file
-    $o->count(0);      # reset counter
     $o->dir_walk(
         path => $path,
         code => $code,
@@ -60,13 +57,10 @@ our $log = Log::Log4perl->get_logger( __PACKAGE__ );
     # if cached_dir is set, at each iteration starts from 
     # what stored in cache, if something has been stored,
     # otherwise starts from path
-    $o->count(0);      # reset counter
     $o->clear_cache(); # to clear current dir stored in cache
     $o->dir_walk_max(
-        path => $path,
         code => $code, # not mandatory, code to exec for each file found
-        max  => $max,  # not mandatory, max files successfully processed
-        cached_dir => 1# not mandatory, if set 
+        max  => $max  # not mandatory, max files successfully processed
     );
 
 =head1 EXPORT
@@ -84,7 +78,6 @@ our $log = Log::Log4perl->get_logger( __PACKAGE__ );
 =cut
 
 #=============================================================
-
 has 'path' => ( 
     is => 'rw', 
     isa => 'Str', 
@@ -108,10 +101,13 @@ has 'cache' => (
     }
 );
 
-has 'count' => (
+has 'log' => (
     is  => 'rw',
-    isa => 'Int',
-    default => sub { 0 },
+    isa => 'Log::Log4perl::Logger',
+    lazy => 1,
+    default => sub {
+        return Log::Log4perl->get_logger( __PACKAGE__ );
+    }
 );
 
 sub BUILD {
@@ -203,7 +199,7 @@ sub _get_path_from_cache {
 
 sub _set_path_in_cache {
     my ( $self, $path ) = @_;
-    $log->debug("SETTING $path IN CACHE...");
+    return $self->clear_cache() unless ( $path );
     return $self->cache->set( $self->cache_key, $path );
 }
 
@@ -220,8 +216,7 @@ sub clear_cache {
 =head3 INPUT
 
 An hash with keys:
-    top :   the folder to start with
-    code:   a coderef to apply to
+    code: a coderef to apply to each file
 
 =head3 OUTPUT
 
@@ -241,46 +236,64 @@ features look at dir_walk_max.
 #=============================================================
 sub dir_walk {
     my ( $self, %params ) = @_;
-    my $top  = $params{top};
     my $code = $params{code};
-    
-    $log->error("File or folder $top not existent") && return -1
-        unless ( -e $top );
+    return undef unless $code;
+    return $self->_walk( $self->path, $code, 0);
+}
 
+#=============================================================
+
+=head2 _walk
+
+=head3 INPUT
+
+    $top: subtree root
+    $code: code to execute against each valid file
+    $count: number of valid files till now...
+
+=head3 OUTPUT
+
+The number of valid files.
+
+=head3 DESCRIPTION
+
+Traverse the subtree.
+
+=cut
+
+#=============================================================
+sub _walk {
+    my ( $self, $top, $code, $count ) = @_;
     my $DIR;
     unless (opendir $DIR, $top) {
-        $log->error( "Couldn’t open directory $top: $!" );
+        $self->log->error( "Couldn’t open directory $top: $!" );
         return;
     }
     my $file;
     while ($file = readdir $DIR) {
         my $item = "$top/$file";
         if ( -f $item ) {
-            $self->{count} += $code->($item);
+            $count += $code->($item);
         } elsif (-d $item ) {
             next if $file eq '.' || $file eq '..';
-            $self->dir_walk( 
-                top  => $item, 
-                code => $code 
-            );
+            $count = $self->_walk( $item, $code, $count );
         }
     }
     closedir $DIR;
-    return 1;
+    return $count;
 }
 
 #=============================================================
 
 =head2 dir_walk_max - traverses recursively a folder, stops after
-                      max valid files found
+                      max valid files found or all tree has been
+                      traversed
 
 =head3 INPUT
 
 An hash with keys:
     code:   a coderef to apply to
     max:    max number of items to evaluate
-    dir_cached: if current folder needs to be cached and used as starting
-            folder at next iteration;
 
 =head3 OUTPUT
 
@@ -293,70 +306,74 @@ Traverse a directory, triggering a sub for each file found.
 The sub should return 1 if file is good, 0 otherwise.
 The method stops when all files are consumed or max number
 of good files is reached.
-If the dir_cached param is set, it fetches the current folder from
-cache, otherwise starts from the configured path
+
 
 =cut
 
 #=============================================================
 sub dir_walk_max {
     my ( $self, %params ) = @_;
+    my $code = $params{code};
+    my $max  = $params{max};
+    return undef unless ( $code && $max );
+    my $rel_path = $self->_get_path_from_cache();
+    return $self->_walk_max( $self->path, 0, $max, $code, $rel_path );
+}
 
-    my $top        = $params{top};
-    my $code       = $params{code};
-    my $max        = $params{max};
-    my $cached_dir = $params{cached_dir};
-    state $first   = 1;
-    state $level   = 0;
-    state $cache_set=1;
 
-    $level++;
-    # we start getting folder from cache if cached_dir param
-    # is set...
-    if ( $first && $cached_dir ) {
-        undef $first;
-        my $cached_dir = $self->_get_path_from_cache();
-        $top = ( $cached_dir ) ? $cached_dir : $top;
-    }
-    
-    $log->error("File or folder $top not existent") && return -1
-        unless ( -e $top );
+#=============================================================
+
+=head2 _walk_max
+
+=head3 INPUT
+
+root     : the root folder to start with
+count    : number of valid items processed
+rel_path : the relative path from root
+max      : max number of valid items
+code     : code to run against each item
+
+=head3 OUTPUT
+
+The number of valid items processed
+
+=head3 DESCRIPTION
+
+Inner loop to analize each item of the tree.
+
+=cut
+
+#=============================================================
+sub _walk_max {
+    my ( $self, $root, $count, $max, $code, $rel_path ) = @_;
+
+    $self->log->debug("Scanning $rel_path") if( $rel_path );
+    my $path = ( $rel_path ) ? "$root/$rel_path" : $root;
+    $self->_set_path_in_cache( $rel_path );
 
     my $DIR;
-    unless (opendir $DIR, $top) {
-        $log->error( "Couldn’t open directory $top: $!" );
-        return;
+    unless (opendir $DIR, $path) {
+        $self->log->error( "Couldn’t open directory $path $!" );
+        return undef;
     }
+
     my $file;
-    while ($file = readdir $DIR) {
-        my $item = "$top/$file";
+    while ( defined($file = readdir $DIR) && ( $count < $max ) ) {
+        my $item = "$path/$file";
         if ( -f $item ) {
-            if ( $max && ( $self->{count} >= $max )) {
-                $self->_set_path_in_cache( dirname ($top) ) if ( $cached_dir && $cache_set);
-                $cache_set = 0;
-                last;
-            }
-            $self->{count} += $code->($item);
+            $count += $code->($item);
         } elsif (-d $item ) {
             next if $file eq '.' || $file eq '..';
-            $self->dir_walk_max( 
-                top         => $item, 
-                code        => $code, 
-                max         => $max,
-                cached_dir  => $cached_dir
-            );
+            $count = $self->_walk_max( $root, $count, $max, $code, ( $rel_path ) ? $rel_path.'/'.$file : $file );
         }
     }
     closedir $DIR;
-    $level--;
-    if ( ( $level == 0 ) && ( $max && ( $self->{count} < $max ) ) ) {
-        # going to exit as no more files are there
-        # we clear cache so to force restart from 
-        # scratch...
-        $log->debug("Clearing cache..");
-        $self->clear_cache();
+    unless ( $file ) {
+    $DB::single=1;
+        ( $rel_path ) ?  $self->_set_path_in_cache( join('/', splice(@{[split(m|/|, $rel_path)]},0,-1))) :
+                         $self->clear_cache();
     }
-    return 1;
+    return $count;
 }
 
 #=============================================================
