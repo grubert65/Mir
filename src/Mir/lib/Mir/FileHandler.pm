@@ -340,6 +340,12 @@ The number of valid items processed
 =head3 DESCRIPTION
 
 Inner loop to analize each item of the tree.
+it calls recursively itself for each sub-tree.
+Ends when 1 of these conditions is met:
+- no more files found
+- max number of valid items reached
+this number is set to be 10 times the max number of valid items.
+
 
 =cut
 
@@ -347,7 +353,7 @@ Inner loop to analize each item of the tree.
 sub _walk_max {
     my ( $self, $root, $count, $max, $code, $rel_path ) = @_;
 
-    $self->log->debug("Scanning $rel_path") if( $rel_path );
+    $self->log->info(sprintf("[%06d]:Scanning %s", $count, $rel_path)) if( $rel_path );
     my $path = ( $rel_path ) ? "$root/$rel_path" : $root;
     $self->_set_path_in_cache( $rel_path );
 
@@ -369,7 +375,6 @@ sub _walk_max {
     }
     closedir $DIR;
     unless ( $file ) {
-    $DB::single=1;
         ( $rel_path ) ?  $self->_set_path_in_cache( join('/', splice(@{[split(m|/|, $rel_path)]},0,-1))) :
                          $self->clear_cache();
     }
