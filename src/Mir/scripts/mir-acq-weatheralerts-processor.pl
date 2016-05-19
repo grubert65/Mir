@@ -29,6 +29,7 @@ use YAML                            qw( Load );
 use JSON                            ;
 use Getopt::Long                    qw( GetOptions );
 use LWP::UserAgent                  ;
+use Encode qw(encode);
 use Data::Dumper                    qw( Dumper );
 
 Log::Log4perl->easy_init( $DEBUG );
@@ -117,6 +118,9 @@ $DB::single=1;
             # set custom HTTP request header fields to send alert content
             $req->header('content-type' => 'application/json');
             $req->header('token' => $message->{token});
+            # Encode description  and status field
+            $item->{description} = encode('UTF-8', $item->{description});
+            $item->{status} = encode('UTF-8', $item->{status});
             my $current_observation = {
                 current_observation => $item
             };
