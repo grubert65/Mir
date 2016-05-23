@@ -1,0 +1,63 @@
+[
+    { 
+        "path" : "./data/ir/hop-133.txt", 
+        "mtime_iso8601" : "2012-10-11T12:43:30", 
+        "abspath" : "./data/ir/hop-133.txt", 
+        "creation_date" : "2016-02-16T20:11:47", 
+        "status" : 0, 
+        "relpath" : "./data/ir/hop-133.txt", 
+        "storage_io_params" : { 
+            "io" : [ 
+                "MongoDB", 
+                { 
+                    "host" : "localhost", 
+                    "key_attr" : "id", 
+                    "database" : "MIR", 
+                    "collection" : "IR_test" 
+                } ] 
+        }, 
+        "atime_iso8601" : "2015-12-04T18:41:45", 
+        "filename" : "hop-133.txt", 
+        "size" : 134144, 
+        "mtime" : 1349959410, 
+        "id" : "3A6t+dpH8iViNPR9m2/+Mg", 
+        "atime" : 1449254505, 
+        "keywords" : [ "hop-133", "iterator" ], 
+        "node" : "mir", 
+        "ctime" : 1452783672, 
+        "__CLASS__" : "Mir::Doc::File-0.01", 
+        "ctime_iso8601" : "2016-01-14T15:01:12", 
+        "suffix" : "doc",
+        "title" : "Higher Order Perl"
+    }, {
+        "path" : "./data/ir/hop-134.txt", 
+        "mtime_iso8601" : "2012-10-11T12:43:30", 
+        "abspath" : "./data/ir/hop-134.txt", 
+        "creation_date" : "2016-02-16T20:11:47", 
+        "status" : 0, 
+        "relpath" : "./data/ir/hop-134.txt", 
+        "storage_io_params" : { 
+            "io" : [ 
+                "MongoDB", 
+                { 
+                    "host" : "localhost", 
+                    "key_attr" : "id", 
+                    "database" : "MIR", 
+                    "collection" : "IR_test" 
+                } ] 
+        }, 
+        "atime_iso8601" : "2015-12-04T18:41:45", 
+        "filename" : "hop-134.txt", 
+        "size" : 134144, 
+        "mtime" : 1349959410, 
+        "id" : "3A6t+dpH8iViNPR9m2/+Mg", 
+        "atime" : 1449254505, 
+        "keywords" : [ "hop-134", "iterative" ], 
+        "node" : "mir", 
+        "ctime" : 1452783672, 
+        "__CLASS__" : "Mir::Doc::File-0.01", 
+        "ctime_iso8601" : "2016-01-14T15:01:12", 
+        "suffix" : "doc",
+        "title" : "Higher Order Perl - Chapter 4 - Iterators"
+    }
+]
