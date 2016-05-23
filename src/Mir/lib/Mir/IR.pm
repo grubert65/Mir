@@ -113,6 +113,12 @@ has 'queue'         => ( is => 'rw', isa => 'Queue::Q::ReliableFIFO::Redis' );
 
 has 'params'     => ( is => 'rw', isa => 'HashRef' );
 has 'sleeping_time' => ( is => 'rw', isa => 'Int', default => sub { return 3600 } );
+has 'e' => ( 
+    is => 'ro', 
+    isa => 'Search::Elasticsearch::Client::2_0::Direct', 
+    lazy => 1, 
+    default => sub { return $e } 
+);
 
 #=============================================================
 
