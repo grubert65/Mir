@@ -28,6 +28,7 @@ use YAML                            qw( Load );
 use Getopt::Long                    qw( GetOptions );
 use Data::Dumper                    qw( Dumper );
 use TryCatch;
+use Mir::Stat ();
 
 my $config;
 
@@ -108,6 +109,11 @@ sub run_fetchers {
             $log->debug ( Dumper ( $item->{params} ) );
             my $o = $class->new( %{$item->{params}} );
             $o->fetch();
+            my $stat = Mir::Stat->new(
+                counter => $campaign.'_fetched',
+                select  => 10,
+            );
+            $stat->incrBy( scalar @{ $o->{docs} } );
         } catch( $err ) {
             $log->error ( $err );
         }
