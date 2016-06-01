@@ -3,7 +3,10 @@
 #
 #         FILE: mir-ir-search.pl
 #
-#        USAGE: ./mir-ir-search.pl <an index> <a match JSON-encoded string...> 
+#        USAGE: ./mir-ir-search.pl 
+#                   --index <an index> 
+#                   --q_str <a match JSON-encoded string...> 
+#                   --q_file <path to a JSON-encoded query file>
 #
 #  DESCRIPTION: 
 #       Performs a query against an index, example:
@@ -26,21 +29,70 @@ use utf8;
 use Search::Elasticsearch;
 use JSON;
 use Data::Printer;
+use Getopt::Long qw( GetOptions );
+use TryCatch;
 
-my ($index, $query_json_str) = @ARGV
-    or die "Usage: $0 <an index> <a match JSON-encoded string>";
+if ( scalar @ARGV < 2 ) {
+    die <<EOT;
 
-my $query = decode_json ( $query_json_str );
+        USAGE: ./mir-ir-search.pl 
+                   --index <an index> 
+                   --q_str <a match JSON-encoded string...> 
+                   --q_file <path to a JSON-encoded query file>
+
+EOT
+}
+
+my ( $index, $q_str, $q_file );
+
+GetOptions (
+    "index=s"   => \$index,
+    "q_str=s"   => \$q_str,
+    "q_file=s"  => \$q_file,
+) or die <<EOT;
+
+        USAGE: ./mir-ir-search.pl 
+                   --index <an index> 
+                   --q_str <a match JSON-encoded string...> 
+                   --q_file <path to a JSON-encoded query file>
+
+EOT
+
 my $e = Search::Elasticsearch->new();
+my $res = "no result";
+my $query;
 
-my $results = $e->search(
-    index => $index,
-    body  => {
-        query => $query,
-    }
-);
+try {
+    if ( $q_str ) {
+        $query = decode_json ( $q_str );
+        $res = $e->search(
+            index => $index,
+            body  => {
+                query => $query,
+            }
+        );
+    } elsif ( $q_file ) {
+        die "File not found or not readable\n" unless ( -f $q_file );
+        {
+            local $/;
+            open my $fh, "<", $q_file;
+            $q_str = <$fh>;
+            close $fh;
+        }
+        $query = decode_json ( $q_str );
+        $res = $e->search(
+            index => $index,
+            body  => {
+                query => $query,
+            }
+        );
+    } 
+} catch ( Search::Elasticsearch $err ) {
+    print "Search error!\n";
+    p $err;
+}
 
-p $results;
+p $res;
 
 
 

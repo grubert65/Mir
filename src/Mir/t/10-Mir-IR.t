@@ -64,6 +64,7 @@ foreach my $item ( @$items ) {
 
 ok( $o->process_new_items(), 'process_new_items');
 
+sleep(1);
 # ok, now look for all docs that have to do with
 # iterators, using the raw ES client
 ok($res = $o->e->search(
@@ -78,6 +79,5 @@ ok($res = $o->e->search(
         }
     ), 'search' );
 is ($res->{hits}->{total}, 2, 'ok, got right number of docs back');
-
 
 done_testing;

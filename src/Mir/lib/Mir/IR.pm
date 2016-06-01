@@ -128,6 +128,8 @@ has 'e' => (
 
 =head3 OUTPUT
 
+1 or die in case of errors.
+
 =head3 DESCRIPTION
 
 Configure the object.
@@ -192,12 +194,31 @@ sub config {
         { mappings => 1 }
     )->[0]->{'mappings'};
 
-    $log->warn("WARNING: NO MAPPINGS SECTION FOUND IN CONFIG")
+    $log->warn("WARNING: No mappings section found in config")
         unless $mappings;
 
-    if ( $mappings && exists $mappings->{docs}->{properties} ) {
-        @mapping_keys = keys %{ $mappings->{docs}->{properties} };
+    if ( $mappings && exists $mappings->{$type}->{properties} ) {
+        @mapping_keys = keys %{ $mappings->{$type}->{properties} };
     }
+
+    #now we check if the index exists, otherwise we create it with the right
+    #mapping...
+    unless ( $e->indices->exists( index => $index ) ) {
+        try {
+            if ( exists $mappings->{$type} ) {
+                $e->indices->create(
+                    index   => $index,
+                    body    => { mappings => { $type => $mappings->{$type} } }
+                ) or die "Error creating index $index for document $type\n";
+            } else {
+                $e->indices->create( index => $index ) or die "Error creating index $index\n";
+            }
+        } catch ( Search::Elasticsearch::Error $err ) {
+            die "Error creating index $index : type $err->{type}\nMsg: $err->{text}\n";
+        }
+    }
+
+    return 1;
 }
 
 #=============================================================

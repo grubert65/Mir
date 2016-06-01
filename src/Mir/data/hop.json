@@ -27,7 +27,7 @@
         "ctime" : 1452783672, 
         "__CLASS__" : "Mir::Doc::File-0.01", 
         "ctime_iso8601" : "2016-01-14T15:01:12", 
-        "suffix" : "doc",
+        "suffix" : "txt",
         "title" : "Higher Order Perl"
     }, {
         "path" : "./data/ir/hop-134.txt", 
@@ -57,7 +57,7 @@
         "ctime" : 1452783672, 
         "__CLASS__" : "Mir::Doc::File-0.01", 
         "ctime_iso8601" : "2016-01-14T15:01:12", 
-        "suffix" : "doc",
+        "suffix" : "txt",
         "title" : "Higher Order Perl - Chapter 4 - Iterators"
     }
 ]

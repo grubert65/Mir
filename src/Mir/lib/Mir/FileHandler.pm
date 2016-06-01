@@ -374,10 +374,12 @@ sub _walk_max {
         }
     }
     closedir $DIR;
+    undef $DIR;
     unless ( $file ) {
         ( $rel_path ) ?  $self->_set_path_in_cache( join('/', splice(@{[split(m|/|, $rel_path)]},0,-1))) :
                          $self->clear_cache();
     }
+    undef $file;
     return $count;
 }
 

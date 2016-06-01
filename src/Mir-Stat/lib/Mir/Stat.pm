@@ -23,7 +23,7 @@ $VERSION='0.01';
     my $foo_counter = Mir::Stat->new( 
         counter => 'foo', 
         value   => 0, # set the initial value of the counter...
-        server  => 'redis.example.com:8080',
+        server  => 'redis.example.com:8080', # defaults to '127.0.0.1:6379' 
         select  => 10 
     );
 

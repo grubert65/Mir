@@ -63,10 +63,7 @@
   },{
     "tag":"elastic",
     "mappings": {
-      "docs": {
-          "_source": {
-              "compress": 1
-          },
+      "doc": {
           "properties": {
               "abspath": {
                   "index": "analyzed",
@@ -113,7 +110,7 @@
                   "store": "yes",
                   "type": "long"
               },
-              "pages": {
+              "text": {
                   "index": "analyzed",
                   "store": "no",
                   "type": "string"
