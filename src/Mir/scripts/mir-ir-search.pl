@@ -58,6 +58,17 @@ GetOptions (
 
 EOT
 
+unless ( ( $index ) && ( $q_str || $q_file ) )  {
+
+    die <<EOT;
+        USAGE: ./mir-ir-search.pl 
+                   --index <an index> 
+                   --q_str <a match JSON-encoded string...> 
+                   --q_file <path to a JSON-encoded query file>
+
+EOT
+}
+
 my $e = Search::Elasticsearch->new();
 my $res = "no result";
 my $query;
