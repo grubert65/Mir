@@ -7,12 +7,12 @@ Mir::Stat - A simple class to keep statistical counters
 
 =head1 VERSION
 
-0.01
+0.02
 
 =cut
 
 use vars qw( $VERSION );
-$VERSION='0.01';
+$VERSION='0.02';
 
 =head1 SYNOPSIS
 
