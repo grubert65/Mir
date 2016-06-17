@@ -189,7 +189,7 @@ Reads the value of the counter
 #=============================================================
 sub get_value {
     my $self = shift;
-    return $self->redis->get( $self->counter );
+    return $self->redis->get( $self->counter ) || 0;
 }
 
 1;
