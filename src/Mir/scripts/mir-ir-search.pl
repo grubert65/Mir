@@ -36,25 +36,31 @@ if ( scalar @ARGV < 2 ) {
     die <<EOT;
 
         USAGE: ./mir-ir-search.pl 
-                   --index <an index> 
-                   --q_str <a match JSON-encoded string...> 
+                   --index  <an index> 
+                   --q_str  <a match JSON-encoded string...> 
                    --q_file <path to a JSON-encoded query file>
+                   [--size   <size, defaults to 5>]
+                   [--from   <from, defaults to 0>]
 
 EOT
 }
 
-my ( $index, $q_str, $q_file );
+my ( $index, $q_str, $q_file, $size, $from ) = ("","","",5,0);
 
 GetOptions (
     "index=s"   => \$index,
     "q_str=s"   => \$q_str,
     "q_file=s"  => \$q_file,
+    "size=i"    => \$size,
+    "from=i"    => \$from
 ) or die <<EOT;
 
         USAGE: ./mir-ir-search.pl 
                    --index <an index> 
                    --q_str <a match JSON-encoded string...> 
                    --q_file <path to a JSON-encoded query file>
+                   [--size   <size defaults to 5>]
+                   [--from   <from defaults to 0>]
 
 EOT
 
@@ -65,6 +71,8 @@ unless ( ( $index ) && ( $q_str || $q_file ) )  {
                    --index <an index> 
                    --q_str <a match JSON-encoded string...> 
                    --q_file <path to a JSON-encoded query file>
+                   [--size   <size defaults to 5>]
+                   [--from   <from defaults to 0>]
 
 EOT
 }
@@ -76,12 +84,6 @@ my $query;
 try {
     if ( $q_str ) {
         $query = decode_json ( $q_str );
-        $res = $e->search(
-            index => $index,
-            body  => {
-                query => $query,
-            }
-        );
     } elsif ( $q_file ) {
         die "File not found or not readable\n" unless ( -f $q_file );
         {
@@ -91,13 +93,15 @@ try {
             close $fh;
         }
         $query = decode_json ( $q_str );
-        $res = $e->search(
-            index => $index,
-            body  => {
-                query => $query,
-            }
-        );
     } 
+    $res = $e->search(
+        size  => $size,
+        from  => $from,
+        index => $index,
+        body  => {
+            query => $query,
+        }
+    );
 } catch ( Search::Elasticsearch $err ) {
     print "Search error!\n";
     p $err;
