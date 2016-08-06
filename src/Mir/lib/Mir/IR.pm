@@ -20,7 +20,8 @@ Mir::IR - frontend for the Elastic Search indexer.
 # 0.10 | 20.04.2016 | Logs added...
 # 0.11 | 22.04.2016 | Lowercase suffix...
 # 0.12 | 04.05.2016 | Properly handling of not valid suffix
-our $VERSION = '0.12';
+# 0.13 | 04.07.2016 | Does not bother is idx queue doesn't exists
+our $VERSION = '0.13';
 
 =head1 SYNOPSIS
 
@@ -158,8 +159,6 @@ sub config {
         }, { params => 1 }
     )->[0]->{params});
 
-    $log->debug("Going to connect to idx queue:");
-    $log->debug( Dumper $self->params->{idx_queue_params} );
     $log->debug("Going to connect to Search Text Engine:");
     $log->debug( Dumper $self->params->{idx_server}->{ir_params} );
 
@@ -167,23 +166,28 @@ sub config {
     $type  = $self->params->{idx_server}->{type};
     $log->info("Going to index docs of type $type into index $index");
 
-    $log->info("Opening queue:");
-    $log->info( Dumper $self->params->{idx_queue_params} );
 
-    $self->queue( Queue::Q::ReliableFIFO::Redis->new( %{ $self->params->{idx_queue_params} } ) )
-        or die "Error getting a Queue::Q::ReliableFIFO::Redis object\n";
+    if ( exists $self->params->{idx_queue_params} ) {
+        $log->debug("Going to connect to idx queue:");
+        $log->debug( Dumper $self->params->{idx_queue_params} );
+        $self->queue( Queue::Q::ReliableFIFO::Redis->new( %{ $self->params->{idx_queue_params} } ) )
+            or die "Error getting a Queue::Q::ReliableFIFO::Redis object\n";
+    } else {
+        $log->info("No queue defined for this campaign...can only work polling docs...");
+    }
 
     $log->debug("Getting a Search::Elasticsearch object with params:");
     $log->debug( Dumper $self->params->{idx_server}->{ir_params} );
     $e = Search::Elasticsearch->new( %{ $self->params->{idx_server}->{ir_params} } );
 
     $log->debug( "Getting a Mir::Stat object for counter $self->{campaign}" );
-    # NOTE : we assume served by the same Redis server as the idx queues...
-    $stat = Mir::Stat->new(
-        server  => $self->params->{idx_queue_params}->{server}.':6379',
-        counter => $self->{campaign}.'_indexed',
-        select  => 10,
-    );
+    # stat section should contains the server and select keys...
+    if ( exists ( $self->params->{idx_server}->{stat} ) ) {
+        $stat = Mir::Stat->new(
+            counter => $self->{campaign}.'_indexed',
+            %{ $self->params->{idx_server}->{stat} }
+        );
+    }
 
     $drivers_lut = $self->params->{idx_server}->{doc_handlers_lut} if ( $self->params->{idx_server}->{doc_handlers_lut} );
     # if no threashold defined we take everything...
@@ -238,7 +242,11 @@ sub process_items_in_queue {
     my $self = shift;
 
     $log->info("Start consuming items...");
-    $self->queue->consume( \&_index_item, "drop" );
+    if ( $self->queue ) {
+        $self->queue->consume( \&_index_item, "drop" );
+    } else {
+        $log->error("Cannot consume items from queue, queue doesn't exists!");
+    }
 }
 
 #=============================================================
@@ -327,7 +335,7 @@ sub _index_item {
 
         if ( $ret->{_id} ) {
             $log->info("Indexed document $item_to_index{id}, IDX id: $ret->{_id}");
-            $stat->incrBy();
+            $stat->incrBy() if ( $stat );
 
             if ( $store ) {
                 $store->update( { '_id' => $item->{_id} }, {'$set' => {
