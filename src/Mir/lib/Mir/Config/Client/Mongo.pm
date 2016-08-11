@@ -152,36 +152,6 @@ sub get_section {
 
 #=============================================================
 
-=head2 get_id
-
-=head3 INPUT
-
-    $section: the section the configuration structure belongs to.
-    $id: the unique configuration structure id
-
-=head3 OUTPUT
-
-An hashref
-
-=head3 DESCRIPTION
-
-Given the passed section, it looks into it for the structure
-pointed to by the id.
-
-=cut
-
-#=============================================================
-sub get_id {
-    my ( $self, $id ) = @_;
-    
-    return undef unless $self->collection;
-    my $obj = $self->collection->find_one({ _id => $id });
-
-    return $obj;
-}
-
-#=============================================================
-
 =head2 get_key
 
 =head3 INPUT
