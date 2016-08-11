@@ -141,28 +141,6 @@ sub get_section {
 
 #=============================================================
 
-=head2 get_id
-
-=head3 INPUT
-
-=head3 OUTPUT
-
-=head3 DESCRIPTION
-
-=cut
-
-#=============================================================
-sub get_id {
-    my ( $self, $id ) = @_;
-    
-#    return undef unless $self->collection;
-#    my $obj = $self->collection->find_one({ _id => $id });
-    #
-#    return $obj;
-}
-
-#=============================================================
-
 =head2 get_key
 
 =head3 INPUT
