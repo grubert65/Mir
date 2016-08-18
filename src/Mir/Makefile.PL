@@ -45,6 +45,7 @@ WriteMakefile(
         'Moose'                 => 0,
         'MooseX::Storage'       => 0,
         'Parallel::ForkManager' => 0,
+        'Proc::ProcessTable'    => 0,
         'Queue::Q'              => 0,
         'Redis'                 => 0,
         'Search::Elasticsearch' => 0,
