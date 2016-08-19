@@ -1,16 +1,8 @@
 DriverRole
 
-The README is used to introduce the module and provide instructions on
-how to install the module, any machine dependencies it may have (for
-example C compilers and installed libraries) and any other information
-that should be provided before the module is installed.
-
-A README file is required for CPAN modules since CPAN extracts the README
-file from a module distribution so that people browsing the archive
-can use it to get an idea of the module's uses. It is usually a good idea
-to provide version information here so that people can decide whether
-fixes for the module are worth downloading.
-
+A role that implements the pattern driver/interface.
+The pattern can be used to choose between different role implementations at
+configuration time.
 
 INSTALLATION
 
@@ -27,20 +19,6 @@ After installing, you can find documentation for this module with the
 perldoc command.
 
     perldoc DriverRole
-
-You can also look for information at:
-
-    RT, CPAN's request tracker (report bugs here)
-        http://rt.cpan.org/NoAuth/Bugs.html?Dist=DriverRole
-
-    AnnoCPAN, Annotated CPAN documentation
-        http://annocpan.org/dist/DriverRole
-
-    CPAN Ratings
-        http://cpanratings.perl.org/d/DriverRole
-
-    Search CPAN
-        http://search.cpan.org/dist/DriverRole/
 
 
 LICENSE AND COPYRIGHT
