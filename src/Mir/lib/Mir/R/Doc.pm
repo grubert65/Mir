@@ -61,7 +61,6 @@ has 'id' => (
 );
 
 has 'title'         => ( is => 'rw', isa => 'Str' );
-#has 'text'          => ( is => 'rw', isa => 'Str' );
 has 'source'        => ( is => 'rw', isa => 'Str' );
 has 'creation_date' => ( 
     is      => 'ro',
@@ -69,18 +68,10 @@ has 'creation_date' => (
     default => sub { DateTime->now->iso8601() },
 );
 
-# TODO : questo e' forse inutile, dal namespace...
-#has 'type'   => ( is => 'rw', isa => 'Str' );
-#has 'status'        => ( 
-#    is      => 'rw',
-#    isa     => 'Int',
-#    default => sub { NEW },
-#);
-
-# documento padre
+# in case of hierarchical doc structure...
+# this again should eventually be handled by a 
+# specific role to add hierarchical behaviour...
 has 'father'    => ( is => 'rw', isa => 'Obj' );
-
-# documenti figli
 has 'children'  => ( is => 'rw', isa => 'ArrayRef[Obj]' );
 
 #=============================================================

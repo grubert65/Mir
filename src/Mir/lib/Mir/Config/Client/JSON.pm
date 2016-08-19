@@ -32,7 +32,8 @@ $VERSION='0.01';
 
 =head1 DESCRIPTION
 
-A class that handles Mir::Config sections on a Mongo data store.
+A class that handles a Mir::Config section stored on a JSON file.
+By default a configuration file can hold the description of a single section.
 
 =head1 AUTHOR
 
@@ -118,9 +119,14 @@ sub connect {
 
 =head3 INPUT
 
+    $section : the section label.
+
 =head3 OUTPUT
 
 =head3 DESCRIPTION
+
+Returns the complete content of the configuration file, as by
+default there is a configuration file for each section.
 
 =cut
 
@@ -128,15 +134,7 @@ sub connect {
 sub get_section {
     my ( $self, $section ) = @_;
 
-#    if ( $section ) {
-#        $self->_set_collection( $self->database->get_collection( $section ) )
-#            or die "Error getting section $section\n";
-#    }
-    #
-#    return undef unless $self->collection;
-#    my $cursor = $self->collection->find();
-#    
-#    return [ $cursor->all ];
+    return $self->config;
 }
 
 #=============================================================
@@ -165,19 +163,19 @@ sub get_key {
     my ( $self, $keys, $attrs ) = @_;
 
     my $out_params = [];
-    foreach my $section ( @{ $self->config } ) {
+    foreach my $module ( @{ $self->config } ) {
         my $found = 0;
         foreach my $key ( keys %$keys ) {
-            if (( exists $section->{ $key } )&& 
-                ( $keys->{$key} eq $section->{ $key } ) )  {
+            if (( exists $module->{ $key } )&& 
+                ( $keys->{$key} eq $module->{ $key } ) )  {
                 $found++;
             }
         }
         if ( $found == scalar keys ( %$keys ) ) {
             my $doc = {};
             foreach my $attr ( keys %$attrs ) {
-                $doc->{ $attr } = $section->{ $attr }  
-                    if ( exists $section->{ $attr } );
+                $doc->{ $attr } = $module->{ $attr }  
+                    if ( exists $module->{ $attr } );
             }
             push @$out_params, $doc;
         }

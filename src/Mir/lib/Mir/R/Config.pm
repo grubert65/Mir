@@ -9,34 +9,34 @@ Mir::R::Config - role for any Mir::Config::Client drivers
 
     use Mir::Config::Client;
 
-    # get a Mir::Config::Client
+    # Get a Mir::Config::Client
     my $client = Mir::Config::Client->create( 
         driver  => 'Foo',
         params  => $connection_params );
 
-    # connect to the Mir::Config
+    # Connect to the Mir::Config data store...
     $client->connect();
 
-    # get a Mir::Config section
+    # Get an entire Mir::Config section...
     my $section = $client->get_section( 'system' );
 
-    # get all configuration docs matching a key/value pairs filter
+    # Get all configuration docs matching a key/value pairs filter
     my $docs = $client->get_key({
-        tag => 'ACQ',
+        tag => 'campaign',
         campaign => 'weather'
     });
 
-    # get only configuration attributes matching a key/value filter
+    # Get only configuration attributes matching a key/value filter
     my $attr = $client->get_key({
-        tag => 'ACQ',
+        tag => 'campaign',
         campaign => 'weather'
     }, { fetchers => 1 });
 
 =head1 DESCRIPTION
 
 Defines the behaviour of any Mir::Config::Client driver.
-A Mir::Config::Client interacts with a Mir::Config data store to handle the
-configuration of a MIR system components.
+A Mir::Config::Client object interacts with a Mir::Config data store 
+to handle the configuration of a MIR system components.
 Each component is labelled by a tag.
 Each component can have a custom list of parameters.
 The component profile can be modelled as a list of key/values where 'tag' is
@@ -77,11 +77,13 @@ with 'DriverRole';
 
 =head3 OUTPUT
 
-    A Mir::Config::Client driver object.
+    A Mir::Config::Client driver object or undef in 
+    case of error.
 
 =head3 DESCRIPTION
 
 Connects to the proper config data store.
+Should throw an error if connection fails.
 
 =cut
 
@@ -108,29 +110,6 @@ Returns the complete content of a configuration section.
 
 #=============================================================
 requires 'get_section';
-
-#=============================================================
-
-=head2 get_id
-
-=head3 INPUT
-
-    $section: the section the configuration structure belongs to.
-    $id: the unique configuration structure id
-
-=head3 OUTPUT
-
-An hashref
-
-=head3 DESCRIPTION
-
-Given the passed section, it looks into it for the structure
-pointed to by the id.
-
-=cut
-
-#=============================================================
-requires 'get_id';
 
 #=============================================================
 

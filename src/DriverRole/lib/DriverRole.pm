@@ -3,7 +3,10 @@ package DriverRole;
 
 =head1 NAME
 
-DriverRole - Ruolo che implementa il pattern Driver/Inteface.
+DriverRole - A role that implements the pattern driver/interface.
+
+The pattern can be used to choose between different role implementations at
+configuration time.
 
 =head1 VERSION
 
@@ -16,17 +19,30 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
+    # we first define our interface.
+    # Consuming the DriverRole role will automatically
+    # enable to easily create a driver calling the 'create' method...
     package Foo;
     use Moose::Role;
     with 'DriverRole';
 
     requires sub_a;
 
+    # We implement a driver that consumes our interface 
+    # and implements its methods...
+    package Foo::Driver;
+    use Moose;
+    with 'Foo';
+    sub sub_a { print "Driver called!\n"};
+
+
+    # In our app we then instantiate a driver
+    # object via the 'create' method provided by the role...
     package Main;
     use Moose;
-    use Foo; # classe base (interface) di cui vogliamo un driver...
+    use Foo; 
 
-    my $foo_driver = Foo->create( driver => $driver );
+    my $foo_driver = Foo->create( driver => 'Driver' );
     $foo_driver->sub_a();
 
 
@@ -72,6 +88,27 @@ sub create {
     ( ref $params ) ? $class->new( $params ) : $class->new();
 }
 
+#=============================================================
+
+=head2 _get_driver
+
+=head3 INPUT
+
+    $driver_type   : driver interface classname
+    $driver_source : specific driver name
+
+=head3 OUTPUT
+
+A string or die in case of errors.
+
+=head3 DESCRIPTION
+
+Checks that the driver classname module exists and returns it
+or dies in case of errors.
+
+=cut
+
+#=============================================================
 sub _get_driver {
     my $driver_type   = shift;
     my $driver_source = shift;

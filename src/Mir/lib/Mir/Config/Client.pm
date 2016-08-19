@@ -12,7 +12,7 @@ with 'DriverRole';
 
 =head1 NAME
 
-Mir::Config::Client - A client to interact with the Mir::Config server.
+Mir::Config::Client - A client to interact with the Mir Config data store...
 
 =head1 VERSION
 
@@ -68,8 +68,6 @@ our $VERSION = '0.01';
         } );
     $o->connect();
     my $fetchers = $o->get_key({tag=>'ACQ'},{fetchers=>1});
-
-
 
 
 
