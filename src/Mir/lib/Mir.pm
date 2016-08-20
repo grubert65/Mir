@@ -135,24 +135,4 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =cut
 
-no warnings 'experimental::smartmatch';
-use v5.10.1;
-use Proc::ProcessTable;
-require Exporter;
-use base 'Exporter';
-use vars qw( @EXPORT_OK );
-@EXPORT_OK = qw( check_process );
-
-sub check_process {
-    my $pname = shift or return undef;
-    my $p = new Proc::ProcessTable(); 
-    my $t = $p->table;
-    my @pnames = map { $_->fname } @$t;
-    if ( $pname ~~ @pnames ) {
-        return 1;
-    }
-    return undef;
-}
-
-
 1; # End of Mir

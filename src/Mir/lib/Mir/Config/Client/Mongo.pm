@@ -57,7 +57,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 #========================================================================
 use Moose;
-use Mir qw( check_process );
+use Mir;
 use MongoDB;
 use MongoDB::OID;
 
@@ -102,8 +102,6 @@ Connects to the proper config data store.
 #=============================================================
 sub connect {
     my  $self = shift;
-
-    return undef unless check_process( 'mongod' );
 
     my $client     = MongoDB::MongoClient->new(
         host => $self->host,
