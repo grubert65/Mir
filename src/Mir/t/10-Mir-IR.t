@@ -20,6 +20,7 @@ diag( "Testing Mir::IR $Mir::IR::VERSION, Perl $], $^X" );
 my $res = `curl "http://localhost:9200"`;
 unless ( $res ) {
     diag "It seems that no Elastic server is listening at 0.0.0.0:9200, exiting...\n";
+    done_testing();
     exit;
 }
 

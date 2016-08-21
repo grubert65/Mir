@@ -11,6 +11,7 @@ WriteMakefile(
     LICENSE          => 'artistic_2',
     PL_FILES         => {},
     EXE_FILES        => [
+        'scripts/mir-acq-fetcher.pl',
         'scripts/mir-acq-scheduler.pl',
         'scripts/mir-acq-processor.pl',
         'scripts/mir-store-update.pl',
