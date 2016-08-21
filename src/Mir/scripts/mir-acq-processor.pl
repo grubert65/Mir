@@ -5,7 +5,8 @@
 #
 #        USAGE: ./mir-acq-processor.pl  --campaign <campaign>
 #
-#  DESCRIPTION: gets the next fetcher for the campaign and executes it in an endless loop. 
+#  DESCRIPTION: Gets the next chunk of fetchers for the campaign and executes them 
+#               in an endless loop. 
 #
 #      OPTIONS: ---
 # REQUIREMENTS: ---
