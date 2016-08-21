@@ -41,8 +41,8 @@ my $doc = Mir::Util::DocHandler->create( driver => $driver )
     or die "Error getting an obj for driver $driver";
 
 $doc->open_doc( $file );
-print "Tesseract version:";
-`tesseract -v`;
+# print "Tesseract version:";
+# `tesseract -v`;
 print "\nPages: ".$doc->pages(). "\n";
 if ( $page_num ) {
     die "Page is not a digit!" unless ( $page_num =~ /(\d+)/ );
