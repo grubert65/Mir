@@ -17,12 +17,12 @@ remove_tree( './data/pages' ) if (-d './data/pages');
 remove_tree( './data/images') if (-d './data/images');
 
 ok (my $doc = Mir::Util::DocHandler->create(driver => 'pdf3'), "new"); 
-ok ($doc->open_doc("./data/Piano attività.pdf"), "open_doc");
+ok ($doc->open_doc("./data/plan.pdf"), "open_doc");
 is ($doc->pages(), 1, "pages");
 ok (my ($text,$conf)=$doc->page_text(1), 'page_text');
 
 ok (my $doc2 = Mir::Util::DocHandler->create(driver => 'pdf3'), "new"); 
-ok ($doc2->open_doc("./data/Piano attività.pdf"), "open_doc");
+ok ($doc2->open_doc("./data/plan.pdf"), "open_doc");
 is ( ($doc2->page_text(1))[0], $text, "got same text...");
 
 # now tries to extract text from all pages...

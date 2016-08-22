@@ -17,7 +17,7 @@ remove_tree( './data/temp/pages' ) if (-d './data/pages');
 remove_tree( './data/temp/images') if (-d './data/images');
 
 ok (my $doc = Mir::Util::DocHandler->create(driver => 'pdf2'), "new"); 
-ok ($doc->open_doc("./data/Piano attività.pdf"), "open_doc");
+ok ($doc->open_doc("./data/plan.pdf"), "open_doc");
 is ($doc->pages(), 1, "pages");
 ok (my $pdf_file = $doc->extractPage( 1 ), "extractPage");
 ok (-e $pdf_file, "page file exists");

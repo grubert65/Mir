@@ -11,7 +11,7 @@ BEGIN {
 }
 
 ok( my $o = Mir::Util::DocHandler->create( driver => 'image' ), 'create' );
-ok( $o->open_doc('data/Udine.tiff'), 'open_doc' );
+ok( $o->open_doc('data/perl.org.png'), 'open_doc' );
 ok( my ( $text, $confidence ) = $o->page_text(), 'page_text' );
 
 done_testing;

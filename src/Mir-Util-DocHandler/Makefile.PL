@@ -21,6 +21,7 @@ WriteMakefile(
         'Test::More' => 0,
     },
     PREREQ_PM => {
+        'Data::UUID'            => 0,
         'DirHandle'             => 0,
         'DriverRole'            => 0,
         'Time::HiRes'           => 0,
@@ -31,6 +32,7 @@ WriteMakefile(
         'File::Remove'          => 0,
         'Encode'                => 0,
         'LEOCHARRE::HTML::Text' => 0,
+        'Log::Log4perl'         => 0,
         'PDF::API2'             => 0,
         'CAM::PDF'              => 0,
         'Image::OCR::Tesseract' => 0,

@@ -10,20 +10,14 @@ BEGIN {
 
 diag( "Testing Mir::Util::DocHandler::pdf $Mir::Util::DocHandler::pdf::VERSION, Perl $], $^X" );
 
-ok (my $doc = Mir::Util::DocHandler::pdf->new(
-        TEMP_DIR => './data'
-        ),                                          "new");
+ok (my $doc = Mir::Util::DocHandler::pdf->new(TEMP_DIR => './data'), "new");
 # Open with PDF:API2
-ok ($doc->open_doc("./data/FVG.pdf"),                                                                     "open_doc 1");
-is ($doc->pages(), 292,                                                                                   "pages 1");
-ok ($doc->page_text(71, "./data"),                                                                        "page_text 1");
-# Open with CAM::PDF
-ok ($doc->open_doc("./data/Trentino.pdf"),                                                                 "open_doc 2");
-ok ($doc->pages(),                                                                                         "pages 2");
-ok ($doc->page_text(58, "./data"),                                                                         "page_text 2");
-# Open with pdfinfo
-ok ($doc->open_doc("./data/RegioneAbruzzo.pdf"),                                                           "open_doc 3");
-ok ($doc->pages(),                                                                                         "pages 3");
-ok ($doc->page_text(105, "./data"),                                                                        "page_text 3");
+ok ($doc->open_doc("./data/Jaae-is2007.pdf"), "open_doc");
+is ($doc->pages(), 4, "pages");
+ok (my ($t, $c) = $doc->page_text(1, "./data"), "page_text");
+note "Page 1 text:";
+note $t;
+note "Confidence:";
+note $c;
 
 done_testing;

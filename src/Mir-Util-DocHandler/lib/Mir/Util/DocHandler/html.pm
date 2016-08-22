@@ -174,7 +174,7 @@ sub page_text
     close DOC;
     
     if ($html =~ /charset\s*=\s*(.+)\"/) {
-        my $converted;
+        my $converted = 0;
         if ($1 !~ /utf/i) {    
             $converted = from_to($text, $1, 'utf8'); 
         }
