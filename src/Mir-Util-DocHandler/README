@@ -1,6 +1,9 @@
 Mir-Util-DocHandler
 
-A class to extract text from a range of document types.
+A class to handle a range of document types. Main features:
+- text extraction
+- cross-format encoding
+
 
 INSTALLATION
 
