@@ -17,7 +17,18 @@ our $VERSION = '0.11';
 
     use Mir::Util::DocHandler;
 
+    # get a driver for the proper doc type...
     my $dh = Mir::Util::DocHandler->create( driver => 'txt' );
+
+    # open the doc...
+    $dh->open_doc("./lib/Mir/Util/DocHandler.pm");
+
+    # get the number of document pages...
+    # (for some driver - as txt, image - this is meaningless...)
+    my $pages = $dh->pages();
+
+    # get page text and confidence...
+    my ($text,$conf) = $dh->page_text(1);
 
 =head1 DESCRIPTION
 
