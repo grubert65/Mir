@@ -171,6 +171,59 @@ sub DownloadLink
 
 #=============================================================
 
+=head1 GetLinks
+
+=head2 INPUT
+    $link_type:       link type
+    $pattern:         link search pattern
+    $from_root:       start from root node if 1, from selected
+                      node otherwise
+
+=head2 OUTPUT
+    $links:           reference to an array of links
+
+=head2 DESCRIPTION
+
+    Gets links from specified node and its children
+
+=cut
+
+#=============================================================
+sub GetLinks
+{
+    my ($self, $link_type, $pattern, $from_root) = @_;
+
+    my $links = [];
+    $pattern = '.*' if (not defined $pattern);
+
+    my $start_node = undef;
+    if (defined $from_root && $from_root == 1) {
+        $start_node = [$self->{ ROOT_NODE }];
+        if (not defined $start_node) {
+            $self->log->info("ERROR No node is currently selected") if (defined $self->log);
+            return undef;
+        }
+    } else {
+        $start_node = $self->{ CURRENT_NODE };
+        if (not defined $start_node) {
+            $self->log->info("ERROR No node is currently selected") if (defined $self->log);
+            return undef;
+        }
+    }
+
+    # Look for links
+    foreach my $node (@$start_node) {
+        for (@{ $node->extract_links($link_type) }) {
+            my ($link, $element, $attr, $tag) = @$_;
+            push @$links, $link if ($link =~ /$pattern/g);
+        }
+    }
+    
+    return $links;
+}
+
+#=============================================================
+
 =head1 GotoPage
 
 =head2 INPUT
