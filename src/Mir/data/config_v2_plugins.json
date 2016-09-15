@@ -30,6 +30,9 @@
       "idx_server":{
           "index":"ir-test",
           "type":"doc",
+          "plugins":{
+            "after_text_extraction":"IR::GetTerms"
+          },
           "ir_params": {
             "nodes": "localhost:9200"
           },

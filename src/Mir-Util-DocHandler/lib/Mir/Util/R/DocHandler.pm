@@ -17,13 +17,14 @@ $VERSION='0.01';
 
 =head1 SYNOPSIS
 
+Refer to the L<Mir::Doc::Handler> class documentation.
 
 =head1 DESCRIPTION
 
 
 =head1 AUTHOR
 
-Andrea Poggi (andrea.poggi @ softeco.it )
+Marco Masetti (marco.masetti @ softeco.it )
 
 =head1 LICENCE AND COPYRIGHT
 

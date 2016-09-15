@@ -1,0 +1,21 @@
+{
+    "root_dir":".",
+    "suffixes":["pm", "pl"],
+    "browse_func": "dir_walk",
+    "max_valid": 10,
+    "cache_params":{
+        "server":"127.0.0.1:6379",
+        "db":2
+    },
+    "storage_io_params":{
+        "io": [ 
+            "MongoDB",
+            {
+                "key_attr": "id",
+                "host":     "localhost",
+                "database": "MIR",
+                "collection":"fetcher_test"
+            }
+        ]
+    }
+}
