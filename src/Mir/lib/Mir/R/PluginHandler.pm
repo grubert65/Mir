@@ -27,7 +27,7 @@ our $VERSION = '0.01';
 
     #call all plugins registered for a hook...
     $self->call_registered_plugins(
-        hook    => 'hook1',
+        hook            => 'hook1',
         input_params    => $input,
         output_params   => $$out
     );

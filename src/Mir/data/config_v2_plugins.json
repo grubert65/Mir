@@ -31,7 +31,13 @@
           "index":"ir-test",
           "type":"doc",
           "plugins":{
-            "after_text_extraction":"IR::GetTerms"
+            "after_text_extraction":{
+              "IR::ComputeTermsFrequency":{
+                "terms":[
+                  "license",
+                  "patent"
+                ]
+              }
           },
           "ir_params": {
             "nodes": "localhost:9200"

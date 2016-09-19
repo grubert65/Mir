@@ -86,6 +86,8 @@ use Mir::Stat ();
 use Mir::Store ();
 use Encode;
 
+with 'Mir::R::PluginHandler';
+
 use vars qw( 
     $log 
     $stat
@@ -159,13 +161,19 @@ sub config {
         }, { params => 1 }
     )->[0]->{params});
 
+    # Register any plugins configured to be executed 
+    # at giveln locations
+    $DB::single=1;
+    if ( exists $self->params->{idx_server}->{plugins} ) {
+        $self->register_plugins( $self->params->{idx_server}->{plugins} );
+    }
+
     $log->debug("Going to connect to Search Text Engine:");
     $log->debug( Dumper $self->params->{idx_server}->{ir_params} );
 
     $index = $self->params->{idx_server}->{index};
     $type  = $self->params->{idx_server}->{type};
     $log->info("Going to index docs of type $type into index $index");
-
 
     if ( exists $self->params->{idx_queue_params} ) {
         $log->debug("Going to connect to idx queue:");
@@ -322,6 +330,20 @@ sub _index_item {
     }
 
     try {
+        # run all plugins registered for the after_text_extraction hook
+        # the input params will be addd to the list of parameters
+        # already configured for each plugin...
+        # all these plugins should change the item that is going to
+        # be indexed...
+        my $out = {};
+        $self->call_registered_plugins( 
+            hook            => 'after_text_extraction',
+            output_params   => \%item_to_index,
+            input_params    => {
+                doc => $item_to_index
+            }
+        );
+
         # index item in the proper index...
         $log->info("Indexing document: $item_to_index{id}");
         $log->debug( Dumper \%item_to_index );
