@@ -1,0 +1,3 @@
+[
+{ "path" : "./lib/Mir/Plugin/IR/ComputeTermsFrequency.pm", "mtime_iso8601" : "2012-10-11T12:43:30", "abspath" : "./lib/Mir/Plugin/IR/ComputeTermsFrequency.pm", "creation_date" : "2016-02-16T20:11:47", "status" : 0, "relpath" : "./lib/Mir/Plugin/IR/ComputeTermsFrequency.pm", "storage_io_params" : { "io" : [ "MongoDB", { "host" : "localhost", "key_attr" : "id", "database" : "MIR", "collection" : "IR_test" } ] }, "atime_iso8601" : "2015-12-04T18:41:45", "filename" : "ComputeTermsFrequency.pm", "size" : 134144, "mtime" : 1349959410, "id" : "3A6t+dpH8iViNPR9m2/+Mg", "atime" : 1449254505, "keywords" : [ "ComputeTermsFrequency.pm" ], "node" : "mir", "ctime" : 1452783672, "__CLASS__" : "Mir::Doc::File-0.01", "ctime_iso8601" : "2016-01-14T15:01:12", "suffix" : "pm" }
+]
