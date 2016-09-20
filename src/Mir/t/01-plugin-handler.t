@@ -9,7 +9,10 @@ BEGIN {
 
 ok( my $o = Foo->new(), 'new' );
 ok($o->register_plugins({
-            'hook' => ['Foo', 'Bar']
+            'hook' => {
+                Foo => { a1 => 'v1' },
+                Bar => { a2 => 'v2' }
+            }
         }), 'register_plugins' );
 
 my $foo = {};

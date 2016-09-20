@@ -123,6 +123,13 @@ use Moose;
 with 'Mir::R::Plugin';
 
 use Lingua::Stem::Snowball;
+use Log::Log4perl;
+
+has 'log' => (
+    is  => 'rw',
+    isa => 'Log::Log4perl::Logger',
+    default => sub { Log::Log4perl::get_logger( __PACKAGE__ ); }
+);
 
 #=============================================================
 
@@ -246,6 +253,7 @@ sub compute_term_frequency {
             my @text_string = ();
             for( my $j = 0; $j<scalar( @query_tokens );$j++) {
                 if ( $text_tokens[$i+$j] eq $query_tokens[$j] ) {
+                    $self->log->debug("Token \"$text_tokens_orig[$i+$j]\" found");
                     push @text_string, $text_tokens_orig[$i+$j];
                 }
             }

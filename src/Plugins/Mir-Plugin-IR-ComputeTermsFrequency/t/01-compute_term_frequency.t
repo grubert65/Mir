@@ -1,7 +1,8 @@
 use strict;
 use warnings;
-
 use Test::More;
+use Log::Log4perl qw(:easy);
+Log::Log4perl::easy_init($DEBUG);
 
 BEGIN {
     use_ok('Mir::Plugin::IR::ComputeTermsFrequency');

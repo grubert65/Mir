@@ -96,6 +96,9 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 use Moose::Role;
 
 
+#===============================================================================
+# Each plugin must implement a method 'run'
+#===============================================================================
 requires 'run';
 
 1; 

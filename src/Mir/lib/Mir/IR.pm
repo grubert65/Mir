@@ -21,7 +21,8 @@ Mir::IR - frontend for the Elastic Search indexer.
 # 0.11 | 22.04.2016 | Lowercase suffix...
 # 0.12 | 04.05.2016 | Properly handling of not valid suffix
 # 0.13 | 04.07.2016 | Does not bother is idx queue doesn't exists
-our $VERSION = '0.13';
+# 0.14 | 22.09.2016 | Now handlogic can be extended via plugins
+our $VERSION = '0.14';
 
 =head1 SYNOPSIS
 
@@ -71,6 +72,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #========================================================================
 use v5.10;
 use Moose;
+with 'Mir::R::PluginHandler';
+
 use Search::Elasticsearch;
 use namespace::clean;
 use Log::Log4perl;
@@ -86,7 +89,6 @@ use Mir::Stat ();
 use Mir::Store ();
 use Encode;
 
-with 'Mir::R::PluginHandler';
 
 use vars qw( 
     $log 
@@ -163,10 +165,10 @@ sub config {
 
     # Register any plugins configured to be executed 
     # at giveln locations
-    $DB::single=1;
-    if ( exists $self->params->{idx_server}->{plugins} ) {
-        $self->register_plugins( $self->params->{idx_server}->{plugins} );
-    }
+#      $DB::single=1;
+     if ( exists $self->params->{idx_server}->{plugins} ) {
+         $self->register_plugins( $self->params->{idx_server}->{plugins} );
+     }
 
     $log->debug("Going to connect to Search Text Engine:");
     $log->debug( Dumper $self->params->{idx_server}->{ir_params} );
@@ -279,7 +281,7 @@ index, for the type and with the mapping configured.
 
 #=============================================================
 sub _index_item {
-    my $item = (ref $_[0] eq 'HASH') ? $_[0] : $_[1];
+    my ( $self, $item ) = (ref $_[0] eq 'HASH') ? (undef, $_[0] ) : @_;
 
     unless ( $item ) {
         $log->error( "No item found!" );
@@ -329,20 +331,22 @@ sub _index_item {
         $new_status = Mir::Doc::CONF_TOO_LOW;
     }
 
-    try {
+     try {
+
         # run all plugins registered for the after_text_extraction hook
-        # the input params will be addd to the list of parameters
+        # the input params will be added to the list of parameters
         # already configured for each plugin...
         # all these plugins should change the item that is going to
         # be indexed...
         my $out = {};
-        $self->call_registered_plugins( 
+        $self->call_registered_plugins( {
             hook            => 'after_text_extraction',
             output_params   => \%item_to_index,
             input_params    => {
-                doc => $item_to_index
+                doc => \%item_to_index
             }
-        );
+        } ) if ( defined $self );  #we can call class registered plugins only if we are
+                                   # an object...
 
         # index item in the proper index...
         $log->info("Indexing document: $item_to_index{id}");
@@ -379,8 +383,8 @@ sub _index_item {
                 }
             ) if ( $store );
         }
-    } catch ( $err ) {
-        $log->error("Error indexing document $item->{id}: $err");
+     } catch ( $err ) {
+         $log->error("Error indexing document $item->{id}: $err");
         $store->update( { '_id' => $item->{_id} }, {'$set' => {
                 status          => Mir::Doc::IDX_FAILED,
                 }

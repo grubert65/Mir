@@ -170,10 +170,14 @@ sub call_registered_plugins {
 
     my $p = $self->plugins->{ $params->{hook} };
 
+    $DB::single=1;
     try {
-        foreach my $driver ( @$p ) {
+        while ( my ($driver, $config_params) = each ( %$p ) ) {
             my $plugin = Mir::Plugin->create( driver => $driver );
-            my $out = $plugin->run( $params->{input_params} );
+            my $out = $plugin->run( {
+                    %{ $params->{input_params} },
+                    %$config_params,
+                } );
             if ( ref $out eq 'HASH' ) {
                 while ( my ( $k, $v ) = each( %$out ) ) {
                     $params->{output_params}->{$k} = {$v};
