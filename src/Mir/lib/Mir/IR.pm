@@ -311,6 +311,7 @@ sub _index_item {
     my $new_status = Mir::Doc::INDEXED; # think positive...
     @item_to_index{@mapping_keys} = @$item{@mapping_keys};
 
+    $DB::single=1;
     if ( get_text( \%item_to_index ) == Mir::Doc::INVALID_SUFFIX ) {
         $log->error("Suffix $item->{suffix} NOT VALID");
         $new_status = Mir::Doc::INVALID_SUFFIX;
@@ -352,6 +353,7 @@ sub _index_item {
         $log->info("Indexing document: $item_to_index{id}");
         $log->debug( Dumper \%item_to_index );
 
+        $DB::single=1;
         $ret = $e->index( 
             index   => $index,
             id      => $item->{idx_id}, # in case this item has been already indexed...

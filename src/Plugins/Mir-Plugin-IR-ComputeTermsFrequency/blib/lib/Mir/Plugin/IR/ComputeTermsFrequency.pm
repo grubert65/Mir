@@ -152,9 +152,9 @@ An HashRef with the new document profile. The new document profile
 should contain this new attribute:
 
     terms => [{
-        term  => t1,
-        count => x,
-        pages => [ 1, 2, 3,..]
+        term  => t1,            # the original term found
+        count => x,             # how many times...
+        pages => [ 1, 2, 3,..]  # in which pages...
     }],
 
 
@@ -179,22 +179,23 @@ sub run {
     $params->{doc}->{terms} = [];
     foreach my $term ( @{ $params->{terms} } ) {
         my $page_num=1;
-        my @pages;
+        my @pages = ();
         my $count = 0;
         foreach my $text ( @{ $params->{doc}->{text} } ) {
             my $r = $self->compute_term_frequency(
                 $text, $term, $lang, $params->{exact_match}
             );
-
-            push @pages, $page_num;
+            if ( scalar @$r ) {
+                push @pages, $page_num;
+                $count += scalar @$r;
+            }
             $page_num++;
-            $count += scalar @$r;
         }
         push @{ $params->{doc}->{terms} }, {
             term    => $term,
             count   => $count,
             pages   => \@pages
-        };
+        } if ( $count );
     }
     return $params->{doc};
 }

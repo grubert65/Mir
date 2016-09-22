@@ -161,26 +161,26 @@ It takes an hashref with keys:
 
 #=============================================================
 sub call_registered_plugins {
-    my ( $self, $params ) = @_;
-    return undef unless ( $params->{hook} );
+    my $self = shift;
+    return undef unless ( $_[0]->{hook} );
+    return undef unless ( $self->plugins );
 
-    $self->log->debug("Calling all plugins registered for hook: $params->{hook}");
+    $self->log->debug("Calling all plugins registered for hook: $_[0]->{hook}");
     $self->log->debug("Input Params:");
-    $self->log->debug( Dumper( $params->{input_params} ) );
+    $self->log->debug( Dumper( $_[0]->{input_params} ) );
 
-    my $p = $self->plugins->{ $params->{hook} };
+    my $p = $self->plugins->{ $_[0]->{hook} };
 
-    $DB::single=1;
     try {
         while ( my ($driver, $config_params) = each ( %$p ) ) {
             my $plugin = Mir::Plugin->create( driver => $driver );
             my $out = $plugin->run( {
-                    %{ $params->{input_params} },
+                    %{ $_[0]->{input_params} },
                     %$config_params,
                 } );
             if ( ref $out eq 'HASH' ) {
                 while ( my ( $k, $v ) = each( %$out ) ) {
-                    $params->{output_params}->{$k} = {$v};
+                    $_[0]->{output_params}->{$k} = $v;
                 }
             }
         }
