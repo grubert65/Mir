@@ -30,7 +30,7 @@ use Mir::IR         ();
 
 my $campaign;
 my $config_driver = 'Mongo';
-my $config_params = { section => 'system' };
+my $config_params = { section => 'system', dbname => 'MIR' };
 my $config_params_json;
 my $log_config_params;
 my $polling_period;

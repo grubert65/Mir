@@ -165,7 +165,6 @@ sub config {
 
     # Register any plugins configured to be executed 
     # at giveln locations
-#      $DB::single=1;
      if ( exists $self->params->{idx_server}->{plugins} ) {
          $self->register_plugins( $self->params->{idx_server}->{plugins} );
      }
@@ -311,29 +310,27 @@ sub _index_item {
     my $new_status = Mir::Doc::INDEXED; # think positive...
     @item_to_index{@mapping_keys} = @$item{@mapping_keys};
 
-    $DB::single=1;
-    if ( get_text( \%item_to_index ) == Mir::Doc::INVALID_SUFFIX ) {
-        $log->error("Suffix $item->{suffix} NOT VALID");
-        $new_status = Mir::Doc::INVALID_SUFFIX;
-    }
+    try {
+        $self->call_registered_plugins( {
+            hook            => 'before_text_extraction',
+            output_params   => \%item_to_index,
+            input_params    => {
+                doc => \%item_to_index
+            }
+        } ) if ( defined $self );  #we can call class registered plugins only if we are
+    
+        if ( get_text( \%item_to_index ) == Mir::Doc::INVALID_SUFFIX ) {
+            $log->error("Suffix $item->{suffix} NOT VALID");
+            $new_status = Mir::Doc::INVALID_SUFFIX;
+        }
 
-    # if no text is found we index as well but mark indexed document as NO_TEXT
-    # actually any invalid suffix gets this...
-#    unless ( scalar @{$item_to_index{text}} ) {
-#        $log->error("Doc. $item->{path}");
-#        $log->error("No text found, indexing metadata...");
-#        $new_status = Mir::Doc::NO_TEXT;
-#    }
-
-    if ( scalar @{$item_to_index{text}} && 
-        ( $item_to_index{mean_confidence} < $confidence_threashold ) ) {
-        $log->error("Doc. $item->{path}");
-        $log->error("Mean confidence under threashold, indexing metadata...");
-        $new_status = Mir::Doc::CONF_TOO_LOW;
-    }
-
-     try {
-
+        if ( scalar @{$item_to_index{text}} && 
+            ( $item_to_index{mean_confidence} < $confidence_threashold ) ) {
+            $log->error("Doc. $item->{path}");
+            $log->error("Mean confidence under threashold, indexing metadata...");
+            $new_status = Mir::Doc::CONF_TOO_LOW;
+        }
+    
         # run all plugins registered for the after_text_extraction hook
         # the input params will be added to the list of parameters
         # already configured for each plugin...
@@ -353,7 +350,6 @@ sub _index_item {
         $log->info("Indexing document: $item_to_index{id}");
         $log->debug( Dumper \%item_to_index );
 
-        $DB::single=1;
         $ret = $e->index( 
             index   => $index,
             id      => $item->{idx_id}, # in case this item has been already indexed...
@@ -386,13 +382,14 @@ sub _index_item {
             ) if ( $store );
         }
      } catch ( $err ) {
-         $log->error("Error indexing document $item->{id}: $err");
+        $log->error("Error indexing document $item->{id}: $err");
         $store->update( { '_id' => $item->{_id} }, {'$set' => {
                 status          => Mir::Doc::IDX_FAILED,
                 }
             }
         ) if ( $store );
     };
+
     return ( $ret );
 }
 

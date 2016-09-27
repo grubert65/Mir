@@ -6,11 +6,14 @@ Mir - Media Indexer and Retriever
 
 =head1 VERSION
 
-Version 0.16
+Version 0.18
 
 =cut
 
-our $VERSION = '0.17';
+#History:
+# 0.18 | 23.09.2016 | Now supports plugins
+# 0.19 | 27.09.2016 | Plugins support extended
+our $VERSION = '0.19';
 
 
 =head1 SYNOPSIS

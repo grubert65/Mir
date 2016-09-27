@@ -2,7 +2,7 @@ package Mir::Plugin::IR::ComputeTermsFrequency;
 
 =head1 NAME
 
-Mir::Plugin::IR::ComputeTermsFrequency - The great new Mir::Plugin::IR::ComputeTermsFrequency!
+Mir::Plugin::IR::ComputeTermsFrequency - A plugin to compute terms frequency in a document text
 
 =head1 VERSION
 
@@ -36,8 +36,6 @@ Perhaps a little code snippet.
 
 A list of functions that can be exported.  You can delete this section
 if you don't export anything, such as for a purely object-oriented module.
-
-=head1 SUBROUTINES/METHODS
 
 =head1 AUTHOR
 
@@ -115,7 +113,6 @@ YOUR LOCAL LAW. UNLESS REQUIRED BY LAW, NO COPYRIGHT HOLDER OR
 CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, OR
 CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF THE USE OF THE PACKAGE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 
 =cut
 
