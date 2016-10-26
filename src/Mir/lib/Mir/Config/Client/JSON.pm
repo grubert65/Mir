@@ -61,11 +61,9 @@ use Log::Log4perl;
 use TryCatch;
 with 'Mir::R::Config';
 
-has 'path' => ( is => 'rw', isa => 'Str' );
-
+has 'path'   => ( is => 'rw', isa => 'Str' );
 has 'config' => ( is => 'rw', isa => 'ArrayRef' );
-
-has 'log' => (
+has 'log'    => (
     is => 'ro',
     isa => 'Log::Log4perl::Logger',
     default => sub {
@@ -184,4 +182,4 @@ sub get_key {
     return $out_params;
 }
 
-1; # End of Mir::Config::Client::Mongo
+1;
