@@ -21,7 +21,7 @@ Mir::IR - frontend for the Elastic Search indexer.
 # 0.11 | 22.04.2016 | Lowercase suffix...
 # 0.12 | 04.05.2016 | Properly handling of not valid suffix
 # 0.13 | 04.07.2016 | Does not bother is idx queue doesn't exists
-# 0.14 | 22.09.2016 | Now handlogic can be extended via plugins
+# 0.14 | 22.09.2016 | Now logic can be extended via plugins
 our $VERSION = '0.14';
 
 =head1 SYNOPSIS
@@ -89,7 +89,6 @@ use Mir::Stat ();
 use Mir::Store ();
 use Encode;
 
-
 use vars qw( 
     $log 
     $stat
@@ -99,14 +98,11 @@ use vars qw(
     $type
     @mapping_keys
     $e
+    $plugins
 );
 
 $log = Log::Log4perl->get_logger( __PACKAGE__ );
-{
-    local $/;
-    my $data=<DATA>;
-    $drivers_lut = decode_json $data;
-}
+$drivers_lut = {};
 
 has 'campaign'      => ( is => 'rw', isa => 'Str', required => 1 );
 
@@ -115,8 +111,7 @@ has 'config_driver' => ( is => 'rw', isa => 'Str', default => sub { return 'Mong
 has 'config_params' => ( is => 'rw', isa => 'HashRef' );
 has 'config_params_json' => ( is => 'rw', isa => 'Str' );
 has 'queue'         => ( is => 'rw', isa => 'Queue::Q::ReliableFIFO::Redis' );
-
-has 'params'     => ( is => 'rw', isa => 'HashRef' );
+has 'params'        => ( is => 'rw', isa => 'HashRef' );
 has 'sleeping_time' => ( is => 'rw', isa => 'Int', default => sub { return 3600 } );
 has 'e' => ( 
     is => 'ro', 
@@ -166,7 +161,12 @@ sub config {
     # Register any plugins configured to be executed 
     # at giveln locations
      if ( exists $self->params->{idx_server}->{plugins} ) {
+         $self->log->debug( "Registering plugins:");
+         $self->log->debug( Dumper $self->params->{idx_server}->{plugins} );
          $self->register_plugins( $self->params->{idx_server}->{plugins} );
+         $plugins = $self->params->{idx_server}->{plugins}; 
+     }  else {
+         $plugins = {};
      }
 
     $log->debug("Going to connect to Search Text Engine:");
@@ -343,7 +343,7 @@ sub _index_item {
             input_params    => {
                 doc => \%item_to_index
             }
-        } ) if ( defined $self );  #we can call class registered plugins only if we are
+        } ) if ( defined $self );  # we can call class registered plugins only if we are
                                    # an object...
 
         # index item in the proper index...
@@ -423,11 +423,14 @@ sub get_text {
     try {
         my $dh;
         my $mean_confidence=0;
-        if ( $doc->{suffix} && ( $dh = Mir::Util::DocHandler->create( driver => get_driver ( lc $doc->{suffix} ) ) ) ) {
+        if ( $doc->{suffix} && ( $dh = Mir::Util::DocHandler->create( 
+                    driver => get_driver ( lc $doc->{suffix} ),
+                    params => { plugins => $plugins }
+                ) ) ) {
             $log->info("Opening doc $doc->{path}...");
             $dh->open_doc( "$doc->{path}" ) or return;
         
-            $doc->{num_pages} = $dh->pages();
+            $doc->{num_pages} = $dh->num_pages();
             $log->info( "Doc has $doc->{num_pages} pages" );
         
             foreach( my $page=1;$page<=$doc->{num_pages};$page++ ) {
@@ -587,16 +590,3 @@ sub process_new_items {
 }
 
 1;
-
-__DATA__
-{
-    "pdf":  "pdf3",
-    "html": "html",
-    "doc":  "doc",
-    "docx": "docx",
-    "rtf":  "rtf",
-    "java": "txt",
-    "js":   "txt",
-    "pm":   "txt",
-    "json": "txt"
-}
