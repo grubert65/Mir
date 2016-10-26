@@ -41,20 +41,21 @@ my $doc = Mir::Util::DocHandler->create( driver => $driver )
     or die "Error getting an obj for driver $driver";
 
 $doc->open_doc( "$file" );
-print "\nPages: ".$doc->pages(). "\n";
+print "\nPages: ".$doc->num_pages. "\n";
 if ( $page_num ) {
     die "Page is not a digit!" unless ( $page_num =~ /(\d+)/ );
-    my ($text, $conf) = $doc->page_text($page_num, "/tmp");
+    my ($text, $conf) = $doc->page_text($page_num);
     print "Page: $page_num\n";
     print "TEXT:\n";
     print "$text\n";
     print "Confidence: $conf\n";
 } else {
-    for ( my $i=1;$i<= $doc->pages();$i++) {
-        my ($text, $conf) = $doc->page_text($i, "/tmp");
+    for ( my $i=1;$i<= $doc->num_pages;$i++) {
+        my ($text, $conf) = $doc->page_text($i);
         print "\nPage: $i\n";
         print "TEXT:\n";
         print "$text\n";
         print "Confidence: $conf\n";
     }
 }
+$doc->delete_temp_dirs();

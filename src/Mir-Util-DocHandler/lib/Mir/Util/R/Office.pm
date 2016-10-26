@@ -52,11 +52,12 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 =cut
 
 #========================================================================
-use feature 'unicode_strings';
 use Moose::Role;
+use feature 'unicode_strings';
 use Mir::Util::DocHandler;
-use File::Copy qw( copy );
-use File::Remove qw( remove );
+use File::Copy              qw( copy );
+use File::Remove            qw( remove );
+use Time::HiRes             qw(gettimeofday);
 use Data::UUID;
 use Encode;
 
@@ -71,8 +72,128 @@ has 'pdf_dh' => (
     }
 );
 
-sub pages {
-    return 1;
+#=============================================================
+
+=head1 CheckFileType
+
+=head2 INPUT
+    $file:          full path to file
+
+=head2 OUTPUT
+    $ret:           file type if successful, undef otherwise
+
+=head2 DESCRIPTION
+
+    Checks for file type
+    NOTE : potentially to be moved somewhere
+
+=cut
+
+#=============================================================
+sub CheckFileType {
+    my ($self, $file) = @_;
+
+    if (not stat $file) {
+        $self->log->error("Cannot open file $file");
+        return undef;
+    }
+
+    my $type;
+
+    # Check for Excel and Word documents
+    my $infos;
+    my ($seconds, $microseconds) = gettimeofday;
+    my $info_file = $self->{'TEMP_DIR'}."/"."$seconds"."_"."$microseconds";
+    my $cmd = "antiword \"$file\" 2> $info_file 1> /dev/null";
+    my $ret = system($cmd);
+
+    if (stat ($info_file))
+    {
+        open FILE_INFO, "< $info_file";
+        read (FILE_INFO, $infos, (stat(FILE_INFO))[7]);
+        close FILE_INFO;
+        unlink $info_file;
+        if ($infos =~ /excel/gi) {
+            return 'xls';
+        } elsif ($infos =~ /rich text format/gi) {
+            return 'rtf';
+        } elsif (($ret == 0) && ($infos eq '')) {
+            return 'doc';
+        }
+    }
+
+    if (($ret != 0) && (not defined $type)) {
+        # If not successful, use catdoc
+        $cmd = "catdoc -v \"$file\" > $info_file";
+        $ret = system($cmd);
+    }
+
+    if (stat ($info_file))
+    {
+        open FILE_INFO, "< $info_file";
+        read (FILE_INFO, $infos, (stat(FILE_INFO))[7]);
+        close FILE_INFO;
+        unlink $info_file;
+        if ($infos =~ /This is document \(DOC\) file/gi) {
+            return 'doc';
+        }
+    }
+
+    # If no type was found, use File::Type
+    if (not defined $type) {
+        my $ft = File::Type->new();
+        $type = $ft->mime_type($file);
+    
+        $type =~ s/.+\///;
+        if ($type =~ /word/) {
+            return "doc";
+        }
+        return $type;
+    }
+
+    return undef;
+}
+
+#=============================================================
+
+=head2 _killOOWriter
+
+=head3 INPUT
+    $doc_name:      document name
+    
+=head3 OUTPUT
+
+=head3 DESCRIPTION
+
+Kills OpenOffice Writer
+
+=cut
+
+#=============================================================
+sub _killOOWriter {
+    my ($self, $doc_name) = @_;
+
+    my ($seconds, $microseconds) = gettimeofday;
+    my $ps_file =  "$seconds".'_'."$microseconds";
+    my $cmd = "ps -ef|grep writer.*$doc_name|grep -v grep > /tmp/$ps_file";
+    my $ret = system($cmd);
+    if ($ret == 0) {
+        open INFO, "< /tmp/$ps_file";
+        while (<INFO>) {
+            my $infos = $_;
+            my $user = $1 if ($infos =~ /(.*?)\s/);
+            my @pids;
+            while ($infos =~ /$user\s*(\d{1,})\s*.*$doc_name/g) {
+                push @pids, $1;
+            }
+            $cmd = "kill -9 @pids";
+            system($cmd);
+        }
+        close INFO;
+        unlink ("/tmp/$ps_file") if (stat("/tmp/$ps_file"));
+    } else {
+        $self->log->error("Error while converting file $doc_name");
+    }
 }
 
 #=============================================================
@@ -83,6 +204,7 @@ sub pages {
 
     $page_num: page number (defaults to 1 for this driver...)
     $temp_dir: temp dir to use
+    $lang    : supposed language of text (not mandatory)
 
 =head3 OUTPUT
 
@@ -106,7 +228,7 @@ Workflow:
 
 #=============================================================
 sub page_text {
-    my ( $self, $page_num, $temp_dir ) = @_;
+    my ( $self, $page_num, $temp_dir, $lang ) = @_;
 
     my ($text, $confidence) = (undef, undef);
 
@@ -141,7 +263,7 @@ sub page_text {
         if ( -e $pdf ) {
             $self->pdf_dh->open_doc( $pdf );
             foreach my $page_num ( 1..$self->pdf_dh->pages() ) {
-                my ( $t, $c ) = $self->pdf_dh->page_text( $page_num, $temp );
+                my ( $t, $c ) = $self->pdf_dh->page_text( $page_num, $temp, $lang );
                 $text .= encode('UTF-8', $t);
                 $confidence += $c;
             }

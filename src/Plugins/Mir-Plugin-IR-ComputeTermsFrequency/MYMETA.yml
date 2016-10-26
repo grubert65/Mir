@@ -1,5 +1,5 @@
 ---
-abstract: 'The great new Mir::Plugin::IR::ComputeTermsFrequency!'
+abstract: 'A plugin to compute terms frequency in a document text'
 author:
   - 'Marco Masetti <marco.masetti@softeco.it>'
 build_requires:

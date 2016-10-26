@@ -10,7 +10,7 @@ BEGIN {
     use_ok( 'Mir::Config::Client::Mongo' );
 }
 
-diag( "Testing Mir::Config::Client::Mongo $Mir::Config::Client::Mongo::VERSION, Perl $], $^X" );
+note( "Testing Mir::Config::Client::Mongo $Mir::Config::Client::Mongo::VERSION, Perl $], $^X" );
 
 my $docs;
 {
@@ -25,7 +25,7 @@ my $collection = $client->ns('MIR.system');
 
 eval { $collection->drop() };
 if ( $@ ) {
-    diag "It seems Mongo is not running, exiting...";
+    note "It seems Mongo is not running, exiting...";
     done_testing;
     exit;
 } else {

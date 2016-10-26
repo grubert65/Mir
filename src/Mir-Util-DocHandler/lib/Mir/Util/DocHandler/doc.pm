@@ -53,38 +53,11 @@ of the License, or (at your option) any later version.
 use Moose;
 use feature 'unicode_strings';
 with 'Mir::Util::R::DocHandler';
-use Encode;
+use Text::Extract::Word;
 
-extends 'Mir::Util::DocHandler::Office';
-
-#=============================================================
-
-=head2 pages
-
-=head3 INPUT
-
-=head3 OUTPUT
-
-Currently unavailable, always returns 1
-
-=head3 DESCRIPTION
-
-Currently unavailable, always returns 1
-
-=cut
-
-#=============================================================
-sub pages
-{
-    my ($self) = shift;
-
-    my $doc = $self->{'DOC_PATH'};
-    if (not defined $doc) {
-        $self->log->error("No document was ever opened");
-        return undef;
-    }
-
-    return 1;
+sub get_num_pages {
+    # not possible to detect the number of pages...
+    return undef;
 }
 
 #=============================================================
@@ -92,9 +65,6 @@ sub pages
 =head2 page_text
 
 =head3 INPUT
-
-$page:                  page number (ignored)
-$temp_dir:              temp dir where text is stored
 
 =head3 OUTPUT
 
@@ -106,47 +76,63 @@ $confidence:            Estimated accuracy of extracted text
 
 =head3 DESCRIPTION
 
-Returns text of document
+Returns text of document. Currently it is not possible
+to extract a single page text, rather we extract the text for
+the whole document.
 
 =cut
 
 #=============================================================
-sub page_text
-{
-    my ($self, $page, $temp_dir) = @_;
+sub page_text {
+    my $self = shift;
 
-    my $confidence = 100;
-    $temp_dir = $self->{TEMP_DIR} unless $temp_dir;
-    $temp_dir = '/tmp' unless $temp_dir;
+    my ( $c, $t ) = ( 100, undef );
 
-    my $doc = $self->{'DOC_PATH'};
-    if (not defined $doc) {
-        $self->log->error("No document was ever opened");
-        return undef;
-    }
+    $DB::single=1;
+    my $file = Text::Extract::Word->new( $self->doc_path );
+    $t = $file->get_text() if ( $file );
 
-    # Try antiword first
-    my $cmd = "antiword -m UTF-8.txt \"$doc\" > $temp_dir/page.txt";
-    my $ret = system($cmd);
-
-    # If not successful, use catdoc
-    if ($ret != 0) {
-        $cmd = "catdoc \"$doc\" > $temp_dir/page.txt";
-        $ret = system($cmd);
-    }
-
-    my $text = undef;
-    if ($ret == 0) {
-        open (SINGLE_PAGE, "<:encoding(UTF-8)", "$temp_dir/page.txt");
-        read (SINGLE_PAGE, $text, (stat(SINGLE_PAGE))[7]);
-        close SINGLE_PAGE;
-        unlink "$temp_dir/page.txt";
-    } else {
-        $self->log->error("Unable to read page $page from document $doc");
-        return (undef, 0);
-    }
-
-    return ($text, $confidence);
+    return ($t, $c);
 }
+
+#-----------------------------------------------------------------------------------
+# old implemenation that uses antiword...
+# sub page_text {
+#     my ($self, $page, $temp_dir) = @_;
+# 
+#     my $confidence = 100;
+#     $temp_dir = $self->{TEMP_DIR} unless $temp_dir;
+#     $temp_dir = '/tmp' unless $temp_dir;
+# 
+#     my $doc = $self->{'DOC_PATH'};
+#     if (not defined $doc) {
+#         $self->log->error("No document was ever opened");
+#         return undef;
+#     }
+# 
+#     # Try antiword first
+#     my $cmd = "antiword -m UTF-8.txt \"$doc\" > $temp_dir/page.txt";
+#     my $ret = system($cmd);
+# 
+#     # If not successful, use catdoc
+#     if ($ret != 0) {
+#         $cmd = "catdoc \"$doc\" > $temp_dir/page.txt";
+#         $ret = system($cmd);
+#     }
+# 
+#     my $text = undef;
+#     if ($ret == 0) {
+#         open (SINGLE_PAGE, "<:encoding(UTF-8)", "$temp_dir/page.txt");
+#         read (SINGLE_PAGE, $text, (stat(SINGLE_PAGE))[7]);
+#         close SINGLE_PAGE;
+#         unlink "$temp_dir/page.txt";
+#     } else {
+#         $self->log->error("Unable to read page $page from document $doc");
+#         return (undef, 0);
+#     }
+# 
+#     return ($text, $confidence);
+# }
+#-----------------------------------------------------------------------------------
 
 1;

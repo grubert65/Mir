@@ -157,6 +157,12 @@ It takes an hashref with keys:
 
 =head3 DESCRIPTION
 
+Calls (currently in random order, being hash keys...) all plugins
+registered for the passed hook. 
+Starts setting input parameters as passed, then replaces them
+with preceeding plugin output params (so plugins can be chained
+and each one will work on previous output...).
+
 =cut
 
 #=============================================================
@@ -173,16 +179,19 @@ sub call_registered_plugins {
 
     try {
         while ( my ($driver, $config_params) = each ( %$p ) ) {
-            my $plugin = Mir::Plugin->create( driver => $driver );
+            $DB::single=1;
+            my $plugin = Mir::Plugin->create( 
+                driver => $driver,
+                params => $config_params
+            );
             my $out = $plugin->run( {
                     %{ $_[0]->{input_params} },
-                    %$config_params,
                 } );
             if ( ref $out eq 'HASH' ) {
                 while ( my ( $k, $v ) = each( %$out ) ) {
                     $_[0]->{output_params}->{$k} = $v;
                 }
-            }
+            } 
         }
     } catch {
         $self->log->error("Error executing plugin: $@");

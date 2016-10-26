@@ -1,19 +1,3 @@
-#
-#===============================================================================
-#
-#         FILE: 01-plugin.t
-#
-#  DESCRIPTION: 
-#
-#        FILES: ---
-#         BUGS: ---
-#        NOTES: ---
-#       AUTHOR: YOUR NAME (), 
-# ORGANIZATION: 
-#      VERSION: 1.0
-#      CREATED: 09/15/2016 01:30:20 PM
-#     REVISION: ---
-#===============================================================================
 use strict;
 use warnings;
 use Test::More;

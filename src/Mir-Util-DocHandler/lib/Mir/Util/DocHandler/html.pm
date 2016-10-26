@@ -64,49 +64,6 @@ $VERSION = '0.01';
 
 #=============================================================
 
-=head2 open_doc
-
-=head3 INPUT
-
-$document:          path to document
-
-=head3 OUTPUT
-
-0/1:                fail/success
-
-=head3 DESCRIPTION
-
-Stores document path in object
-
-=cut
-
-#=============================================================
-sub open_doc
-{
-    my ($self, $document) = @_;
-
-    unless (defined $document) {
-        $self->log->error("No document was provided");
-        return 0;
-    }
-
-    unless (stat ($document)) {
-        $self->log->error("Cannot find document $document");
-        return 0;
-    }
-
-    unless ( -T $document ) {
-        $self->log->error("Document is not a text file");
-        return 0;
-    }
-
-    $self->{'DOC_PATH'} = $document;
-
-    return 1; 
-}
-
-#=============================================================
-
 =head2 pages
 
 =head3 INPUT
@@ -122,10 +79,8 @@ Currently unavailable, always returns 1
 =cut
 
 #=============================================================
-sub pages
-{
+sub get_num_pages {
     my ($self) = shift;
-
     return 1;
 }
 
@@ -153,16 +108,14 @@ Returns text of document
 =cut
 
 #=============================================================
-sub page_text
-{
-    my ($self, $page, $temp_dir) = @_;
+sub page_text {
+    my $self = shift;
 
-    my $doc = $self->{'DOC_PATH'};
-
+    my $doc = $self->doc_path;
     my $text = undef;
     {
         local $/;
-        open my $fh, "< $doc";
+        open my $fh, "<:encoding(UTF-8)", $doc;
         $text=<$fh>;
         close $fh;
     }

@@ -8,12 +8,12 @@ drivers
 
 =head1 VERSION
 
-0.01
+0.02
 
 =cut
 
 use vars qw( $VERSION );
-$VERSION='0.01';
+$VERSION='0.02';
 
 =head1 SYNOPSIS
 
@@ -21,6 +21,7 @@ Refer to the L<Mir::Doc::Handler> class documentation.
 
 =head1 DESCRIPTION
 
+Base role to be consumed by any Mir::Util::DocHandler driver.
 
 =head1 AUTHOR
 
@@ -43,40 +44,65 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 #========================================================================
 use Moose::Role;
-use File::Basename                          qw( dirname basename );
-use DirHandle                               ();
-use File::Copy                              qw( copy );
-use File::stat                              ();
-use File::Path                              qw( mkpath );
-use File::Type                              ();
-use Path::Class                             ();
-use Log::Log4perl                           ();
-use Time::HiRes                             qw(gettimeofday);
-use namespace::autoclean;
+with 'Mir::R::Util',
+     'Mir::R::PluginHandler'; # so each DocHandler can handle plugins
 
-has 'TEMP_DIR' => ( 
+use DirHandle      ();
+use File::Copy     qw( copy );
+use File::stat     ();
+use File::Path     qw( make_path remove_tree );
+use File::Basename qw( fileparse );
+use File::Type     ();
+use Data::UUID;
+use TryCatch;
+
+has 'ug' => (
+    is  => 'ro',
+    isa => 'Data::UUID',
+    default => sub { Data::UUID->new }
+);
+
+# The document path...
+# along with document file name...
+has 'doc_path' => ( is => 'rw', isa => 'Str' );
+
+# only the path...
+has 'path'     => ( is => 'rw', isa => 'Str' );
+
+# only the document file name without the suffix...
+has 'doc_name' => ( is => 'rw', isa => 'Str' );
+
+# only the suffix...
+has 'suffix'   => ( is => 'rw', isa => 'Str' );
+
+# Directory for temporary
+# artifacts
+has 'temp_dir_root' => ( 
     is => 'rw', 
     isa => 'Str',
     default => '/tmp'
 );
 
-has 'OCR_THRESHOLD' => ( 
-    is => 'rw', 
-    isa => 'Str',
-    default => '80'
-);
-has 'CONFIDENCE' => ( 
-    is => 'rw', 
-    isa => 'Str',
-    default => '100'
+# if temporary folders have to 
+# be deleted
+has 'delete_temp_dir' => (
+    is  => 'rw',
+    isa => 'Bool',
+    default => 1,
 );
 
-has 'log' => (
-    is      => 'ro',
-    lazy    => 1,
-    default => sub { Log::Log4perl->get_logger( __PACKAGE__ ); },
+# if temporary directory
+# needs to be unique.
+# (otherwise it is derived from 
+# document name hence being the same
+# throu different calls for the same document...
+has 'unique_temp_dir' => (
+    is  => 'rw',
+    isa => 'Bool',
+    default => 0,
 );
 
+# NOTE : do we really need this ?!?
 has 'params' => (
     is      => 'rw',
     isa     => 'HashRef',
@@ -84,22 +110,62 @@ has 'params' => (
     default => sub { return {} },
 );
 
-requires 'pages';
+#=============================================================
+# number of pages of the document
+# it should be valorized at document opening 
+# if undefined, it means that the driver was not able 
+# to detect the number of pages
+#=============================================================
+has 'num_pages' => (
+    is      => 'ro',
+    isa     => 'Maybe[Int]',
+    writer  => '_set_num_pages'
+);
+
+# ---- METHODS ----
+#
+#=============================================================
+# A method that needs to be implemented by any 
+# driver. It is called internally to set the 
+# number of pages.
+#=============================================================
+requires 'get_num_pages';
 
 #=============================================================
-#Returns text of document and the confidence on it.
-#Currently implemented by each driver.
+# Returns text of document and the confidence on it.
+# Currently implemented by each driver.
+# It should take as param the page number we want to have the
+# text back (undef to get all document text back)
 #=============================================================
 requires 'page_text';
 
+#=============================================================
+
+=head2 create_temp_dirs
+
+=head3 INPUT
+
+=head3 OUTPUT
+
+=head3 DESCRIPTION
+
+To be implemented by each driver. All created folders
+should be collected into the temp_dirs ArrayRef.
+
+=cut
+
+#=============================================================
+sub create_temp_dirs {
+    return 1;
+}
 
 #=============================================================
 # Deletes all temp files.
 #=============================================================
-#requires 'delete_temp_files';
-
-sub delete_temp_files { return 1 };
-
+sub delete_temp_dirs { 
+    my $self = shift;
+    remove_tree( $self->temp_dir_root );
+}
 
 #=============================================================
 =head2 open_doc
@@ -114,13 +180,13 @@ $document:          path to document
 
 =head3 DESCRIPTION
 
-Stores document path in object
+Stores document path in object.
+Creates temp_root_dir if does not exists.
 
 =cut
 
 #=============================================================
-sub open_doc
-{
+sub open_doc {
     my ($self, $document) = @_;
 
     if (not defined $document) {
@@ -133,133 +199,36 @@ sub open_doc
         return 0;
     }
 
-    $self->{DOC_PATH} = $document;
+    $self->{doc_path} = $document;
+    my ( $filename, $path, $suffix ) = fileparse ( $document );
+    $self->path( $path );
+
+    if ( $suffix ) {
+        $self->suffix( $suffix );
+        $self->doc_name( $filename );
+    } else {
+        my ( $name, $suffix ) = $self->get_name_suffix( $filename );
+        $self->suffix( $suffix );
+        $self->doc_name( $name );
+    }
+
+    if ( $self->unique_temp_dir ) {
+        my $uuid = $self->ug->create();
+        $self->{temp_dir_root} = $self->{temp_dir_root}.'/'.
+                                 $self->ug->to_string( $uuid );
+    } else {
+        $self->{doc_name} =~ s/\W//g;
+        $self->{temp_dir_root} = $self->{temp_dir_root}.'/'.
+            $self->{doc_name};
+    }
+
+    make_path ( $self->{temp_dir_root} ) 
+        unless ( -d $self->{temp_dir_root} );
+
+    $self->_set_num_pages( $self->get_num_pages() );
+    $self->create_temp_dirs();
 
     return 1; 
-}
-
-#=============================================================
-
-=head1 CheckFileType
-
-=head2 INPUT
-    $file:          full path to file
-
-=head2 OUTPUT
-    $ret:           file type if successful, undef otherwise
-
-=head2 DESCRIPTION
-
-    Checks for file type
-
-=cut
-
-#=============================================================
-sub CheckFileType
-{
-    my ($self, $file) = @_;
-
-    if (not stat $file) {
-        $self->log->error("Cannot open file $file");
-        return undef;
-    }
-
-    my $type;
-
-    # Check for Excel and Word documents
-    my $infos;
-    my ($seconds, $microseconds) = gettimeofday;
-    my $info_file = $self->{'TEMP_DIR'}."/"."$seconds"."_"."$microseconds";
-    my $cmd = "antiword \"$file\" 2> $info_file 1> /dev/null";
-    my $ret = system($cmd);
-
-    if (stat ($info_file))
-    {
-        open FILE_INFO, "< $info_file";
-        read (FILE_INFO, $infos, (stat(FILE_INFO))[7]);
-        close FILE_INFO;
-        unlink $info_file;
-        if ($infos =~ /excel/gi) {
-            return 'xls';
-        } elsif ($infos =~ /rich text format/gi) {
-            return 'rtf';
-        } elsif (($ret == 0) && ($infos eq '')) {
-            return 'doc';
-        }
-    }
-
-    if (($ret != 0) && (not defined $type)) {
-        # If not successful, use catdoc
-        $cmd = "catdoc -v \"$file\" > $info_file";
-        $ret = system($cmd);
-    }
-
-    if (stat ($info_file))
-    {
-        open FILE_INFO, "< $info_file";
-        read (FILE_INFO, $infos, (stat(FILE_INFO))[7]);
-        close FILE_INFO;
-        unlink $info_file;
-        if ($infos =~ /This is document \(DOC\) file/gi) {
-            return 'doc';
-        }
-    }
-
-    # If no type was found, use File::Type
-    if (not defined $type) {
-        my $ft = File::Type->new();
-        $type = $ft->mime_type($file);
-    
-        $type =~ s/.+\///;
-        if ($type =~ /word/) {
-            return "doc";
-        }
-        return $type;
-    }
-
-    return undef;
-}
-
-#=============================================================
-
-=head2 _killOOWriter
-
-=head3 INPUT
-    $doc_name:      document name
-    
-=head3 OUTPUT
-
-=head3 DESCRIPTION
-
-Kills OpenOffice Writer
-
-=cut
-
-#=============================================================
-sub _killOOWriter {
-    my ($self, $doc_name) = @_;
-
-    my ($seconds, $microseconds) = gettimeofday;
-    my $ps_file =  "$seconds".'_'."$microseconds";
-    my $cmd = "ps -ef|grep writer.*$doc_name|grep -v grep > /tmp/$ps_file";
-    my $ret = system($cmd);
-    if ($ret == 0) {
-        open INFO, "< /tmp/$ps_file";
-        while (<INFO>) {
-            my $infos = $_;
-            my $user = $1 if ($infos =~ /(.*?)\s/);
-            my @pids;
-            while ($infos =~ /$user\s*(\d{1,})\s*.*$doc_name/g) {
-                push @pids, $1;
-            }
-            $cmd = "kill -9 @pids";
-            system($cmd);
-        }
-        close INFO;
-        unlink ("/tmp/$ps_file") if (stat("/tmp/$ps_file"));
-    } else {
-        $self->log->error("Error while converting file $doc_name");
-    }
 }
 
 1; # End of Mir::Util::DocHandler

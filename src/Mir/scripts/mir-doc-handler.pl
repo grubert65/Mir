@@ -43,7 +43,7 @@ my $doc = Mir::Util::DocHandler->create( driver => $driver )
 $doc->open_doc( $file );
 # print "Tesseract version:";
 # `tesseract -v`;
-print "\nPages: ".$doc->pages(). "\n";
+print "\nPages: ".$doc->num_pages(). "\n";
 if ( $page_num ) {
     die "Page is not a digit!" unless ( $page_num =~ /(\d+)/ );
     my ($text, $conf) = $doc->page_text($page_num, "/tmp");
@@ -52,7 +52,7 @@ if ( $page_num ) {
     print "$text\n";
     print "Confidence: $conf\n";
 } else {
-    for ( my $i=1;$i<= $doc->pages();$i++) {
+    for ( my $i=1;$i<= $doc->num_pages();$i++) {
         my ($text, $conf) = $doc->page_text($i, "/tmp");
         print "Page: $i\n";
         print "TEXT:\n";

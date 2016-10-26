@@ -13,7 +13,7 @@ BEGIN {
     use_ok( 'Mir::Config::Client::JSON' ) || print "Bail out!\n";
 }
 
-diag( "Testing Mir::Config::Client::JSON $Mir::Config::Client::JSON::VERSION, Perl $], $^X" );
+note( "Testing Mir::Config::Client::JSON $Mir::Config::Client::JSON::VERSION, Perl $], $^X" );
 
 my $docs;
 my $data;
@@ -34,8 +34,11 @@ ok( my $o = Mir::Config::Client->create(
 );
 
 ok( $o->connect(), 'connect' );
-diag "The complete configuration file content:";
-p $o->config;
+my $config = $o->config;
+is( ref $config, 'ARRAY', 'ok, got right data type back');
+is( $config->[0]->{campaign}, 'IR-test', 'ok, got right data back');
+# note "The complete configuration file content:";
+# p $o->config;
 
 ok(my $fetchers = $o->get_key({tag=>'ACQ'},{fetchers=>1}), 'get_key');
 is_deeply( $fetchers->[0]->{fetchers}, $docs->[0]->{fetchers}, 'get_key: got right data back...' );
@@ -60,10 +63,14 @@ ok( my $o2 = Mir::Config::Client->create(
 );
 
 ok( $o2->connect(), 'connect' );
-diag "The complete configuration file content:";
-p $o2->config;
+$config = $o->config;
+is( ref $config, 'ARRAY', 'ok, got right data type back');
+is( $config->[0]->{campaign}, 'IR-test', 'ok, got right data back');
+# note "The complete configuration file content:";
+# p $o2->config;
 
 ok($params = $o2->get_key({campaign=>'IR-test'},{params=>1}), 'get_key');
-p $params;
+is(ref $params, 'ARRAY', 'ok, got right data type back...');
+is( $params->[0]->{params}->{fetchers}->[0]->{ns}, 'FS', 'ok, got right data back...');
 
 done_testing;

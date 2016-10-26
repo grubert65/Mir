@@ -28,11 +28,15 @@ done_testing;
 package Mir::Plugin::Foo;
 use Moose;
 with 'Mir::R::Plugin';
-sub run { print "Plugin Foo called!\n" };
+has 'a1' => ( is => 'rw', isa => 'Str', required => 1 );
+sub run { 
+    print "Plugin Foo called!\n" 
+};
 
 package Mir::Plugin::Bar;
 use Moose;
 with 'Mir::R::Plugin';
+has 'a2' => ( is => 'rw', isa => 'Str', required => 1 );
 sub run { print "Plugin Bar called!\n" };
 
 1;

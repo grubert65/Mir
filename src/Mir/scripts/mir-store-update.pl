@@ -62,7 +62,7 @@ EOT
 }
 
 my $update = decode_json( $update_json );
-my $filter = decode_json( $filter_json );
+my $filter = ( defined $filter_json ) ? decode_json( $filter_json ) : {};
 
 my $store = Mir::Store->create(
     driver => 'MongoDB',

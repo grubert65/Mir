@@ -3,7 +3,7 @@ package Mir::R::Plugin;
 
 =head1 NAME
 
-Mir::R::Plugin - a role to consume by any plugin.
+Mir::R::Plugin - a role to be consumed by any plugin.
 
 =head1 VERSION
 
@@ -94,7 +94,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #===============================================================================
 use Moose::Role;
-
 
 #===============================================================================
 # Each plugin must implement a method 'run'

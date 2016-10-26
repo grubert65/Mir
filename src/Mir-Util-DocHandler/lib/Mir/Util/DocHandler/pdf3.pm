@@ -81,7 +81,7 @@ sub pages {
 }
 
 sub page_text {
-    my ($self, $page, $temp_dir) = @_;
+    my ($self, $page, $lang) = @_;
 
     my @drivers = qw( pdf1_dh pdf2_dh );
 

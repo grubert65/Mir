@@ -8,7 +8,7 @@ use JSON;
 use Data::Printer;
 use Mir::Store ();
 
-Log::Log4perl->easy_init( $INFO );
+Log::Log4perl->easy_init( $DEBUG );
 
 BEGIN {
     use_ok( 'Mir::IR' ) || print "Bail out!\n";

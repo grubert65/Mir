@@ -33,6 +33,10 @@ You can find documentation for this module with the perldoc command:
 
 Andrea Poggi <andrea.poggi at softeco dot it>
 
+=head2 ACKNOWLEDGEMENTS
+
+Marco Masetti <marco.masetti at softeco.it> reviewed code.
+
 =head2 COPYRIGHT and LICENSE
 
 Copyright (C) 2015 Andrea Poggi.  All Rights Reserved.
@@ -49,179 +53,98 @@ of the License, or (at your option) any later version.
 
 #========================================================================
 use Moose;
-with 'Mir::Util::R::DocHandler';
+with    'Mir::Util::R::DocHandler', 
+        'Mir::Util::R::OCR',
+        'Mir::Util::R::PDF',
+        'Mir::R::PluginHandler';
 
-use PDF::API2                   ();
-use CAM::PDF                    ();
-use Image::OCR::Tesseract       qw( get_ocr );
-use File::Path                  qw( rmtree );
-use Time::HiRes                 qw( gettimeofday );
+use open qw(:std :utf8);
 use Image::Size                 qw( imgsize );
 use Imager                      ();
-use Encode                      qw( encode decode );
-use File::Basename              qw( dirname basename );
+use File::Basename              qw( dirname basename fileparse );
+use Mir::Util::ImageHandler     ();
+use File::Which                 qw(which);
+use File::Path                  qw( make_path remove_tree );
 
-use constant DPI        => 72; # Consider monitor DPIs
-use constant AREA       => 1260; # A4 row area (1260 square millimeters)
-use constant PDF_API2   => 100; 
-use constant CAM_PDF    => 101; 
-use constant CAM_PDF_CONF    => 95; 
-use constant PDF_INFO_CONF   => 90; 
-use constant MAX_PAGES  => 100;
+# use constant AREA          => 1260; # A4 row area (1260 square millimeters)
+use constant DPI            => 72; # Consider monitor DPIs
+use constant AREA           => 126; 
+use constant PDF_API2       => 100; 
+use constant CAM_PDF        => 101; 
+use constant CAM_PDF_CONF   => 95; 
+use constant PDF_INFO_CONF  => 90; 
 
 use vars qw( $VERSION  );
 
 # 0.01 : first stable release
 
-$VERSION = '0.01';
+$VERSION = '0.02';
 
-#=============================================================
+has 'plugins' => (
+    is  => 'rw',
+    isa => 'HashRef',
+    default => sub { {} },
+    trigger => \&_register_plugins
+);
 
-=head2 open_doc
+binmode STDOUT, ":encoding(UTF-8)";
 
-=head3 INPUT
-
-$document:          path to document
-
-=head3 OUTPUT
-
-0/1:                fail/success
-
-=head3 DESCRIPTION
-
-Opens provided document and stores its path in object
-
-=cut
-
-#=============================================================
-sub open_doc {
-    my ($self, $document) = @_;
-
-    if (not defined $document) {
-        $self->log->error("No document was provided");
-        return 0;
-    }
-
-    if (not stat ($document)) {
-        $self->log->error("Cannot find document $document");
-        return 0;
-    }
-    
-    my $pdf_doc;
-
-    # Create temp dir...
-    my $temp_dir .= $self->{'TEMP_DIR'}."/"._generateUUID();
-    rmtree ($temp_dir) if stat ($temp_dir);
-    mkdir ($temp_dir);
-    my $infos;
-    my $cmd = "pdfinfo \"$document\" > $temp_dir/pdf_info_file.txt 2>&1";
-    my $ret = system($cmd);
-    if ($ret == 0) {
-        # Get infos and delete temp dir...
-        open (PDF_INFO, "<:encoding(utf8)", "$temp_dir/pdf_info_file.txt");
-        read (PDF_INFO, $infos, (stat(PDF_INFO))[7]);
-        close (PDF_INFO);
-        rmtree ($temp_dir) if stat ($temp_dir);
-        
-        # If everything was OK, get document infos
-        if ($infos =~ /pages\:.*?(\d{1,})/i) {
-            $self->{'pages'} = $1;
-        } else {
-            $self->log->error("Cannot get document $document infos") if $self->log;
-            return 0;
-        }
-    } else {
-        # Sorry, no way to handle this document...
-        $self->log->error("Cannot open document $document with any tool, giving up") if $self->log;
-        return 0;
-    }
-    
-    $self->{'DOC_PATH'} = $document;
-
-    return 1; 
+sub _register_plugins {
+    my ( $self, $plugins ) = @_;
+    $self->register_plugins( $plugins );
 }
-
-#=============================================================
-
-=head2 pages
-
-=head3 INPUT
-
-=head3 OUTPUT
-
-Number of pages if successful, undef if not
-
-=head3 DESCRIPTION
-
-Returns number of pages of document
-
-=cut
-
-#=============================================================
-sub pages
-{
-    my ($self) = shift;
-
-    my $doc = $self->{'DOC_PATH'};
-    if (not defined $doc) {
-        $self->log->error("No document was ever opened");
-        return undef;
-    }
-
-    my $pages = $self->{'pages'};
-
-    return $pages; 
-}
-
 #=============================================================
 
 =head2 page_text
 
 =head3 INPUT
 
-$page:                  page number
-$temp_dir:              temp dir where text is stored
+$page: page number, all if not passed...
 
 =head3 OUTPUT
 
-$text:                  Text of page if successful, undef if not
-$confidence:            Estimated accuracy of extracted text
+$text:        Text of page if successful, undef if not
+$confidence:  Estimated accuracy of extracted text
 
 =head3 DESCRIPTION
 
 Returns text of desired page of document
+Workflow:
+- returns if doc not opened
+- creates a temporary folder to store extracted images
+- get text using pdftotext first (doesn't work with images...)
+- then looks for images to process with OCR. In this case
+  language used by the OCR needs to be set via the lang attribute.
 
 =cut
 
 #=============================================================
-sub page_text
-{
-    my ($self, $page, $temp_dir) = @_;
+sub page_text {
+    my ( $self, $page ) = @_;
 
-    my $doc = $self->{'DOC_PATH'};
-    if (not defined $doc) {
-        $self->log->error("No document was ever opened");
-        return undef;
-    }
-
-    my $ocr_threshold = $self->{'OCR_THRESHOLD'};
     my $text = "";
-    my $confidence = $self->{'CONFIDENCE'};
-    $temp_dir = $self->{TEMP_DIR} unless ( $temp_dir );
-    $temp_dir .= "/"._generateUUID();
-    rmtree ($temp_dir) if stat ($temp_dir);
-    mkdir ($temp_dir);
+    my $confidence = 100;
+    my ($f_page, $l_page) = ($page) ? ($page, $page):(1, $self->num_pages);
 
+    my $pdftotext_bin = which('pdftotext');
+    unless ( $pdftotext_bin ) {
+        $self->log->error("No pdftotext cmd, cannot extract text from PDF");
+    }
     # Get text using pdftotext first...
     # pdftotext default encoding for output text is Latin1, we force to encode in utf8
-    my $cmd = "pdftotext -nopgbrk -enc UTF-8 -f $page -l $page \"$doc\" $temp_dir/page.txt > /dev/null 2>&1";
+    my $cmd = join (' ', 
+        $pdftotext_bin,
+        "-nopgbrk -enc UTF-8",
+        "-f $f_page",
+        "-l $l_page",
+        '"'.$self->{doc_path}.'"',
+        "$self->{temp_dir_root}/page.txt",
+        "> /dev/null 2>&1");
     my $ret = system($cmd);
-
     if ($ret == 0) {
-        open (SINGLE_PAGE, "<:encoding(utf8)", "$temp_dir/page.txt");
-        read (SINGLE_PAGE, $text, (stat(SINGLE_PAGE))[7]);
+        open  (SINGLE_PAGE, "<:encoding(utf8)", "$self->{temp_dir_root}/page.txt");
+        read  (SINGLE_PAGE, $text, (stat(SINGLE_PAGE))[7]);
         close (SINGLE_PAGE);
-
         if ( $text ) {
             # removing weird code points...
             # (all Unicode first 0x1f control chars...
@@ -232,7 +155,6 @@ sub page_text
                 $hex = sprintf("%X", $i);
                 $text =~ s/\x{$hex}/\x{20}/g;
             }
-    
             # extracting text from PDF can result in some non printable chars
             # the following should be connected with pdf 'bookmarks'
             # this again can corrupt the CMS representation...
@@ -240,105 +162,95 @@ sub page_text
         } else {
             $confidence = 0;
         }
-        unlink "$temp_dir/page.txt";
     } else {
-        $self->log->error("Unable to read page $page from document $doc");
+        $self->log->error("Unable to read text from document $self->{doc_path}");
         return (undef, 0);
     }
 
-    # ...then look for images to process with OCR (only if we don't have too much pages to process)
-    if ( $self->{pages} < MAX_PAGES ) {
-        $cmd = "pdfimages -f $page -l $page \"$doc\" $temp_dir/images";
-        $ret = system($cmd);
-        
-        if ($ret == 0) {
-            opendir (DIR, "$temp_dir");
-            my @dir_content = readdir DIR;
-            my @pagefiles = map { "$temp_dir/$_" } sort grep { /images.+\.p.m$/i } @dir_content;
-            closedir(DIR);
-             # for each page, get text and retrieve confidence
-             my $total_images = (scalar @pagefiles);
-             foreach my $page_image (@pagefiles) {
-                my $ocr_OK = 1;
-                my $ocr_text;
-                my @rot_angles = (90, 270);
-                # If size is too small, skip it
-                if (_checkSize($page_image, DPI, AREA)) {
-                    # TODO should we force text encoding here as well ?!?
-                    $ocr_text = get_ocr($page_image, undef, 'ita');
-    #                $ocr_text = decode( 'iso-8859-1', $ocr_text );
-    #                $ocr_text = encode( 'utf8', $ocr_text);
-                    if ($ocr_text =~ /average_doc_confidence\:(\d{1,})/g) {
-                        # If image confidence is below threshold, try to rotate
-                        # it, in case it was badly oriented
-                        if (defined $ocr_threshold && $1 <= $ocr_threshold) {
-                            my $max_conf = 0;
-                            my $imager;
-                            my $rotated_ocr_text;
-                            foreach my $rot_angle (@rot_angles) {
-                                $imager = Imager->new(file=>$page_image) if not defined $imager;
-                                my $rotated = $imager->rotate(degrees => $rot_angle);
-                                $rotated->write(file => $page_image);
-                                $rotated_ocr_text = get_ocr($page_image, undef, 'ita');
-    #                            $rotated_ocr_text = decode( 'iso-8859-1', $rotated_ocr_text );
-    #                            $rotated_ocr_text = encode( 'utf8', $rotated_ocr_text);
-                                if ($rotated_ocr_text =~ /average_doc_confidence\:(\d{1,})/g) {
-                                    if (($1 > $max_conf) && ($1 > $ocr_threshold)) {
-                                        $max_conf = $1;
-                                        $ocr_text = $rotated_ocr_text;
-                                    }
-                                }
-                            }
-                            # If its confidence is still below threshold, discard it;
-                            # it's probably garbage and it would lower the total
-                            # page confidence
-                            if ($max_conf > 0) {
-                                $confidence += $max_conf;
-                                $ocr_text =~s/average_doc_confidence\:\d{1,}//g;
-                            } else {
-                                $total_images--;
-                                $ocr_OK = 0;
-                            }
-                        } else {
-                            $confidence += $1;
-                            $ocr_text =~s/average_doc_confidence\:\d{1,}//g;
-                        }
-                    }
-                } else {
-                    $total_images--;
-                    $ocr_OK = 0;
-                }
-                $text .= "\n".$ocr_text if $ocr_OK;
-            }
-            if ($total_images > 0) {
-                $confidence /= $total_images + 1;
+    # ...then look for images to process with OCR 
+    my $ih = Mir::Util::ImageHandler->new();
+    my $total_images = 0;
+    foreach my $page_num ( $f_page .. $l_page ) {
+
+        my $image_files = $ih->pdfimages(
+            pdf_file => "$self->{doc_path}",
+            page_num => $page_num,
+            out_root => "$self->{temp_dir_root}/images/$self->{doc_name}",
+            params   => '-png'
+        );
+
+        # get rid of all images too small...
+        for ( 0 .. (scalar @$image_files - 1 )) {
+            unless ( _checkSize($image_files->[$_], DPI, AREA) ) {
+                splice( @$image_files, $_, 1);
             }
         }
+
+        # now call all image pre processing plugins...
+        # they should eventually update image file names...
+        my $out_params = {};
+        my $input_params = { image_files => $image_files };
+        $self->call_registered_plugins({
+            hook            => 'image_pre_processing',
+            input_params    => $input_params,
+            output_params   => \$out_params
+        });
+
+        $DB::single=1;
+        $image_files = $input_params->{image_files};
+    
+        my $ocr_OK       = 0;
+        my @rot_angles   = (90, 90, 90); #assume it is right first...
+
+        foreach my $page_image (@$image_files) {
+            $total_images++;
+            my $ocr_text;
+            my $ocr_conf;
+            ( $ocr_text, $ocr_conf ) = $self->get_ocr( 
+                $page_image, 
+                "$self->{temp_dir_root}/$self->{doc_name}" 
+            );
+            if ( $ocr_conf <= $self->{OCR_THRESHOLD} ) {
+                my $max_conf = 0;
+                my $rotated_ocr_text;
+                my $angle_total=0;
+                $ih->open( $page_image ) or die $@;
+                foreach my $rot_angle (@rot_angles) {
+                    $ih->rotate($rot_angle);
+                    my $rotated = $ih->write();
+                    ($rotated_ocr_text, $ocr_conf) = $self->get_ocr(
+                        $rotated, 
+                        "$self->{temp_dir_root}/$self->{doc_name}" 
+                    );
+                    if (($ocr_conf > $max_conf) && ($ocr_conf > $self->{OCR_THRESHOLD})) {
+                        $max_conf = $ocr_conf;
+                        $ocr_text = $rotated_ocr_text;
+                    }
+                    last if ( $max_conf > $self->{OCR_VALID_THRESHOLD} );
+                }
+                # If its confidence is still below threshold, discard it;
+                # it's probably garbage and it would lower the total
+                # page confidence
+                if ($max_conf > 0) {
+                    $confidence += $max_conf;
+                    $ocr_OK=1;
+                }
+            } else {
+                $confidence += $ocr_conf;
+                $ocr_OK=1;
+            }
+            $text .= "\n".$ocr_text if $ocr_OK;
+        }
+    }
+    if ($total_images > 0) {
+        $confidence /= $total_images;
     }
 
-    rmtree($temp_dir) if stat ($temp_dir);
+    # NOTE : maybe we could even get rid of this 
+    # provided all images fall inside the temp_dir_root...
+#     $ih->delete_all();
+
     return ($text, $confidence);
-}
-
-#=============================================================
-
-=head1 _generateUUID
-
-=head2 INPUT
-
-=head2 OUTPUT
-
-=head2 DESCRIPTION
-
-    Genereates a unique identifier based on current time
-
-=cut
-
-#=============================================================
-sub _generateUUID
-{
-    my ($seconds, $microseconds) = gettimeofday;
-    return "$seconds".'_'."$microseconds";
 }
 
 #=============================================================

@@ -50,45 +50,8 @@ use Moose;
 with 'Mir::Util::R::DocHandler';
 
 #=============================================================
-=head2 open_doc
 
-=head3 INPUT
-
-$document:          path to document
-
-=head3 OUTPUT
-
-0/1:                fail/success
-
-=head3 DESCRIPTION
-
-Stores document path in object
-
-=cut
-
-#=============================================================
-sub open_doc
-{
-    my ($self, $document) = @_;
-
-    if (not defined $document) {
-        $self->log->error("No document was provided");
-        return 0;
-    }
-
-    if (not stat ("$document")) {
-        $self->log->error("Cannot find document $document");
-        return 0;
-    }
-
-    $self->{DOC_PATH} = "$document";
-
-    return 1; 
-}
-
-#=============================================================
-
-=head2 pages
+=head2 get_num_pages
 
 =head3 INPUT
 
@@ -101,7 +64,7 @@ Returns the number of pages (actually 1) for the text document
 =cut
 
 #=============================================================
-sub pages {
+sub get_num_pages {
     my $self = shift;
     return 1;
 }
@@ -134,10 +97,10 @@ Currently implemented by each driver.
 sub page_text {
     my ($self, $page, $temp_dir) = @_;
     my $text;
-    if ( -T "$self->{DOC_PATH}" ) {
+    if ( -T "$self->{doc_path}" ) {
         local $/;
         my $fh;
-        open ($fh, "<", "$self->{DOC_PATH}" );
+        open ($fh, "<", "$self->{doc_path}" );
         $text = <$fh>;
         if ( $text ) {
         }

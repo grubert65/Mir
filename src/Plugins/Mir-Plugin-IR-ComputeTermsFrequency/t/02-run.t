@@ -30,7 +30,7 @@ foreach my $doc ( @$docs ) {
     my $dh = Mir::Util::DocHandler->create( driver => 'txt' );
     $dh->open_doc($doc->{path});
     $doc->{text} = [];
-    for (my $i=0;$i<$dh->pages();$i++) {
+    for (my $i=0;$i<$dh->num_pages();$i++) {
         my ( $text, $confidence ) = $dh->page_text( $i, '/tmp' );
         push @{ $doc->{text} }, $text;
     }

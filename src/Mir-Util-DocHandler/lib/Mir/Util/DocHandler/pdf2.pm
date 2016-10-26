@@ -28,11 +28,11 @@ for pdf files.
     my $pdf_page_path = $doc->extractPage( $page_num);
 
     # convert a pdf file to an image
-    # returns the abs path to the image file
-    my $image_file_path = $doc->convertToImage( $pdf_page_path );
+    $doc->convertToImage( $pdf_page_path, $img_file )
+        or die "Error converting pdf page";
 
     # get text for a given page...
-    my ( $text, $confidence ) = $doc->page_text( $page_num, $temp_dir );
+    my ( $text, $confidence ) = $doc->page_text( $page_num );
 
     # or extract all pages at once...
     my $array = $doc->extractAllAndConvert();
@@ -74,15 +74,16 @@ of the License, or (at your option) any later version.
 
 #========================================================================
 use Moose;
-with 'Mir::Util::R::DocHandler';
-
-use feature 'unicode_strings';
 use namespace::autoclean;
-use Image::OCR::Tesseract   qw( get_ocr );
-use File::Path              qw( make_path rmtree );
-use File::Basename          qw( basename dirname );
-use File::Remove            qw( remove );
-use Image::Size             qw( imgsize );
+with 'Mir::Util::R::DocHandler', 
+     'Mir::Util::R::OCR',
+     'Mir::Util::R::PDF';
+
+use File::Path      qw( make_path rmtree );
+use File::Basename  qw( basename dirname fileparse);
+use File::Remove    qw( remove );
+use File::Copy      qw( copy );
+use Image::Size     qw( imgsize );
 use Imager;
 use PDF::Extract;
 use DirHandle;
@@ -98,21 +99,31 @@ use vars qw( $VERSION );
 #        basedir. This prevents errors in case we don't
 #        have priviledges on the pdf base fodler...
 # 0.05 : bug fixing...
-$VERSION = '0.05';
+# 0.06 : rewriting some stuff...
+$VERSION = '0.06';
 
-# tesseract confidence on extraction
-has 'confidence' => ( 
-    is      => 'rw', 
-    isa     => 'Int',
-    lazy    => 1,
-    default => sub { return 100; }
+has 'uid' => (
+    is      => 'ro',
+    isa     => 'Str',
+    default => sub { 
+        my $ug = Data::UUID->new();
+        my $uuid = $ug->create();
+        return $ug->to_string( $uuid );
+    }
+);
+
+has 'pdfex' => (
+    is      => 'ro',
+    isa     => 'PDF::Extract',
+    default => sub { PDF::Extract->new() },
 );
 
 # the pdf document and where everything get stored...
 has 'pdf'           => ( is => 'rw', isa => 'Str' );
 has 'page_num'      => ( is => 'rw', isa => 'Int' );
-
 has 'basedir'       => ( is => 'rw', isa => 'Str' );
+has 'filename'      => ( is => 'rw', isa => 'Str' );
+has 'suffix'        => ( is => 'rw', isa => 'Str' );
 has 'pdf_pages_dir' => ( is => 'rw', isa => 'Str' );
 has 'pdf_images_dir'=> ( is => 'rw', isa => 'Str' );
 has 'pdf_text_dir'  => ( is => 'rw', isa => 'Str' );
@@ -121,66 +132,35 @@ $ENV{CACHE_DIR} //= '/tmp';
 
 #=============================================================
 
-=head2 open_doc
+=head2 create_temp_dirs
 
 =head3 INPUT
 
-    $pdf:          path to pdf doc
-
 =head3 OUTPUT
 
-    0/1:                fail/success
+1
 
 =head3 DESCRIPTION
 
-Opens provided document and stores its path in object.
-Creates these subfolders:
+Create temporary directories:
     - pages:    where single page pdfs get stored
     - images:   where single page images get stored
-
-TODO : should return page number...
+    - text:     where document text files get stored
 
 =cut
 
 #=============================================================
-sub open_doc {
-    my ($self, $pdf) = @_;
+sub create_temp_dirs {
+    my $self = shift;
 
-    return undef unless $pdf;
-    $self->pdf( $pdf ) if ( $pdf );
+    $self->pdf_pages_dir ("$self->{temp_dir_root}/pages");
+    $self->pdf_images_dir("$self->{temp_dir_root}/images");
+    $self->pdf_text_dir  ("$self->{temp_dir_root}/text");
 
-    if (not stat ($self->pdf)) {
-        $self->log->error("Cannot find document $self->{pdf}");
-        return 0;
-    }
-
-    my $ug = Data::UUID->new; my $uuid=$ug->create();
-    $self->basedir( $ENV{CACHE_DIR}.'/'.$ug->to_string( $uuid ) );
-    make_path( $self->basedir );
-    $self->pdf_pages_dir("$self->{basedir}/pages");
-    $self->pdf_images_dir("$self->{basedir}/images");
-    $self->pdf_text_dir("$self->{basedir}/text");
-
-    $self->{filename} =  basename ( $self->pdf );
-    ($self->{basename}, $self->{suffix}) = split(/\./, $self->{filename});
-
-    my $infos;
-    my $cmd = "pdfinfo \"$pdf\" > $self->{basedir}/pdf_info_file.txt 2>&1";
-    my $ret = system($cmd);
-    if ($ret == 0) {
-        # Get infos and delete temp dir...
-        open (PDF_INFO, "<:encoding(utf8)", "$self->{basedir}/pdf_info_file.txt");
-        read (PDF_INFO, $infos, (stat(PDF_INFO))[7]);
-        close (PDF_INFO);
-        
-        # If everything was OK, get document infos
-        if ($infos =~ /pages\:.*?(\d{1,})/i) {
-            $self->page_num( $1 );
-        } else {
-            $self->log->error("Cannot get document $pdf infos") if $self->log;
-            return 0;
-        }
-    }
+    $self->pdfex->setPDFExtractVariables( 
+        PDFDoc   => $self->{doc_path},
+        PDFCache => $self->pdf_pages_dir 
+    );
 
     return 1 if ( -d $self->pdf_pages_dir && 
                   -d $self->pdf_images_dir &&
@@ -192,11 +172,6 @@ sub open_doc {
     }
     
     return 1; 
-}
-
-sub pages {
-    my $self = shift;
-    return $self->page_num;
 }
 
 #=============================================================
@@ -223,19 +198,27 @@ sub extractAllAndConvert {
     my $self = shift;
 
     my @pages;
-    if ( $self->page_num ) {
-        foreach( my $page_num=1;$page_num<=$self->page_num;$page_num++){
+    if ( $self->num_pages ) {
+        foreach( my $page_num=1;$page_num<=$self->num_pages;$page_num++){
             # extract each page as single pdf
             my $pdf_file = $self->extractPage ($page_num)
                 or next;
+            
+            my $img_file = $self->_get_image_file( $page_num );
 
             # convert each pdf page in image
-            my $img_file = $self->convertToImage($pdf_file) or next;
+            $self->convertToImage($pdf_file, $img_file) or next;
 
             push @pages, { pdf => $pdf_file, img => $img_file };
         }
     }
     return \@pages;
+}
+
+
+sub _get_image_file {
+    my ( $self, $page ) = @_;
+    return $self->pdf_images_dir.'/'.$self->{doc_name}.'-'.$page.'.jpg';
 }
 
 #=============================================================
@@ -245,7 +228,7 @@ sub extractAllAndConvert {
 =head3 INPUT
 
     $page:     page number
-    $temp_dir: temp dir where text is stored (not mandatory)
+    $lang:     the supposed text language
 
 =head3 OUTPUT
 
@@ -263,42 +246,23 @@ Returns ( undef, 0 ) in case of errors.
 
 #=============================================================
 sub page_text {
-    my ($self, $page, $temp_dir) = @_;
+    my ($self, $page, $lang) = @_;
 
-    my $text = "";
-    my $confidence = $self->confidence;
-
-    my @path = split(/\//, $self->pdf);
-    my ($filename, $suffix) = split(/\./, $path[-1]);
-    my $img = $self->pdf_images_dir.'/'.$filename.$page.'.jpg';
-    $self->log->debug("Going to extract text from image: $img");
-    if (! -e $img ) {
-        try {
-            $self->log->debug("Image $img not existent, going to extract page and convert...");
-            my $pdf_page = $self->extractPage( $page )
-                or die "Error extracting page $page\n";
-            $img = $self->convertToImage( $pdf_page );
-            die "Error converting image" unless ( $img && -e $img );
-        } catch {
-            $self->log->error( $@ );
-            return ( undef, 0 );
+    $DB::single=1;
+    my $img_file = $self->_get_image_file( $page );
+    $self->log->debug("Going to extract text from image: $img_file");
+    try {
+        unless ( -e "$img_file" ) {
+            $self->log->debug("Image $img_file not existent, going to extract page and convert...");
+            my $pdf_page = ( $self->page_num > 1 ) ? $self->extractPage( $page ) : $self->pdf;
+            die ("PDF page not found") unless ( -f $pdf_page );
+            $self->convertToImage( $pdf_page, $img_file ) or die "Error converting image";
         }
+        return $self->get_ocr( "$img_file", "$self->{pdf_text_dir}/$self->{filename}-$page", $lang );
+    } catch {
+        $self->log->error( $@ );
+        return ( undef, 0 );
     }
-
-    unless ( $img ) {
-        $self->log->error( "Error getting an image for page $page, skipping..." );
-        return ( "", 0 );
-    }
-
-    $text = get_ocr( $img, $self->basedir, 'ita' );
-    if ( $text =~ /average_doc_confidence:(\d{1,3})/ ) {
-        $confidence = $1;
-        $text =~ s/average_doc_confidence:(\d{1,3})//g;
-    }
-
-    # we need to take care of this, if more than one process is running
-    # they actually delete each other files...
-    return ($text, $confidence);
 }
 
 #=============================================================
@@ -324,14 +288,23 @@ pdf with file name <base filename>-<page_num>.pdf
 sub extractPage {
     my ( $self, $page_num ) = @_;
 
-    my $pdf_page=$self->{pdf_pages_dir}.'/'.$self->{basename}.$page_num.'.'.$self->{suffix};
+    my $pdf_page=$self->{pdf_pages_dir}.'/'.$self->{filename}.$page_num.'.pdf';
+    my $pdf_page_name = $self->{filename}.$page_num;
     return $pdf_page if (-e $pdf_page );
     try {
-        my $pdf=new PDF::Extract( PDFDoc=> $self->pdf );
-        $pdf->setVars( PDFCache => $self->{pdf_pages_dir} );
-        my $ret = $pdf->savePDFExtract( PDFPages=>$page_num );
+        # apparently, if several objects are instantiated, 
+        # you have to specify to PDF::Extract all parameters
+        # each time..
+        $self->pdfex->setPDFExtractVariables( 
+            PDFDoc   => $self->pdf,
+            PDFCache => $self->pdf_pages_dir,
+            PDFSaveAs => "$pdf_page_name" 
+        );
+
+        $DB::single=1;
+        my $ret = $self->pdfex->savePDFExtract( PDFPages=>$page_num );
         if ( $ret == 0 ) {
-            $self->log->error( $pdf->getVars("PDFError") );
+            $self->log->error( $self->pdfex->getVars("PDFError") );
             return undef;
         }
         return $pdf_page;
@@ -348,10 +321,11 @@ sub extractPage {
 =head3 INPUT
 
     $pdf_file: path to the pdf file to be converted
+    $img_file: path of the image
 
 =head3 OUTPUT
 
-$outfile/undef in case of errors.
+1/undef in case of errors.
 
 =head3 DESCRIPTION
 
@@ -361,9 +335,10 @@ Converts pdf file to jpg image...
 
 #=============================================================
 sub convertToImage {
-    my ( $self, $pdf_file ) = @_;
+    my ( $self, $pdf_file, $img_file ) = @_;
 
     return undef unless -e $pdf_file;
+    return 1 if ( -e $img_file );
 
     # check that the convert tool is installed
     my $ret = system("which convert");
@@ -372,20 +347,14 @@ sub convertToImage {
         return undef;
     }
 
-    my @path = split(/\//, $pdf_file);
-    my ($filename, $suffix) = split(/\./, $path[-1]);
-
-    my $img_file = $self->pdf_images_dir.'/'.$filename.'.jpg';
-    return $img_file if ( -e $img_file );
-
     my $cmd = "convert -density 300 -quality 100 \"$pdf_file\" \"$img_file\"";
     $ret = system( $cmd );
     if( $ret != 0 ) {
         $self->log->error("ERROR executing cmd: $cmd");
         return undef;
     }
-    return undef unless -e $img_file; #check at least that file exists...
-    return $img_file;
+
+    return -e $img_file; #check at least that file exists...
 }
 
 
@@ -458,6 +427,7 @@ Deletes the basedir folder
 #=============================================================
 sub delete_temp_files {
     my $self = shift;
+    $DB::single=1;
     rmtree($self->basedir);
     return 1;
 }

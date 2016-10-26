@@ -20,10 +20,12 @@ ok (my $doc = Mir::Util::DocHandler->create(driver => 'pdf3'), "new");
 ok ($doc->open_doc("./data/plan.pdf"), "open_doc");
 is ($doc->pages(), 1, "pages");
 ok (my ($text,$conf)=$doc->page_text(1), 'page_text');
+ok ($doc->delete_temp_files(), 'delete_temp_files' );
 
 ok (my $doc2 = Mir::Util::DocHandler->create(driver => 'pdf3'), "new"); 
 ok ($doc2->open_doc("./data/plan.pdf"), "open_doc");
 is ( ($doc2->page_text(1))[0], $text, "got same text...");
+ok ($doc2->delete_temp_files(), 'delete_temp_files' );
 
 # now tries to extract text from all pages...
 ok ($doc->open_doc("./data/Jaae-is2007.pdf"), "open_doc");
@@ -31,8 +33,11 @@ ok (my $num_pages = $doc->pages(), 'pages' );
 is ( $num_pages, 4, 'got right number of pages');
 for( my $num_page=1;$num_page<=$num_pages;$num_page++) {
     ok( ($text,$conf) = $doc->page_text( $num_page ) );
-    diag "Confidence on text for page $num_page: $conf";
+    note "TEXT for page $num_page";
+    note $text;
+    note "Confidence on text for page $num_page: $conf";
 }
+ok ($doc->delete_temp_files(), 'delete_temp_files' );
 
 done_testing;
 

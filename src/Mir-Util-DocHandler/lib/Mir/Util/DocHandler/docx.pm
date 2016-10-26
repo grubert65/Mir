@@ -53,38 +53,10 @@ of the License, or (at your option) any later version.
 #========================================================================
 use Moose;
 with 'Mir::Util::R::DocHandler';
-use Encode;
 
-extends 'Mir::Util::DocHandler::Office';
-
-#=============================================================
-
-=head2 pages
-
-=head3 INPUT
-
-=head3 OUTPUT
-
-Currently unavailable, always returns 1
-
-=head3 DESCRIPTION
-
-Currently unavailable, always returns 1
-
-=cut
-
-#=============================================================
-sub pages
-{
-    my ($self) = shift;
-
-    my $doc = $self->{'DOC_PATH'};
-    if (not defined $doc) {
-        $self->log->error("No document was ever opened");
-        return undef;
-    }
-
-    return 1;
+sub get_num_pages {
+    # not possible to detect the number of pages...
+    return undef;
 }
 
 #=============================================================
@@ -92,9 +64,6 @@ sub pages
 =head2 page_text
 
 =head3 INPUT
-
-$page:                  page number (ignored)
-$temp_dir:              temp dir where text is stored
 
 =head3 OUTPUT
 
@@ -110,20 +79,12 @@ Returns text of document
 =cut
 
 #=============================================================
-sub page_text
-{
-    my ($self, $page, $temp_dir) = @_;
+sub page_text {
+    my $self = shift;
 
     my $confidence = 100;
-    my $doc = $self->{'DOC_PATH'};
-    if (not defined $doc) {
-        $self->log->error("No document was ever opened");
-        return undef;
-    }
-
-    my $cmd = "docx2txt.pl < \"$doc\"";
+    my $cmd = "docx2txt.pl < \"$self->{doc_path}\"";
     my $text = `$cmd`;
-
     return ($text, $confidence);
 }
 

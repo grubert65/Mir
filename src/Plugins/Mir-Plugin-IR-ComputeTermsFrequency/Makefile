@@ -487,7 +487,7 @@ realclean purge :: realclean_subdirs
 metafile : create_distdir
 	$(NOECHO) $(ECHO) Generating META.yml
 	$(NOECHO) $(ECHO) '---' > META_new.yml
-	$(NOECHO) $(ECHO) 'abstract: '\''The great new Mir::Plugin::IR::ComputeTermsFrequency!'\''' >> META_new.yml
+	$(NOECHO) $(ECHO) 'abstract: '\''A plugin to compute terms frequency in a document text'\''' >> META_new.yml
 	$(NOECHO) $(ECHO) 'author:' >> META_new.yml
 	$(NOECHO) $(ECHO) '  - '\''Marco Masetti <marco.masetti@softeco.it>'\''' >> META_new.yml
 	$(NOECHO) $(ECHO) 'build_requires:' >> META_new.yml
@@ -512,7 +512,7 @@ metafile : create_distdir
 	-$(NOECHO) $(MV) META_new.yml $(DISTVNAME)/META.yml
 	$(NOECHO) $(ECHO) Generating META.json
 	$(NOECHO) $(ECHO) '{' > META_new.json
-	$(NOECHO) $(ECHO) '   "abstract" : "The great new Mir::Plugin::IR::ComputeTermsFrequency!",' >> META_new.json
+	$(NOECHO) $(ECHO) '   "abstract" : "A plugin to compute terms frequency in a document text",' >> META_new.json
 	$(NOECHO) $(ECHO) '   "author" : [' >> META_new.json
 	$(NOECHO) $(ECHO) '      "Marco Masetti <marco.masetti@softeco.it>"' >> META_new.json
 	$(NOECHO) $(ECHO) '   ],' >> META_new.json
@@ -861,7 +861,7 @@ testdb_static :: static pure_all
 # Creates a PPD (Perl Package Description) for a binary distribution.
 ppd :
 	$(NOECHO) $(ECHO) '<SOFTPKG NAME="Mir-Plugin-IR-ComputeTermsFrequency" VERSION="0.01">' > Mir-Plugin-IR-ComputeTermsFrequency.ppd
-	$(NOECHO) $(ECHO) '    <ABSTRACT>The great new Mir::Plugin::IR::ComputeTermsFrequency!</ABSTRACT>' >> Mir-Plugin-IR-ComputeTermsFrequency.ppd
+	$(NOECHO) $(ECHO) '    <ABSTRACT>A plugin to compute terms frequency in a document text</ABSTRACT>' >> Mir-Plugin-IR-ComputeTermsFrequency.ppd
 	$(NOECHO) $(ECHO) '    <AUTHOR>Marco Masetti &lt;marco.masetti@softeco.it&gt;</AUTHOR>' >> Mir-Plugin-IR-ComputeTermsFrequency.ppd
 	$(NOECHO) $(ECHO) '    <IMPLEMENTATION>' >> Mir-Plugin-IR-ComputeTermsFrequency.ppd
 	$(NOECHO) $(ECHO) '        <PERLCORE VERSION="5,006,0,0" />' >> Mir-Plugin-IR-ComputeTermsFrequency.ppd
