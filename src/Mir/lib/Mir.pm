@@ -13,7 +13,8 @@ Version 0.18
 #History:
 # 0.18 | 23.09.2016 | Now supports plugins
 # 0.19 | 27.09.2016 | Plugins support extended
-our $VERSION = '0.19';
+# 0.20 | 26.10.2016 | Plugins support completed
+our $VERSION = '0.20';
 
 
 =head1 SYNOPSIS
