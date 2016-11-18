@@ -32,6 +32,7 @@ WriteMakefile(
     PREREQ_PM => {
         'Data::Dumper'          => 0,
         'Data::GUID'            => 0,
+        'Data::Printer'         => 0,
         'DateTime'              => 0,
         'enum'                  => 0,
         'File::Copy'            => 0,
@@ -40,7 +41,6 @@ WriteMakefile(
         'HTTP::Cookies'         => 0,
         'HTML::TreeBuilder'     => 0,
         'Log::Log4perl'         => 0,
-        'Mir::Config::Client'   => 0,
         'MongoDB'               => 0,
         'Moo'                   => 0,
         'Moose'                 => 0,
