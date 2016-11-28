@@ -14,7 +14,8 @@ Version 0.18
 # 0.18 | 23.09.2016 | Now supports plugins
 # 0.19 | 27.09.2016 | Plugins support extended
 # 0.20 | 26.10.2016 | Plugins support completed
-our $VERSION = '0.20';
+# 0.21 | 18.11.2016 | Imported Mir::Stat
+our $VERSION = '0.21';
 
 
 =head1 SYNOPSIS
