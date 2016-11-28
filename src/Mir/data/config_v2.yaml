@@ -1,0 +1,42 @@
+---
+-
+  tag:      campaign
+  campaign: IR-test
+  params:
+    fetchers: 
+      - 
+        ns: FS
+        params:
+          node: localhost
+          root_dir: '.'
+          suffixes: 
+            - pm
+            - t
+            - txt
+          browse_func: dir_walk
+          cache_params:
+            server: '127.0.0.1:6379'
+            db: 2
+          storage_io_params:
+            io: 
+              - MongoDB
+              -
+                key_attr:   id
+                host:       localhost
+                database:   MIR
+                collection: IR_test
+    idx_server:
+      index: ir-test
+      type: doc
+      ir_params:
+        nodes: 'localhost:9200'
+      confidence_threashold: 40
+      doc_handlers_lut:
+        pdf:  pdf3
+        htm:  html
+        docx: doc
+        java: txt
+        js:   txt
+        pm:   txt
+        pl:   txt
+        json: txt
