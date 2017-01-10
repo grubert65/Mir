@@ -15,7 +15,8 @@ Version 0.18
 # 0.19 | 27.09.2016 | Plugins support extended
 # 0.20 | 26.10.2016 | Plugins support completed
 # 0.21 | 18.11.2016 | Imported Mir::Stat
-our $VERSION = '0.21';
+# 0.22 | 10.01.2017 | Role Mir::Acq::Fetcher revised
+our $VERSION = '0.22';
 
 
 =head1 SYNOPSIS

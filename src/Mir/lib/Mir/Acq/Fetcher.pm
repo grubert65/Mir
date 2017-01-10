@@ -16,10 +16,17 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
+    package Mir::Acq::Fetcher::Driver;
+    use Moose;
+    with 'Mir::Acq::Fetcher';
+    has 'foo' => (is => 'rw', isa => 'Num', default => 0);
+    1;
+
+    package Main;
     use Mir::Acq::Fetcher;
     my $f = Mir::Acq::Fetcher->create(
-        driver => $driver,
-        params => $params
+        driver => 'Driver',
+        params => { foo => 1 }
     );
 
 =head1 EXPORT

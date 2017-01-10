@@ -1,6 +1,55 @@
 package Mir::R::Acq::Fetch::Spider;
+#============================================================= -*-perl-*-
+
+=head1 NAME
+
+Mir::R::Acq::Fetch::Spider - A Mir role that should be consumed by
+any implemented web spider 
+
+=head1 VERSION
+
+0.01
+
+=cut
+
+our $VERSION='0.01';
+
+=head1 SYNOPSIS
+
+    package Mir::Acq::Fetcher::WebSpider;
+    with 'Mir::R::Acq::Fetch::Spider';
+
+    ...
+    1;
+
+=head1 DESCRIPTION
+
+This role can be used to inject usefull code to implement a 
+generic web spider.
+
+=head1 AUTHOR
+
+Marco Masetti (marco.masetti @ softeco.it )
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright (c) 2017 Marco Masetti (marco.masetti at softeco.it). All rights reserved.
+
+This module is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself. See perldoc perlartistic.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+=head1 SUBROUTINES/METHODS
+
+=cut
+
+#========================================================================
 use Moose::Role;
 use namespace::autoclean;
+
 use HTTP::Cookies;
 use WWW::Mechanize;
 use HTML::TreeBuilder 5 -weak;  # ensure weak references in use
@@ -47,7 +96,7 @@ has 'TEMP_DIR' => (
     default => '/tmp'
 );
 
-with 'Mir::R::Acq::Fetch';
+with 'Mir::Acq::Fetcher';
 
 #=============================================================
 
