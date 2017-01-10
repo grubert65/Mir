@@ -81,11 +81,18 @@ sub create {
     my $driver = $fields{driver} or die "No driver passed!";
     my $params = $fields{params};
 
+    if ( (ref $params) && (ref $params ne 'HASH')) {
+        warn ( 
+            "Driver $driver created passing wrong params data type, ",
+            "params must be expressed as HashRef\n"
+        );
+    }
+
     my $class = _get_driver($package, $driver) or
         die ("$package driver '$driver' is not supported");
             
     # hand-off to specific implementation sub-class
-    ( ref $params ) ? $class->new( $params ) : $class->new();
+    ( ref $params eq 'HASH') ? $class->new( $params ) : $class->new();
 }
 
 #=============================================================

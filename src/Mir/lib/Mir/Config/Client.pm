@@ -56,8 +56,8 @@ our $VERSION = '0.01';
     my $hash = $c->get_any( section => $section )
         or die "Section $section does not exists...";
 
-# the new way should be:
-#
+    # the new way should be:
+    #
     my $o=Mir::Config::Client->create( 
             driver => 'Mongo', 
             params => {

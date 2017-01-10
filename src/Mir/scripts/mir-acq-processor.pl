@@ -102,13 +102,25 @@ sub run_fetchers {
         $log->debug ("Received:\n");
         $log->debug (Dumper $item );
         try {
-            $class= "Mir::Acq::Fetcher".'::'.$item->{ns}
-                if ( defined $item->{ns} );
-            eval "require $class";
-            $log->debug ("Going to create a $class fetcher...\n");
-            $log->debug ("With params:");
-            $log->debug ( Dumper ( $item->{params} ) );
-            my $o = $class->new( %{$item->{params}} );
+            #-----------------------------------------------------
+            # we actually added the DriverRole to the Mir::Acq::Fetcher class
+            # this means that this old code can be commented out...
+#             $class= "Mir::Acq::Fetcher".'::'.$item->{ns}
+#                 if ( defined $item->{ns} );
+#             eval "require $class";
+#             my $o = $class->new( %{$item->{params}} );
+             $log->debug ("Going to create a $class fetcher...\n");
+             $log->debug ("With params:");
+             $log->debug ( Dumper ( $item->{params} ) );
+            #-----------------------------------------------------
+            # NEW CODE
+            #-----------------------------------------------------
+            my $o = Mir::Acq::Fetcher->create(
+                driver => $item->{ns},
+                params => $item # NOTE : should be $item->{params}
+                                # this is due to the fact that some processors 
+                                # expects a "params" hashref as input
+            );
             $o->fetch();
             my $stat = Mir::Stat->new(
                 counter => $campaign.'_fetched',

@@ -64,23 +64,6 @@ use Moose::Role;
 use namespace::autoclean;
 use Log::Log4perl;
 
-has 'ret'       => ( is => 'rw', isa => 'Int' );
-has 'docs'      => ( is => 'rw', isa => 'ArrayRef', default => sub { [] } );
-has 'errors'    => ( is => 'rw', isa => 'ArrayRef', default => sub { [] } );
-
-has 'log' => (
-    is      => 'ro',
-    lazy    => 1,
-    default => sub { Log::Log4perl->get_logger( __PACKAGE__ ); },
-);
-
-has 'params' => (
-    is      => 'rw',
-    isa     => 'HashRef',
-    lazy    => 1,
-    default => sub { return {} },
-);
-
 requires 'get_docs';
 
 #=============================================================
@@ -105,9 +88,7 @@ sub fetch {
 
     $self->get_docs();
 
-    # TODO
-    # should we notify errors here or in each fetcher ?!?
-    if ( not $self->ret ) {
+    unless ( $self->ret ) {
         $self->log->error( "Error fetching from fetcher: ".ref $self );
         foreach ( @{ $self->errors } ) {
             $self->log->error( $_ );

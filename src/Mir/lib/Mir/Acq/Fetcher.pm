@@ -3,7 +3,7 @@ package Mir::Acq::Fetcher;
 
 =head1 NAME
 
-Mir::Acq::Fetcher - a base class not to use directly
+Mir::Acq::Fetcher - A base class every fetcher should inherit, not to use directly
 
 =head1 VERSION
 
@@ -88,8 +88,70 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =cut
 
 #===============================================================================
-use Moose;
+use Moose::Role;
+use namespace::autoclean;
+use Log::Log4perl;
+
 with 'DriverRole';
+
+
+# the get_docs sub return code: 1 => ok, otherwise errors occurred while fetching
+has 'ret'       => ( is => 'rw', isa => 'Int' );
+
+# a ref to the array of fetched docs. Each item should inherit from Mir::Doc
+has 'docs'      => ( is => 'rw', isa => 'ArrayRef', default => sub { [] } );
+
+# in case fetching fails...
+has 'errors'    => ( is => 'rw', isa => 'ArrayRef', default => sub { [] } );
+
+has 'log' => (
+    is      => 'ro',
+    lazy    => 1,
+    default => sub { Log::Log4perl->get_logger( __PACKAGE__ ); },
+);
+
+# actually using the DriverRole role
+# params gets passed directly as hash ref, not via 
+# the params attribute...
+# has 'params' => (
+#     is      => 'rw',
+#     isa     => 'HashRef',
+#     lazy    => 1,
+#     default => sub { return {} },
+# );
+
+requires 'get_docs';
+
+#=============================================================
+
+=head2 fetch
+
+=head3 INPUT
+
+=head3 OUTPUT
+
+1/undef in case of errors.
+
+=head3 DESCRIPTION
+
+just try to get docs from the fetcher
+
+=cut
+
+#=============================================================
+sub fetch {
+    my $self = shift;
+
+    $self->get_docs();
+
+    unless ( $self->ret ) {
+        $self->log->error( "Error fetching from fetcher: ".ref $self );
+        foreach ( @{ $self->errors } ) {
+            $self->log->error( $_ );
+        }
+    }
+    return $self->ret;
+}
 
 1; 
  
