@@ -21,8 +21,9 @@ my $docs;
 
 # preparing configuration data in Mongo...
 my $client     = MongoDB->connect('mongodb://localhost');
-my $collection = $client->ns('MIR.system');
+my $collection = $client->ns('MIR.system_test');
 
+# Hey, come on! Each time you test in production you loose the configuration!!
 eval { $collection->drop() };
 if ( $@ ) {
     note "It seems Mongo is not running, exiting...";
@@ -43,7 +44,7 @@ ok(my $o=Mir::Config::Client->create(
 
 ok( $o->connect(), 'connect' );
 
-ok(my $system=$o->get_section('system'), 'get_section');
+ok(my $system=$o->get_section('system_test'), 'get_section');
 note "System section:\n";
 note explain $system;
 

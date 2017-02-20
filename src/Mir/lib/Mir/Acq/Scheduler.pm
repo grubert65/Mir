@@ -144,7 +144,7 @@ sub enqueue_fetchers_of_campaign {
                 $c->get_key(
                     { campaign => $campaign },
                     { 'params' => 1 }
-                )->[0]->{ params }->{fetchers};
+                )->[0]->{params}->{fetchers};
             };
         } catch {
             $self->log->warn("Key not found in Config data store");
