@@ -31,7 +31,7 @@ if ( $@ ) {
     exit;
 } else {
     # load testing data into the MIR.system collection...
-    $collection->insert( $_ ) foreach (  @$docs );
+    $collection->insert_one( $_ ) foreach (  @$docs );
 }
 
 ok(my $o=Mir::Config::Client->create( 
