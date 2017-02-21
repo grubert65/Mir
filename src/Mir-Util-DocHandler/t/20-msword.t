@@ -14,7 +14,7 @@ SKIP: {
 
     ok (my $doc = Mir::Util::DocHandler::doc->new(),         "new"); 
     ok ($doc->open_doc("./data/crossmediaretrieval.doc"),    "open_doc");
-    ok ($doc->get_num_pages(),                               "get_num_pages");
+    is ($doc->get_num_pages(), undef,                        "get_num_pages");
     ok ($doc->page_text(1, "./data"),                        "page_text");
     ok ($doc->ConvertToPDF('./data/crossmediaretrieval.pdf', $display),"ConvertToPDF");
     ok ( -f './data/crossmediaretrieval.pdf', 'Ok, pdf file exists...' );

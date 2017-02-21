@@ -9,9 +9,10 @@ BEGIN { use_ok('Mir::Util::DocHandler::ppt') };
 foreach my $file ( qw( ./data/sample.pptx ) ) {
     diag "\nExtracting text from file $file...\n";
     ok (my $doc = Mir::Util::DocHandler::ppt->new(), "new"); 
+    $doc->temp_dir_root('./data/temp');
     ok ($doc->open_doc($file), "open_doc");
-    is ($doc->pages(), 1, "pages");
-    ok (my ($text,$conf) = $doc->page_text(1, "./data"), "page_text");
+    is ($doc->get_num_pages(), 1, "get_num_pages");
+    ok (my ($text,$conf) = $doc->page_text(1), "page_text");
     diag "\nTEXT:\n$text\n";
     is ($conf,100, 'confidence ok');
 }

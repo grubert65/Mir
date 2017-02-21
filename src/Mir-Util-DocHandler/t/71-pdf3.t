@@ -17,12 +17,14 @@ remove_tree( './data/pages' ) if (-d './data/pages');
 remove_tree( './data/images') if (-d './data/images');
 
 ok (my $doc = Mir::Util::DocHandler->create(driver => 'pdf3'), "new"); 
+$doc->temp_dir_root('./data/temp');
 ok ($doc->open_doc("./data/plan.pdf"), "open_doc");
 is ($doc->get_num_pages(), 1, "get_num_pages");
 ok (my ($text,$conf)=$doc->page_text(1), 'page_text');
 ok ($doc->delete_temp_files(), 'delete_temp_files' );
 
 ok (my $doc2 = Mir::Util::DocHandler->create(driver => 'pdf3'), "new"); 
+$doc2->temp_dir_root('./data/temp');
 ok ($doc2->open_doc("./data/plan.pdf"), "open_doc");
 is ( ($doc2->page_text(1))[0], $text, "got same text...");
 ok ($doc2->delete_temp_files(), 'delete_temp_files' );

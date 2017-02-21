@@ -52,10 +52,11 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #========================================================================
 use Moose;
 use namespace::autoclean;
-
 use Mir::Util::DocHandler;
+use File::Path qw(remove_tree);
 
 has 'confidence_threashold' => ( is => 'rw', isa => 'Int', default => 40 );
+has 'temp_dir_root' => ( is => 'rw', isa => 'Str' );
 
 has 'pdf1_dh' => ( 
     is  => 'ro', 
@@ -71,7 +72,10 @@ has 'pdf2_dh' => (
 
 sub open_doc {
     my ($self, $doc) = @_;
-    $self->{$_}->open_doc( $doc ) foreach ( ( qw( pdf1_dh pdf2_dh ) ) );
+    foreach ( ( qw( pdf1_dh pdf2_dh ) ) ) {
+        $self->{$_}->temp_dir_root( $self->temp_dir_root );
+        $self->{$_}->open_doc( $doc );
+    }
     return 1;
 }
 
@@ -98,6 +102,12 @@ sub page_text {
     }
 
     return ( $t_best, $c_max );
+}
+
+sub delete_temp_files {
+    my $self = shift;
+
+    remove_tree( $self->temp_dir_root ) if ( -d $self->temp_dir_root );
 }
 
 1;

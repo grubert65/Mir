@@ -15,7 +15,12 @@ $ENV{CACHE_DIR} = './data/temp';
 remove_tree( './data/temp/pages' ) if (-d './data/pages');
 remove_tree( './data/temp/images') if (-d './data/images');
 
-ok (my $doc  = Mir::Util::DocHandler->create(driver => 'pdf2'), "new"); 
+ok (my $doc  = Mir::Util::DocHandler->create(
+        driver => 'pdf2',
+        params => {
+            temp_dir_root => './data/temp',
+        }
+    ), "new"); 
 
 ok ($doc->open_doc("./data/plan.pdf"), "open_doc");
 is ($doc->get_num_pages(), 1, "get_num_pages");

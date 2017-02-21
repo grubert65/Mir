@@ -24,6 +24,7 @@ Log::Log4perl->easy_init($DEBUG);
 BEGIN{ use_ok('Mir::Util::DocHandler') };
 
 ok( my $o = Mir::Util::DocHandler->create( driver => 'pdf2' ), 'create' );
+ok ($o->temp_dir_root( './data/temp' ), 'setting temp_dir_root...' );
 ok( $o->open_doc( "./data/pdf file (with some weird char).in-it-as % this.pdf" ), 'open_doc' );
 ok( my $page = $o->extractPage( 2 ), 'extractPage' );
 ok( $o->delete_temp_files(), 'delete_temp_files' );

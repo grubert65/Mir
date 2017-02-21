@@ -30,6 +30,7 @@ BEGIN {
 }
 
 ok (my $doc4 = Mir::Util::DocHandler->create(driver => 'pdf2'), "new"); 
+ok ($doc4->temp_dir_root( './data/temp' ), 'setting temp_dir_root...' );
 ok ($doc4->open_doc("./data/test_utf8.pdf"), "open_doc");
 ok (my $num_pages = $doc4->get_num_pages(), 'get_num_pages' );
 is ( $num_pages, 1, 'got right number of pages');

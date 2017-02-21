@@ -17,7 +17,9 @@ remove_tree( './data/temp/pages' ) if (-d './data/pages');
 remove_tree( './data/temp/images') if (-d './data/images');
 
 ok (my $doc  = Mir::Util::DocHandler->create(driver => 'pdf2'), "new"); 
+$doc->temp_dir_root('./data/temp');
 ok (my $doc3 = Mir::Util::DocHandler->create(driver => 'pdf2'), "new"); 
+$doc3->temp_dir_root('./data/temp');
 
 ok ($doc->open_doc("./data/plan.pdf"), "open_doc");
 ok ($doc3->open_doc("./data/Jaae-is2007.pdf"), "open_doc");

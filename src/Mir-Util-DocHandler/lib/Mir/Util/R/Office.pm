@@ -228,11 +228,11 @@ Workflow:
 
 #=============================================================
 sub page_text {
-    my ( $self, $page_num, $temp_dir, $lang ) = @_;
+    my ( $self, $page_num ) = @_;
 
     my ($text, $confidence) = (undef, undef);
 
-    my $temp = $temp_dir || '/tmp';
+    my $temp = $self->temp_dir_root || '/tmp';
 
     my $ug=Data::UUID->new;my $u=$ug->create();
     my $uuid = $ug->to_string($u);
@@ -261,13 +261,15 @@ sub page_text {
         }
         my $pdf =  $temp.'/'.$uuid.'.pdf';
         if ( -e $pdf ) {
+            $self->pdf_dh->temp_dir_root( $temp );
             $self->pdf_dh->open_doc( $pdf );
-            foreach my $page_num ( 1..$self->pdf_dh->pages() ) {
-                my ( $t, $c ) = $self->pdf_dh->page_text( $page_num, $temp, $lang );
+            $self->pdf_dh->temp_dir_root( $self->temp_dir_root );
+            foreach my $page_num ( 1..$self->pdf_dh->get_num_pages() ) {
+                my ( $t, $c ) = $self->pdf_dh->page_text( $page_num, $temp, $self->{lang} );
                 $text .= encode('UTF-8', $t);
                 $confidence += $c;
             }
-            $confidence = $confidence / $self->pdf_dh->pages();
+            $confidence = $confidence / $self->pdf_dh->get_num_pages();
             remove $temp_office_doc;
             remove $pdf;
         } else {
