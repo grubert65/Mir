@@ -51,42 +51,12 @@ of the License, or (at your option) any later version.
 
 #========================================================================
 use Moose;
-with 'Mir::Util::R::DocHandler';
-extends 'Mir::Util::DocHandler::Office';
+use namespace::autoclean;
+extends qw( Mir::Util::DocHandler Mir::Util::DocHandler::Office );
 
 use Time::HiRes                 qw(gettimeofday);
 use File::Copy                  qw( copy );
 use File::Basename              qw( basename );
-
-#=============================================================
-
-=head2 pages
-
-=head3 INPUT
-
-=head3 OUTPUT
-
-Currently unavailable, always returns 1
-
-=head3 DESCRIPTION
-
-Currently unavailable, always returns 1
-
-=cut
-
-#=============================================================
-sub pages
-{
-    my ($self) = shift;
-
-    my $doc = $self->{'DOC_PATH'};
-    if (not defined $doc) {
-        $self->log->error("No document was ever opened");
-        return undef;
-    }
-
-    return 1;
-}
 
 #=============================================================
 
@@ -113,23 +83,23 @@ Returns text of document
 
 #=============================================================
 sub page_text {
-    my ($self, $page, $temp_dir) = @_;
+    my ($self, $page) = @_;
 
-    my $doc = $self->{'DOC_PATH'};
+    my $doc = $self->doc_path;
     if (not defined $doc) {
         $self->log->error("No document was ever opened");
         return undef;
     }
 
-    my $cmd = "catdoc \"$doc\" > $temp_dir/page.txt";
+    my $cmd = "catdoc \"$doc\" > $self->{temp_dir_root}/page.txt";
     my $ret = system($cmd);
 
     my $text = undef;
     if ($ret == 0) {
-        open (SINGLE_PAGE, "<:encoding(UTF-8)",  "$temp_dir/page.txt");
+        open (SINGLE_PAGE, "<:encoding(UTF-8)",  "$self->{temp_dir_root}/page.txt");
         read (SINGLE_PAGE, $text, (stat(SINGLE_PAGE))[7]);
         close SINGLE_PAGE;
-        unlink "$temp_dir/page.txt";
+        unlink "$self->{temp_dir_root}/page.txt";
     } else {
         $self->log->error("Unable to read page $page from document $doc");
         return (undef, 0);
@@ -167,10 +137,10 @@ sub ConvertToPDF {
 
     my $abiword = `which abiword`;
     if ( $abiword ) {
-        my $cmd = "abiword --to=pdf --to-name=$out_file $self->{DOC_PATH}";
+        my $cmd = "abiword --to=pdf --to-name=$out_file $self->{doc_path}";
         system( $cmd ) == 0 or return undef;
 
-        # ora dovrebbe aver generato un file con filepath eq DOC_PATH
+        # ora dovrebbe aver generato un file con filepath eq doc_path
         # ma con suffisso .pdf...
 #        if ( $self->{DOC_PATH} =~ /\.(\w+)$/ ) {
 #            my $length = length( $self->{DOC_PATH}) - length($1);

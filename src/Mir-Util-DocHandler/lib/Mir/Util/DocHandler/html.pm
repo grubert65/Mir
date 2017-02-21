@@ -51,7 +51,7 @@ of the License, or (at your option) any later version.
 
 #========================================================================
 use Moose;
-with 'Mir::Util::R::DocHandler';
+extends qw( Mir::Util::DocHandler );
 
 use Encode                      qw( from_to );
 use LEOCHARRE::HTML::Text       qw( html2txt );
@@ -64,34 +64,11 @@ $VERSION = '0.01';
 
 #=============================================================
 
-=head2 pages
-
-=head3 INPUT
-
-=head3 OUTPUT
-
-Currently unavailable, always returns 1
-
-=head3 DESCRIPTION
-
-Currently unavailable, always returns 1
-
-=cut
-
-#=============================================================
-sub get_num_pages {
-    my ($self) = shift;
-    return 1;
-}
-
-#=============================================================
-
 =head2 page_text
 
 =head3 INPUT
 
-$page:                  page number (ignored)
-$temp_dir:              temp dir where text is stored
+None
 
 =head3 OUTPUT
 

@@ -47,7 +47,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 #========================================================================
 use Moose;
-with 'Mir::Util::R::DocHandler';
+use namespace::autoclean;
+extends 'Mir::Util::DocHandler';
 
 #=============================================================
 
@@ -75,8 +76,7 @@ sub get_num_pages {
 
 =head3 INPUT
 
-$page:                  page number (ignored)
-$temp_dir:              temp dir where text is stored
+None
 
 =head3 OUTPUT
 
@@ -95,7 +95,7 @@ Currently implemented by each driver.
 
 #=============================================================
 sub page_text {
-    my ($self, $page, $temp_dir) = @_;
+    my $self = shift;
     my $text;
     if ( -T "$self->{doc_path}" ) {
         local $/;

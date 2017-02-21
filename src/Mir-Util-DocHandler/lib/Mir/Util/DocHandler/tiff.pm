@@ -49,7 +49,8 @@ of the License, or (at your option) any later version.
 
 #========================================================================
 use Moose;
-with 'Mir::Util::R::DocHandler';
+use namespace::autoclean;
+extends 'Mir::Util::DocHandler';
 
 use Image::OCR::Tesseract       qw( get_ocr );
 use File::Path                  qw( rmtree );
@@ -156,7 +157,6 @@ sub pages
 =head3 INPUT
 
 $page:                  page number
-$temp_dir:              temp dir where text is stored
 
 =head3 OUTPUT
 
@@ -172,7 +172,7 @@ Returns text of desired page of document
 #=============================================================
 sub page_text
 {
-    my ($self, $page, $temp_dir) = @_;
+    my ($self, $page) = @_;
 
     my $doc = $self->{'DOC_PATH'};
     if (not defined $doc) {
@@ -182,7 +182,7 @@ sub page_text
 
     my $ocr_threshold = $self->{'OCR_THRESHOLD'};
     my $text = "";
-    $temp_dir .= "/"._generateUUID();
+    my $temp_dir = $self->temp_dir_root."/"._generateUUID();
     rmtree ($temp_dir) if stat ($temp_dir);
     mkdir ($temp_dir);
     copy($doc, $temp_dir);

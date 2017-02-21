@@ -18,7 +18,7 @@ remove_tree( './data/images') if (-d './data/images');
 
 ok (my $doc = Mir::Util::DocHandler->create(driver => 'pdf3'), "new"); 
 ok ($doc->open_doc("./data/plan.pdf"), "open_doc");
-is ($doc->pages(), 1, "pages");
+is ($doc->get_num_pages(), 1, "get_num_pages");
 ok (my ($text,$conf)=$doc->page_text(1), 'page_text');
 ok ($doc->delete_temp_files(), 'delete_temp_files' );
 
@@ -29,7 +29,7 @@ ok ($doc2->delete_temp_files(), 'delete_temp_files' );
 
 # now tries to extract text from all pages...
 ok ($doc->open_doc("./data/Jaae-is2007.pdf"), "open_doc");
-ok (my $num_pages = $doc->pages(), 'pages' );
+ok (my $num_pages = $doc->get_num_pages(), 'get_num_pages' );
 is ( $num_pages, 4, 'got right number of pages');
 for( my $num_page=1;$num_page<=$num_pages;$num_page++) {
     ok( ($text,$conf) = $doc->page_text( $num_page ) );

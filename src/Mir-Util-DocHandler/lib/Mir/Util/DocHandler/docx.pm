@@ -52,18 +52,34 @@ of the License, or (at your option) any later version.
 
 #========================================================================
 use Moose;
-with 'Mir::Util::R::DocHandler';
+extends qw( Mir::Util::DocHandler );
 
-sub get_num_pages {
-    # not possible to detect the number of pages...
-    return undef;
-}
+#=============================================================
+
+=head2 get_num_pages
+
+=head3 INPUT
+
+=head3 OUTPUT
+
+Undef
+
+=head3 DESCRIPTION
+
+There is no way (yet) to detect number of pages of a MSWord file...
+
+=cut
+
+#=============================================================
+sub get_num_pages { return undef };
 
 #=============================================================
 
 =head2 page_text
 
 =head3 INPUT
+
+None
 
 =head3 OUTPUT
 

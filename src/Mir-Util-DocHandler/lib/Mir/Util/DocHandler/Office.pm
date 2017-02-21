@@ -49,10 +49,12 @@ of the License, or (at your option) any later version.
 
 #========================================================================
 use Moose;
+extends 'Mir::Util::DocHandler';
 
 use Time::HiRes                 qw(gettimeofday);
 use File::Copy                  qw( copy );
 use File::Basename              qw( dirname basename );
+use Path::Class;
 
 use constant OO_CHECK_COUNT => 40;
 use constant OO_CHECK_SLEEP => 2;
@@ -76,8 +78,7 @@ Stores document path in object
 =cut
 
 #=============================================================
-sub open_doc
-{
+sub open_doc {
     my ($self, $document) = @_;
 
     my $driver = (split(/::/, ref( $self ) ))[-1];
@@ -98,7 +99,7 @@ sub open_doc
         return 0;
     }
 
-    $self->{'DOC_PATH'} = $document;
+    $self->doc_path( $document );
 
     return 1; 
 }
@@ -122,25 +123,24 @@ Converts a MS Office document into a PDF
 =cut
 
 #=============================================================
-sub ConvertToPDF
-{
+sub ConvertToPDF {
     my ($self, $out_file, $display) = @_;
 
-    if ((not defined $self->{'DOC_PATH'}) || 
+    if ((not defined $self->doc_path) || 
         (not defined $out_file) || 
         (not defined $display)) {
         $self->log->("Input file name, output file name and display number must be provided");
         return 0;
     }
 
-    if (not stat $self->{'DOC_PATH'}) {
+    if (not stat $self->doc_path) {
         $self->log->error("No input file was specified");
         return 0;
     }
 
     # Copy original document to temp dir, in order to avoid
     # potentially invalid dirs for OOffice
-    my $tmp_dir = $self->TEMP_DIR;
+    my $tmp_dir = $self->temp_dir_root;
     if (not defined $tmp_dir) {
         $self->log->error("No temp dir is defined");
         return 0;
@@ -151,9 +151,9 @@ sub ConvertToPDF
     my $filename = "$seconds".'_'."$microseconds";
     my $in_conv_path = $tmp_dir."/".$filename;
     my $out_conv_path = $tmp_dir."/".$filename.".pdf";
-    copy($self->{'DOC_PATH'}, $in_conv_path);
+    copy($self->doc_path, $in_conv_path);
     if (not stat ($in_conv_path)) {
-        $self->log->error("Error occurred when copying ".$self->{'DOC_PATH'});
+        $self->log->error("Error occurred when copying ".$self->doc_path);
         return 0;
     }
 

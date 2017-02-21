@@ -13,7 +13,7 @@ foreach my $file ( qw( ./data/core.xlsx ) ) {
     diag "\nExtracting text from file $file...\n";
     ok (my $doc = Mir::Util::DocHandler::xls->new(), "new"); 
     ok ($doc->open_doc($file), "open_doc");
-    is ($doc->pages(), 1, "pages");
+    is ($doc->get_num_pages(), 1, "get_num_pages");
     ok (my ($text,$conf) = $doc->page_text(1, "./data"), "page_text");
     diag "\nTEXT:\n$text\n";
     is ($conf,100, 'confidence ok');

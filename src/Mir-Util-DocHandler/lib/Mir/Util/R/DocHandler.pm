@@ -134,7 +134,7 @@ requires 'get_num_pages';
 #=============================================================
 # Returns text of document and the confidence on it.
 # Currently implemented by each driver.
-# It should take as param the page number we want to have the
+# It take as param the page number we want to have the
 # text back (undef to get all document text back)
 #=============================================================
 requires 'page_text';

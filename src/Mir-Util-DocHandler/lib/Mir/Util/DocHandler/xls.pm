@@ -51,8 +51,8 @@ of the License, or (at your option) any later version.
 
 #========================================================================
 use Moose;
-with 'Mir::Util::R::DocHandler';
-extends 'Mir::Util::DocHandler::Office';
+use namespace::autoclean;
+extends qw(Mir::Util::DocHandler Mir::Util::DocHandler::Office );
 
 use feature 'unicode_strings';
 use File::Copy qw( copy );
@@ -62,40 +62,11 @@ use Encode;
 
 #=============================================================
 
-=head2 pages
-
-=head3 INPUT
-
-=head3 OUTPUT
-
-Currently unavailable, always returns undef
-
-=head3 DESCRIPTION
-
-Number of pages cannot be determined for Excel files, try 
-converting it to PDF format using ConvertToPDF method.
-
-=cut
-
-#=============================================================
-sub pages
-{
-    my ($self) = shift;
-
-    $self->log->warn("Number of pages cannot be determined for Excel
-                files, returning 1 page for any spreadsheet");
-
-    return 1;
-}
-
-#=============================================================
-
 =head2 page_text
 
 =head3 INPUT
 
 $page:                  page number (ignored)
-$temp_dir:              temp dir where text is stored
 
 =head3 OUTPUT
 
@@ -111,18 +82,18 @@ to PDF format using ConvertToPDF method.
 
 #=============================================================
 sub page_text {
-    my ($self, $page, $temp_dir) = @_;
+    my ($self, $page) = @_;
 
     my ($text, $confidence) = (undef, undef);
 
-    my $temp = $temp_dir || '/tmp';
+    my $temp = $self->temp_dir_root;
 
     my $ug=Data::UUID->new;my $u=$ug->create();
     my $outfilename = $ug->to_string($u);
 
-    $self->log->debug("Copying file $self->{DOC_PATH} to $temp/$outfilename.xls");
+    $self->log->debug("Copying file $self->{doc_path} to $temp/$outfilename.xls");
 
-    my $ret = copy( $self->{DOC_PATH}, "$temp/$outfilename.xls" );
+    my $ret = copy( $self->doc_path, "$temp/$outfilename.xls" );
     unless ( $ret ) {
         $self->log->error("Error copying file, no text extracted");
         return ($text, $confidence);
@@ -145,7 +116,6 @@ sub page_text {
             $text = encode( 'UTF-8', $text );
             $confidence=100;
             close $fh;
-            $DB::single=1;
             remove $outfile;
             remove "$temp/$outfilename.xls";
             return ($text, $confidence);

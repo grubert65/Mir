@@ -74,10 +74,9 @@ of the License, or (at your option) any later version.
 
 #========================================================================
 use Moose;
-use namespace::autoclean;
-with 'Mir::Util::R::DocHandler', 
-     'Mir::Util::R::OCR',
-     'Mir::Util::R::PDF';
+# use namespace::autoclean;
+extends 'Mir::Util::DocHandler';
+with 'Mir::Util::R::OCR', 'Mir::Util::R::PDF';
 
 use File::Path      qw( make_path rmtree );
 use File::Basename  qw( basename dirname fileparse);
@@ -88,7 +87,8 @@ use Imager;
 use PDF::Extract;
 use DirHandle;
 use Data::UUID;
-use TryCatch;
+use Try::Tiny;
+use Data::Dumper qw( Dumper );
 
 use vars qw( $VERSION );
 
@@ -112,17 +112,25 @@ has 'uid' => (
     }
 );
 
+# the pdf extractor, needs first the doc to be opened...
 has 'pdfex' => (
     is      => 'ro',
     isa     => 'PDF::Extract',
-    default => sub { PDF::Extract->new() },
+    lazy    => 1,
+    builder => '_set_pdfex',
 );
 
 # the pdf document and where everything get stored...
 has 'pdf'           => ( is => 'rw', isa => 'Str' );
 has 'page_num'      => ( is => 'rw', isa => 'Int' );
 has 'basedir'       => ( is => 'rw', isa => 'Str' );
-has 'filename'      => ( is => 'rw', isa => 'Str' );
+has 'filename'      => ( 
+    is => 'ro', 
+    isa => 'Str', 
+    lazy => 1, 
+    builder => '_build_filename' 
+);
+
 has 'suffix'        => ( is => 'rw', isa => 'Str' );
 has 'pdf_pages_dir' => ( is => 'rw', isa => 'Str' );
 has 'pdf_images_dir'=> ( is => 'rw', isa => 'Str' );
@@ -130,6 +138,20 @@ has 'pdf_text_dir'  => ( is => 'rw', isa => 'Str' );
 
 $ENV{CACHE_DIR} //= '/tmp';
 
+sub _build_filename {
+    my $self = shift;
+
+    $DB::single=1;
+    my $filename = (split(/\//, "$self->{doc_path}" ))[-1];
+    my ($name, $suffix) = split(/\./, $filename);
+    return $name;
+}
+
+sub _set_pdfex {
+    my $self = shift;
+
+    return new PDF::Extract( PDFDoc => $self->doc_path );
+}
 #=============================================================
 
 =head2 create_temp_dirs
@@ -158,7 +180,7 @@ sub create_temp_dirs {
     $self->pdf_text_dir  ("$self->{temp_dir_root}/text");
 
     $self->pdfex->setPDFExtractVariables( 
-        PDFDoc   => $self->{doc_path},
+        PDFDoc   => "$self->{doc_path}",
         PDFCache => $self->pdf_pages_dir 
     );
 
@@ -228,7 +250,6 @@ sub _get_image_file {
 =head3 INPUT
 
     $page:     page number
-    $lang:     the supposed text language
 
 =head3 OUTPUT
 
@@ -246,19 +267,19 @@ Returns ( undef, 0 ) in case of errors.
 
 #=============================================================
 sub page_text {
-    my ($self, $page, $lang) = @_;
+    my ($self, $page) = @_;
 
-    $DB::single=1;
     my $img_file = $self->_get_image_file( $page );
     $self->log->debug("Going to extract text from image: $img_file");
     try {
         unless ( -e "$img_file" ) {
             $self->log->debug("Image $img_file not existent, going to extract page and convert...");
-            my $pdf_page = ( $self->page_num > 1 ) ? $self->extractPage( $page ) : $self->pdf;
+            my $pdf_page = ( $self->num_pages > 1 ) ? $self->extractPage( $page ) : $self->doc_path;
             die ("PDF page not found") unless ( -f $pdf_page );
             $self->convertToImage( $pdf_page, $img_file ) or die "Error converting image";
         }
-        return $self->get_ocr( "$img_file", "$self->{pdf_text_dir}/$self->{filename}-$page", $lang );
+    $DB::single=1;
+        return $self->get_ocr( "$img_file", $self->pdf_text_dir.'/'.$self->filename.'-'.$page, $self->lang );
     } catch {
         $self->log->error( $@ );
         return ( undef, 0 );
@@ -288,20 +309,19 @@ pdf with file name <base filename>-<page_num>.pdf
 sub extractPage {
     my ( $self, $page_num ) = @_;
 
-    my $pdf_page=$self->{pdf_pages_dir}.'/'.$self->{filename}.$page_num.'.pdf';
-    my $pdf_page_name = $self->{filename}.$page_num;
+    my $pdf_page=$self->{pdf_pages_dir}.'/'.$self->filename.$page_num.'.pdf';
+    my $pdf_page_name = $self->filename.$page_num;
     return $pdf_page if (-e $pdf_page );
     try {
         # apparently, if several objects are instantiated, 
         # you have to specify to PDF::Extract all parameters
         # each time..
         $self->pdfex->setPDFExtractVariables( 
-            PDFDoc   => $self->pdf,
+            PDFDoc   => "$self->{doc_path}",
             PDFCache => $self->pdf_pages_dir,
             PDFSaveAs => "$pdf_page_name" 
         );
 
-        $DB::single=1;
         my $ret = $self->pdfex->savePDFExtract( PDFPages=>$page_num );
         if ( $ret == 0 ) {
             $self->log->error( $self->pdfex->getVars("PDFError") );
@@ -384,12 +404,19 @@ sub crop {
 
     return undef unless ( -e $img_file );
     my $img = Imager->new();
+    unless ( $img ) {
+        $self->log->error("Error cropping image $img_file: no Imager obj");
+        return undef;
+    }
+    $self->log->debug( "Reading file $img_file" );
     $img->read( file => $img_file );
     if ( $@ ) {
         $self->log->error("Error reading image $img_file, cropping not possible: $@");
         return undef;
     }
     
+    $self->log->debug("Cropping with params:");
+    $self->log->debug( Dumper $crop_params );
     my $cropped = $img->crop( %$crop_params );
     if ( $@ ) {
         $self->log->error("Error cropping image $img_file: $@");
@@ -427,7 +454,6 @@ Deletes the basedir folder
 #=============================================================
 sub delete_temp_files {
     my $self = shift;
-    $DB::single=1;
     rmtree($self->basedir);
     return 1;
 }

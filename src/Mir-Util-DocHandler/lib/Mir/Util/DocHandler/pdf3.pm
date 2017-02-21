@@ -51,7 +51,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 #========================================================================
 use Moose;
-with 'Mir::Util::R::DocHandler';
+use namespace::autoclean;
 
 use Mir::Util::DocHandler;
 
@@ -75,13 +75,13 @@ sub open_doc {
     return 1;
 }
 
-sub pages {
+sub get_num_pages {
     my $self = shift;
-    return $self->pdf1_dh->pages();
+    return $self->pdf1_dh->get_num_pages();
 }
 
 sub page_text {
-    my ($self, $page, $lang) = @_;
+    my ($self, $page) = @_;
 
     my @drivers = qw( pdf1_dh pdf2_dh );
 
@@ -89,7 +89,7 @@ sub page_text {
 
     while( ( $index < scalar @drivers ) && ( $c_max < $self->confidence_threashold ) ) {
         my $driver = $drivers[ $index ];
-        my ( $t, $c ) = $self->$driver->page_text( $page, $temp_dir );
+        my ( $t, $c ) = $self->$driver->page_text( $page );
         if ( $t && ( $c > $c_max ) ) {
             $c_max = $c;
             $t_best= $t;

@@ -14,7 +14,7 @@ SKIP: {
 
     ok (my $doc = Mir::Util::DocHandler::rtf->new(), "new"); 
     ok ($doc->open_doc("./data/rtf_test_file.rtf"), "open_doc");
-    ok ($doc->pages(), "pages");
+    ok ($doc->get_num_pages(), "get_num_pages");
     ok (my($text, $confidence) = $doc->page_text(1, "./data"), "page_text");
     is ( $confidence, 100, "confidence is always 100 for an rtf file...");
     isnt ( $text, undef, "ok, got something...");

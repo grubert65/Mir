@@ -236,14 +236,14 @@ sub page_text {
 
     my $ug=Data::UUID->new;my $u=$ug->create();
     my $uuid = $ug->to_string($u);
-    my $suffix = (split(/\./, $self->{DOC_PATH}))[-1];
+    my $suffix = (split(/\./, $self->doc_path))[-1];
     return ( $text, $confidence ) unless ( $suffix );
 
     my $temp_office_doc = $temp.'/'.$uuid.".$suffix";
 
-    $self->log->debug("Copying file $self->{DOC_PATH} to $temp_office_doc");
+    $self->log->debug("Copying file $self->{doc_path} to $temp_office_doc");
 
-    my $ret = copy( $self->{DOC_PATH}, $temp_office_doc );
+    my $ret = copy( $self->doc_path, $temp_office_doc );
     unless ( $ret ) {
         $self->log->error("Error copying file, no text extracted");
         return ($text, $confidence);

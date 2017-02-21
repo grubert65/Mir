@@ -20,7 +20,7 @@ our $VERSION='0.01';
 
     my $o = Mir::Util::DocHandler->create( driver => 'image' );
     $o->open_doc( $image_file );
-    my $text = $o->page_text(1, '/tmp');
+    my $text = $o->page_text(1);
 
 =head1 DESCRIPTION
 
@@ -48,42 +48,20 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 #========================================================================
 use Moose;
+with 'Mir::Util::R::OCR';
+use namespace::autoclean;
 use Image::OCR::Tesseract 'get_ocr';
 
-with 'Mir::Util::R::DocHandler';
-
-#=============================================================
-
-=head2 pages
-
-=head3 INPUT
-
-=head3 OUTPUT
-
-1
-
-=head3 DESCRIPTION
-
-Returns the number of pages for an image, 1 by default...
-
-=cut
-
-#=============================================================
-sub pages {
-    return 1;
-}
+extends 'Mir::Util::DocHandler';
 
 sub page_text {
-    my ( $self, $page_num, $temp_dir ) = @_;
+    my ( $self, $page_num ) = @_;
 
-    $temp_dir //= $ENV{CACHE_DIR} || '/tmp';
-    my ( $text, $confidence ) = ( "", $self->CONFIDENCE );
-
-    $text = get_ocr( $self->{DOC_PATH}, $temp_dir, 'ita' );
-    if ( $text =~ /average_doc_confidence:(\d{1,3})/ ) {
-        $confidence = $1;
-        $text =~ s/average_doc_confidence:(\d{1,3})//g;
-    }
-
+    $DB::single=1;
+    my $temp_dir = $self->temp_dir_root;
+    my ( $text, $confidence ) = $self->get_ocr(
+        $self->doc_path,
+        "$self->{temp_dir_root}/$self->{filename}-$page_num"
+    );
     return ($text, $confidence);
 }

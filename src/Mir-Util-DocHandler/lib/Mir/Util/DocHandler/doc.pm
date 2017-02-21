@@ -50,21 +50,38 @@ of the License, or (at your option) any later version.
 =cut
 
 #========================================================================
-use Moose;
 use feature 'unicode_strings';
-with 'Mir::Util::R::DocHandler';
+use Moose;
+extends qw( Mir::Util::DocHandler Mir::Util::DocHandler::Office );
+
 use Text::Extract::Word;
 
-sub get_num_pages {
-    # not possible to detect the number of pages...
-    return undef;
-}
+#=============================================================
+
+=head2 get_num_pages
+
+=head3 INPUT
+
+=head3 OUTPUT
+
+Undef
+
+=head3 DESCRIPTION
+
+There is no way (yet) to detect number of pages of a MSWord file...
+
+=cut
+
+#=============================================================
+sub get_num_pages { return undef };
 
 #=============================================================
 
 =head2 page_text
 
 =head3 INPUT
+
+None (should be number page but we cannot fetch text of a given page...)
 
 =head3 OUTPUT
 
@@ -88,7 +105,6 @@ sub page_text {
 
     my ( $c, $t ) = ( 100, undef );
 
-    $DB::single=1;
     my $file = Text::Extract::Word->new( $self->doc_path );
     $t = $file->get_text() if ( $file );
 

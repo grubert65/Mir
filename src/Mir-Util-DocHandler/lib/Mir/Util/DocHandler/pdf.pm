@@ -53,8 +53,8 @@ of the License, or (at your option) any later version.
 
 #========================================================================
 use Moose;
-with    'Mir::Util::R::DocHandler', 
-        'Mir::Util::R::OCR',
+extends 'Mir::Util::DocHandler';
+with    'Mir::Util::R::OCR',
         'Mir::Util::R::PDF',
         'Mir::R::PluginHandler';
 
