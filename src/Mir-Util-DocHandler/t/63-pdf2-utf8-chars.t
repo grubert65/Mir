@@ -39,6 +39,6 @@ for( my $num_page=1;$num_page<=$num_pages;$num_page++) {
     note "Confidence on text for page $num_page: $conf";
     note "TEXT:\n$text\n";
 }
-# ok ( $doc4->delete_temp_files(), 'delete_temp_files');
+ok ( $doc4->delete_temp_files(), 'delete_temp_files');
 
 done_testing ();
