@@ -428,15 +428,15 @@ sub get_text {
                     params => { plugins => $plugins }
                 ) ) ) {
             $log->info("Opening doc $doc->{path}...");
+            $dh->temp_dir_root( $ENV{MIR_TEMP} ||'/tmp' );
             $dh->open_doc( "$doc->{path}" ) or return;
-        
-            $doc->{num_pages} = $dh->num_pages();
+            $doc->{num_pages} = $dh->get_num_pages();
             $log->info( "Doc has $doc->{num_pages} pages" );
         
             foreach( my $page=1;$page<=$doc->{num_pages};$page++ ) {
                 # get page text and confidence
                 # add them to item profile
-                my ( $text, $confidence ) = $dh->page_text( $page, $ENV{MIR_TEMP}||'/tmp' );
+                my ( $text, $confidence ) = $dh->page_text( $page );
                 $log->debug("Confidence: $confidence");
                 $log->debug("Text      :\n\n$text");
                 if ( $text && $confidence ) {

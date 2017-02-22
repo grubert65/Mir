@@ -29,15 +29,8 @@ use YAML                            qw( Load );
 use Getopt::Long                    qw( GetOptions );
 use Data::Dumper                    qw( Dumper );
 use TryCatch;
-use Mir::Stat ();
-
-my $config;
-
-{
-    local $/;
-    my $data = <DATA>;
-    $config = Load( $data );
-}
+use Mir::Stat                       ();
+use Mir::Acq::Fetcher               ();
 
 # by default we consume queue items in chunks of 3 items
 # at a time and don't pause between sessions
@@ -93,33 +86,21 @@ sub run_fetchers {
     FETCHER_LOOP:
     foreach my $item ( @items ) {
         my $class;
-        # TODO 
-        # this should be removed from here...
-    	$ENV{WUNDERGROUND_API} = $config->{WUNDERGROUND_API};
         $thread++;
         my $pid = $pm->start and next FETCHER_LOOP;
         $log->debug ("Thread: ".$thread."\n");
         $log->debug ("Received:\n");
         $log->debug (Dumper $item );
         try {
-            #-----------------------------------------------------
-            # we actually added the DriverRole to the Mir::Acq::Fetcher class
-            # this means that this old code can be commented out...
-#             $class= "Mir::Acq::Fetcher".'::'.$item->{ns}
-#                 if ( defined $item->{ns} );
-#             eval "require $class";
-#             my $o = $class->new( %{$item->{params}} );
-             $log->debug ("Going to create a $class fetcher...\n");
-             $log->debug ("With params:");
-             $log->debug ( Dumper ( $item->{params} ) );
+            $log->debug ("Going to create a $item->{ns} fetcher...\n");
+            $log->debug ("With params:");
+            $log->debug ( Dumper ( $item->{params} ) );
             #-----------------------------------------------------
             # NEW CODE
             #-----------------------------------------------------
             my $o = Mir::Acq::Fetcher->create(
                 driver => $item->{ns},
-                params => $item # NOTE : should be $item->{params}
-                                # this is due to the fact that some processors 
-                                # expects a "params" hashref as input
+                params => $item->{params}
             );
             $o->fetch();
             my $stat = Mir::Stat->new(
@@ -137,7 +118,3 @@ sub run_fetchers {
     $log->debug( "All children ended" );
     $called_times++;
 }
-
-__DATA__
-FETCHER_NS_PREFIX: 'Mir::ACQ::Fetcher'
-WUNDERGROUND_API: 'f9a17cd41b53bb13'

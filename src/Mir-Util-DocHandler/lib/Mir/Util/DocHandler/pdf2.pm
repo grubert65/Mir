@@ -403,37 +403,41 @@ sub crop {
     my ( $self, $img_file, $crop_params ) = @_;
 
     return undef unless ( -e $img_file );
-    my $img = Imager->new();
-    unless ( $img ) {
-        $self->log->error("Error cropping image $img_file: no Imager obj");
-        return undef;
-    }
-    $self->log->debug( "Reading file $img_file" );
-    $img->read( file => $img_file );
-    if ( $@ ) {
-        $self->log->error("Error reading image $img_file, cropping not possible: $@");
-        return undef;
-    }
+
+    try {
+        my $img = Imager->new();
+        unless ( $img ) {
+            $self->log->error("Error cropping image $img_file: no Imager obj");
+            return undef;
+        }
+        $self->log->debug( "Reading file $img_file" );
+        $img->read( file => $img_file );
+        if ( $@ ) {
+            $self->log->error("Error reading image $img_file, cropping not possible: $@");
+            return undef;
+        }
+        
+        $self->log->debug("Cropping with params:");
+        $self->log->debug( Dumper $crop_params );
+        my $cropped = $img->crop( %$crop_params );
+        if ( $@ ) {
+            $self->log->error("Error cropping image $img_file: $@");
+            return undef;
+        }
     
-    $self->log->debug("Cropping with params:");
-    $self->log->debug( Dumper $crop_params );
-    my $cropped = $img->crop( %$crop_params );
-    if ( $@ ) {
-        $self->log->error("Error cropping image $img_file: $@");
-        return undef;
+    # TODO why  doesn't store cropped image in a new file ?
+    #    my ( $dirname, $basename ) = (dirname ($img_file), basename ($img_file));
+    #    my ( $filename, $suffix ) = split(/\./, $basename);
+    #    my $cropped_file = $dirname.'/'.$filename.'-cropped'.'.'.$suffix;
+    
+        $cropped->write( file => $img_file );
+        if ( $@ ) {
+            $self->log->error("Error writing image $img_file, cropping not possible: $@");
+            return undef;
+        }
+    } catch {
+        $self->log->error("Error in Image cropping: $@");
     }
-
-# TODO why  doesn't store cropped image in a new file ?
-#    my ( $dirname, $basename ) = (dirname ($img_file), basename ($img_file));
-#    my ( $filename, $suffix ) = split(/\./, $basename);
-#    my $cropped_file = $dirname.'/'.$filename.'-cropped'.'.'.$suffix;
-
-    $cropped->write( file => $img_file );
-    if ( $@ ) {
-        $self->log->error("Error writing image $img_file, cropping not possible: $@");
-        return undef;
-    }
-
     return $img_file;
 }
 
@@ -454,7 +458,8 @@ Deletes the basedir folder
 #=============================================================
 sub delete_temp_files {
     my $self = shift;
-    rmtree($self->basedir);
+    $DB::single=1;
+    rmtree($self->temp_dir_root);
     return 1;
 }
 

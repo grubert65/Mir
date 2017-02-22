@@ -17,6 +17,8 @@ WriteMakefile(
         'scripts/mir-doc-handler.pl',
         'scripts/mir-store-update.pl',
         'scripts/queue-check.pl',
+        'scripts/check_json.pl',
+        'scripts/check_yaml.pl',
         'scripts/mir-ir.pl',
         'scripts/mir-ir-polling.pl',
         'scripts/mir-ir-search.pl'

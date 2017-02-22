@@ -11,14 +11,14 @@ my $TEMP_DIR = './data/temp';
 my %docs_per_driver = (
      'doc'   => {
          './data/crossmediaretrieval.doc' => {
-             num_pages   => undef,
+             num_pages   => 1,
              text        => qr/The investigators plan to construct a cross-media information retrieval/i,
              min_conf    => 90
          },
      },
      'docx'  => {
          './data/msword_test_file.docx' => {
-             num_pages   => undef,
+             num_pages   => 1,
              text        => qr/This file is for test and validate text extraction from MSWord docx format files/i,
              min_conf    => 90
          },
