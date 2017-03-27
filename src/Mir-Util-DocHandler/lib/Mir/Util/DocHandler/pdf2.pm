@@ -441,27 +441,5 @@ sub crop {
     return $img_file;
 }
 
-#=============================================================
-
-=head2 delete_temp_files
-
-=head3 INPUT
-
-=head3 OUTPUT
-
-=head3 DESCRIPTION
-
-Deletes the basedir folder
-
-=cut
-
-#=============================================================
-sub delete_temp_files {
-    my $self = shift;
-    $DB::single=1;
-    rmtree($self->temp_dir_root);
-    return 1;
-}
-
 no Moose;
 __PACKAGE__->meta->make_immutable;
