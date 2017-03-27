@@ -55,6 +55,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #========================================================================
 use Moose;
 use namespace::autoclean;
+use File::Path qw(make_path remove_tree);
+
 with 'DriverRole', 'Mir::Util::R::DocHandler';
 
 #=============================================================
@@ -102,4 +104,29 @@ sub page_text {
     my ( $self, $page_num ) = @_;
     return ( "", 100 );
 }
+
+#=============================================================
+
+=head2 delete_temp_files
+
+=head3 INPUT
+
+=head3 OUTPUT
+
+=head3 DESCRIPTION
+
+Deletes the temp_dir_root folder
+
+=cut
+
+#=============================================================
+sub delete_temp_files {
+    my $self = shift;
+    return unless ( -d $self->temp_dir_root );
+    remove_tree( $self->temp_dir_root );
+    make_path  ( $self->temp_dir_root );
+    return 1;
+}
+
+
 1;
