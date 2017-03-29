@@ -53,7 +53,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 use Moose;
 use namespace::autoclean;
 use Mir::Util::DocHandler;
-use File::Path qw(remove_tree);
+use File::Path qw(make_path remove_tree);
 
 has 'confidence_threashold' => ( is => 'rw', isa => 'Int', default => 40 );
 has 'temp_dir_root' => ( is => 'rw', isa => 'Str' );
@@ -107,7 +107,9 @@ sub page_text {
 sub delete_temp_files {
     my $self = shift;
 
-    remove_tree( $self->temp_dir_root ) if ( -d $self->temp_dir_root );
+    return unless ( -d $self->temp_dir_root );
+    remove_tree( $self->temp_dir_root );
+    make_path( $self->temp_dir_root );
 }
 
 1;
