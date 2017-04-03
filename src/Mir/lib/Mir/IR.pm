@@ -429,7 +429,8 @@ sub get_text {
                 ) ) ) {
             $log->info("Opening doc $doc->{path}...");
             $dh->temp_dir_root( $ENV{MIR_TEMP} ||'/tmp' );
-            $dh->open_doc( "$doc->{path}" ) or return;
+            $dh->open_doc( "$doc->{path}" ) 
+                or die "Error opening document '$doc->{path}'";
             $doc->{num_pages} = $dh->get_num_pages();
             $log->info( "Doc has $doc->{num_pages} pages" );
         
