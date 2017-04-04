@@ -13,7 +13,6 @@ Version 0.01
 
 our $VERSION = '0.01';
 
-
 =head1 SYNOPSIS
 
     package Mir::Acq::Fetcher::Driver;
@@ -101,9 +100,8 @@ use Log::Log4perl;
 
 with 'DriverRole';
 
-
 # the get_docs sub return code: 1 => ok, otherwise errors occurred while fetching
-has 'ret'       => ( is => 'rw', isa => 'Int' );
+has 'ret'       => ( is => 'rw', isa => 'Int', default => 1 );
 
 # a ref to the array of fetched docs. Each item should inherit from Mir::Doc
 has 'docs'      => ( is => 'rw', isa => 'ArrayRef', default => sub { [] } );
