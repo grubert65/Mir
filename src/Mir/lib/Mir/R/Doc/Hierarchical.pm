@@ -28,7 +28,7 @@ This role can help organizing hierarchical documents.
 
 =head1 AUTHOR
 
-Marco Masetti (marco.masetti @ softeco.it )
+Marco Masetti ( grubert65 at gmail.com )
 
 =head1 LICENCE AND COPYRIGHT
 
