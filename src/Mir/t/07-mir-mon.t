@@ -2,6 +2,9 @@ use strict;
 use warnings;
 use Test::More;
 use Data::Printer;
+use Log::Log4perl qw(:easy);
+
+Log::Log4perl->easy_init($DEBUG);
 
 BEGIN {
     use_ok('Mir::Mon');
