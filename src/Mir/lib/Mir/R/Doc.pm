@@ -68,32 +68,5 @@ has 'source'        => ( is => 'rw', isa => 'Str' );
 #     default => sub { DateTime->now->iso8601() },
 # );
 
-# in case of hierarchical doc structure...
-# this again should eventually be handled by a 
-# specific role to add hierarchical behaviour...
-has 'father'    => ( is => 'rw', isa => 'Obj' );
-has 'children'  => ( is => 'rw', isa => 'ArrayRef[Obj]' );
-
-#=============================================================
-
-=head2 add_child
-
-=head3 INPUT
-
-    $child
-
-=head3 OUTPUT
-
-=head3 DESCRIPTION
-
-Aggiunge l'oggetto passato all'array children.
-
-=cut
-
-#=============================================================
-sub add_child {
-    my ( $self, $child ) = @_;
-    push @{$self->{children}}, $child;
-}
 
 1;
