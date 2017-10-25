@@ -18,7 +18,6 @@ src/Mir-UI/
 src/Mir-Util-DocHandler/foo2.txt
 src/Mir-Util-WebUtils-0.01/
 src/Mir/lib/Mir/Acq/Fetcher/
-src/Mir/lib/Mir/R/Doc/Bare.pm
 src/Mir/lib/Mir/Stat.pm
 src/Mir/lib/Mir/UI.pm
 src/Mir/t/Acq/
