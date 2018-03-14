@@ -1,0 +1,19 @@
+The Queuing System
+------------------
+The Queuing system is managed on separate nodes (an active/active config to start with). The queuing nodes should not
+be used for any other Mir component.
+
+1. Requirements for the queuing system
+--------------------------------------
+RQUEUE-001: Queues need to be persistent, ideally not a single message is lost
+RQUEUE-002: Messages are exchanged in transactions, automatically opened if not already in place and kept open unless specifically closed by client. 
+            At transaction close another one is automatically opened. 
+            Transaction history needs to be kept by the queuing system and replayed by a consumer if necessary.
+            A unique transaction id is used to identify a transaction.
+RQUEUE-003: Queues are actually like channels. Different producers can publish messages to a channel and different consumers can take a message at a time from a channel.
+RQUEUE-004: Channels are identified by a unique path (as a list of labels). The label separator can be defined.
+RQUEUE-005: The queuing system knows how many channels are there and keeps track of the list of producers and consumers connected to a given channel.
+RQUEUE-006: Each single channel operation has to be atomic.
+RQUEUE-007: If the queuing system is centralized, it has to be accessed by any other node of a Mir system and needs to support HA configurations (active/active)
+
+

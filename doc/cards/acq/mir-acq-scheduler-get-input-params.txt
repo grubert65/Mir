@@ -1,0 +1,70 @@
++-----------------------------------------------------------------------------
+| ID
++-----------------------------------------------------------------------------
+ACQ-001
+
++-----------------------------------------------------------------------------
+| Title
++-----------------------------------------------------------------------------
+Mir ACQ Scheduler: get input params
+
++-----------------------------------------------------------------------------
+| Status (TBD, TBI, I, T, D)
++-----------------------------------------------------------------------------
+TBI
+
++-----------------------------------------------------------------------------
+| Package/Directory - Method
++-----------------------------------------------------------------------------
+Mir::Acq::Scheduler - parse_input_params
+
++-----------------------------------------------------------------------------
+| Test file
++-----------------------------------------------------------------------------
+t/Acq/01-acq-scheduler-parse-input_params.t
+
++-----------------------------------------------------------------------------
+| Desc      
++-----------------------------------------------------------------------------
+Lo script mir-acq-scheduler.pl viene schedulato via crontab.
+Lo script accetta i seguenti parametri:
+--campaign          : tag della campagna di acquisizione. Alla campagna sono associati diversi fetchers
+--fetcher           : classpath relativo a Mir::Acq::Fetcher del fetcher da istanziare
+--num_processors    : numero di processori da attivare. Nel caso sia definito un fetcher di default e' 1.
+--params            : json-encoded string to be passed to any fetcher...
+--config-file       : file YAML con i parametri di configurazione (sovrascrive i parametri configurati di default)
+
+Va verificato che:
+- esista almeno uno tra --campaign e --fetcher
+- tutti i parametri vengano letti correttamente
+- il parametro --params deve essere una stringa json valida
+- se defined --config-file:
+    - che punti ad un file regolare e che sia YAML-encoded
+    - che il parsing del file sovrascrivi solo i parametri contenuti nel file
+
++-----------------------------------------------------------------------------
+| Priority (Low/Mid/High)
++-----------------------------------------------------------------------------
+High
+
++-----------------------------------------------------------------------------
+| Planned in Sprint 
++-----------------------------------------------------------------------------
+1
+
++-----------------------------------------------------------------------------
+| Exp (h) 
++-----------------------------------------------------------------------------
+1
+
++-----------------------------------------------------------------------------
+| Release in Sprint
++-----------------------------------------------------------------------------
+
++-----------------------------------------------------------------------------
+| Imp.Notes
++-----------------------------------------------------------------------------
+
++-----------------------------------------------------------------------------
+| Open Issues
++-----------------------------------------------------------------------------

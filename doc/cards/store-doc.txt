@@ -1,0 +1,62 @@
+Mir::Doc::Store - persistenza dei documenti
+--------------------------------------
+I documenti scaricati sono poi gestiti in 2 data store diversi:
+- MongoDB: storicizzazione del documento
+- Elastic: document text search engine
+
+MongoDB serve a 2 scopi:
+- capire se un documento che troviamo sulla fonte e' gia' presente in Mir
+- storicizzare il profilo del documento a fini di presentazione
+
+Gestione docs su MongoDB
+------------------------
+Tutti i documenti sono salvati nel database MIR.
+Una collection diversa per tipo di documento.
+
+Storing/Loading 
+---------------
+Gestiti automaticamente via ruolo MooseX::Storage::IO::MongoDB.
+Quando si consuma il ruolo, va configurato il campo usato come unique id.
+A quel punto load( id ) cerca di caricare il documento dallo store.
+store() carica/aggiorna (upsert) il doc sullo store.
+
+
+--------------- OLD ----------------------
+Mir::Store::Doc o Mir::Doc::Store ?
+-----------------------------------
+Nel primo caso abbiamo una classe "globale" per la gestione di un data store (Mir::Store) che viene specializzata per
+ogni tipo di dato da gestire. Nel secondo caso la classe gestisce solo documenti.
+Per il momento andiamo con il primo approccio...
+
+Gestione documenti gerarchici
+-----------------------------
+Alcuni documenti (come le gazzette ufficiali) possono essere molto gerarchizzati:
+
+gazzetta-> n serie
+serie   -> 1+ rubriche
+rubrica -> 0+ emettitori -> 1+ leggi
+legge   -> 1+ articoli
+
+Quindi:
+
+$gu->{serie}->{rubrica}->[{emettitore}->]{legge}->{articolo}
+
+Struttura denormalizzata
+------------------------
+La struttura denormalizzata prevede che il documento contenga i sottodocumenti. Quando lo tiri su ti tiri su tutto, quando vuoi fare una ricerca nei sottodocumenti devi usare il namespace.
+
+
+"Normalizzazione" struttura dati
+------------------------------
+Proviamo ad organizzare i dati in queste collection:
+gu      => collezione profilo gazzetta fino agli enti emettitori
+leggi   => collezione profilo leggi
+articoli=> collezione profilo articoli
+
+Metodi
+------
+find_by_id      : cerca un documento dato il suo id applicativo.
+add_doc({       : aggiunge un documento per le collection passate
+    <collection> => [<doc>],
+})
+

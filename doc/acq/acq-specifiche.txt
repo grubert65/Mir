@@ -1,0 +1,39 @@
+Il sottosistema gestisce l'acquisizione dalle sorgenti configurate.
+
+Terminologia
+------------
+Processore: processo perl dedicato all'acqusizione da sorgenti eterogenee
+Fetcher: modulo che implementa la logica applicativa di acquisizione
+
+I processori sono processi perl istanziati su nodi diversi (acquisizione distribuita) 
+in numero tale da garantire tempi di acquisizione soddisfacenti. Il numero dipende quindi
+dal dominio applicativo.
+
+Ogni processore esegue il seguente workflow:
+
+1. recupera il fetcher (o da input params o da coda campagna assegnata)
+2. esegue il fetcher (get_docs)
+3. esce
+
+Gestione schedulazione Processori
+---------------------------------
+vedi acq-workflow.txt
+
+- i processori sono installati sotto il namespace Mir::Acq::Fetcher
+- il namespace puo' anche contenere una label utile a raggruppare i processori di una campagna
+
+Gestione comportamento di esecuzione
+------------------------------------
+il comportamento e' gestito via ruoli.
+Il ruolo principale e' Mir::R::Acq::Fetch. Chi lo usa deve implementare la get_docs che a sua
+volta valorizza $self->ret, $self->docs e $self->errors.
+
+Il comportamento e' esteso attraverso i seguenti ruoli addizionali:
+
+-Mir::R::Acq::Download: scarica l'artefatto associato al doc (e da tutti i doc figli). 
+    Gli oggetti in $self->docs devono consumare il ruolo Mir::R::Doc::Web e Mir::R::Doc::Artifact.
+-Mir::R::Acq::Extract: estrae il testo dall'artefatto (after Acq::Download).
+    Gli oggetti in $self->docs devono consumare il ruolo Mir::R::Doc::Web e Mir::R::Doc::Artifact.
+-Mir::R::Acq::NGSI: after get_docs, si connette al ContextBroker configurato e spedisce i documenti.
+
+
