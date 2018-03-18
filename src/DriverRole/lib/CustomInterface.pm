@@ -1,14 +1,15 @@
-package Foo;
+package CustomInterface;
 use Moose::Role;
 with 'DriverRole';
 
+# Interface definition...
 requires 'bar';
 
 
-package Foo::Driver;
+package CustomInterface::Driver;
 use Moose;
 use feature 'say';
-with 'Foo';
+with 'CustomInterface';
 
 has 'baz' => ( is => 'rw', isa => 'Num', default => 0 );
 
