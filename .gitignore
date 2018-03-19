@@ -9,7 +9,6 @@ blib/
 pm_to_blib
 src/Mir-Config/
 src/Mir-Doc-Balance/
-src/Mir-Queue/
 MANIFEST
 MANIFEST.bak
 data/
