@@ -1,0 +1,66 @@
+The Queuing System
+------------------
+The Queuing system is managed on separate nodes (an active/active config to start with). The queuing nodes should not
+be used for any other Mir component.
+
+1. Requirements for the queuing system
+--------------------------------------
+RQUEUE-010: Queues need to be persistent, ideally not a single message is lost
+RQUEUE-020: Queues are actually like channels. Different producers can publish messages to a channel and different consumers can take a message at a time from a channel.
+RQUEUE-030: Channels are identified by a unique path. This allows to publish messages to all queues under a given root path.
+RQUEUE-040: The queuing system knows how many channels are there and keeps track of the list of producers and consumers connected to a given channel.
+RQUEUE-050: Each single channel operation has to be atomic.
+RQUEUE-060: If the queuing system is centralized, it has to be accessed by any other node of a Mir system and needs to support HA configurations (active/active)
+RQUEUE-070: Messages are exchanged in transactions, automatically opened if not already in place and kept open unless specifically closed by client. 
+            At transaction close another one is automatically opened. 
+            Transaction history needs to be kept by the queuing system and replayed by a consumer if necessary.
+            A unique transaction id is used to identify a transaction.
+
+2. Mir::Queue::[DB|DBX]: Implementing queues on a relational database
+-----------------------------------------------
+A relational db can be used to handle queues ? Maybe, at least the requirement of persistency should be met quite easily!
+We should implement 2 drivers: DB (based on DBI) and DBX (based on DBIx::Class) and compare speed vs maintenance.
+The data model is fairly easy:
+
+- channel           : name, id, path, total
+- channel_session   : ch_id, sess_id, ntr (next-to-read)
+- messages          : ch_id, pos, msg
+
+
+3. Workflow
+-----------
+3.1 connect to a channel
+    the second parameter is a hashref of channel connection  parameters
+    queue = Mir::Queue->create(
+        driver => 'DB',
+        params => {
+            channel_name=> 'abc',
+            dsn         => '...',
+            username    => '...',
+            password    => '...',
+        }
+    );
+
+or, to be  notified when a message is added:
+    queue = Mir::Queue->create(
+        driver => 'DB',
+        params => {
+            channel_name => 'abc',
+            callback     => &callback,
+        }
+    );
+
+Other channel parameters:
+        type => Mir::Queue::Fifo (default), Mir::Queue::Lifo
+
+3.2 write to a channel
+    queue->push(msg)
+
+3.3 read from a channel
+    msg = queue->pop()
+
+3.4 get number of messages in a channel
+    num = queue->count()
+
+3.5 drop all messages in a channel (clean the channel):
+    num = queue->flush() # returns the number of dropped messages
