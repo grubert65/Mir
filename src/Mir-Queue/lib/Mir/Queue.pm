@@ -32,7 +32,6 @@ our $VERSION='0.01';
     # push next item in queue...
     $q->push('bar');
 
-
     # pop first item in queue or wait (for timeout)
     # for next item...
     $my $item = q->pop();
@@ -43,7 +42,7 @@ A very simple class to handle a basic queue.
 Don't use the base class (the interface) but one of the 
 implemented drivers.
 The interface comes with the Redis driver.
-The Redis driver supports multiple consumers, please read
+The Redis driver supports multiple producers/consumers, please read
 the specific driver implementation details for its features.
 
 
@@ -53,7 +52,7 @@ Marco Masetti (marco.masetti @ softeco.it )
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2015 Marco Masetti (marco.masetti at softeco.it). All rights reserved.
+Copyright (c) 2015 Marco Masetti (grubert65 at gmail.com). All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See perldoc perlartistic.
