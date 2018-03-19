@@ -25,6 +25,7 @@ use constant CONF_TOO_LOW   => 7;   # confidence below threashold
     NO_TEXT 
     CONF_TOO_LOW 
 );
+
 %EXPORT_TAGS = (status => [qw( 
         NEW 
         INDEXED 

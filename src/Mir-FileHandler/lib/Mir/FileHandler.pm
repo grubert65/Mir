@@ -1,28 +1,103 @@
-Mir
+package Mir::FileHandler;
 
-MIR (Media Indexer & Retriever) is a complete and modular system
-to fetch, extract, index and retrieve text from an heterogeneous
-list of sources.
+use 5.006;
+use strict;
+use warnings;
 
-INSTALLATION
+=head1 NAME
 
-To install this module, run the following commands:
+Mir::FileHandler - The great new Mir::FileHandler!
 
-	perl Makefile.PL
-	make
-	make test
-	make install
+=head1 VERSION
 
-SUPPORT AND DOCUMENTATION
+Version 0.01
 
-After installing, you can find documentation for this module with the
-perldoc command.
+=cut
 
-    perldoc Mir
+our $VERSION = '0.01';
 
-LICENSE AND COPYRIGHT
 
-Copyright (C) 2015 Marco Masetti
+=head1 SYNOPSIS
+
+Quick summary of what the module does.
+
+Perhaps a little code snippet.
+
+    use Mir::FileHandler;
+
+    my $foo = Mir::FileHandler->new();
+    ...
+
+=head1 EXPORT
+
+A list of functions that can be exported.  You can delete this section
+if you don't export anything, such as for a purely object-oriented module.
+
+=head1 SUBROUTINES/METHODS
+
+=head2 function1
+
+=cut
+
+sub function1 {
+}
+
+=head2 function2
+
+=cut
+
+sub function2 {
+}
+
+=head1 AUTHOR
+
+Marco Masetti, C<< <grubert65 at gmail.com> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to C<bug-mir-filehandler at rt.cpan.org>, or through
+the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Mir-FileHandler>.  I will be notified, and then you'll
+automatically be notified of progress on your bug as I make changes.
+
+
+
+
+=head1 SUPPORT
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc Mir::FileHandler
+
+
+You can also look for information at:
+
+=over 4
+
+=item * RT: CPAN's request tracker (report bugs here)
+
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Mir-FileHandler>
+
+=item * AnnoCPAN: Annotated CPAN documentation
+
+L<http://annocpan.org/dist/Mir-FileHandler>
+
+=item * CPAN Ratings
+
+L<http://cpanratings.perl.org/d/Mir-FileHandler>
+
+=item * Search CPAN
+
+L<http://search.cpan.org/dist/Mir-FileHandler/>
+
+=back
+
+
+=head1 ACKNOWLEDGEMENTS
+
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2018 Marco Masetti.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a
@@ -60,3 +135,7 @@ CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, OR
 CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF THE USE OF THE PACKAGE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
+=cut
+
+1; # End of Mir::FileHandler
