@@ -3,7 +3,7 @@ package Mir::Queue;
 
 =head1 NAME
 
-Mir::Queue - A base class to handle simple queues
+Mir::Queue - A Mir role to be consumed by any queue driver
 
 =head1 VERSION
 
