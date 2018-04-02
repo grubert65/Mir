@@ -2,10 +2,8 @@ package Mir::PubSub;
 use Moose::Role;
 with 'DriverRole';
 
-requires 'flush';   # deletes all elements in queue
 requires 'push';    # add a scalar element
 requires 'pop';     # removes and returns the last element as scalar
-requires 'count';   # returns the number of elements in queue
 
 #============================================================= -*-perl-*-
 
