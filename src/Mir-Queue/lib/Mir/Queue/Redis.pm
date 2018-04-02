@@ -32,7 +32,6 @@ our $VERSION='0.01';
     # push next item in queue...
     $q->push('bar');
 
-
     # pop first item in queue or wait (for timeout)
     # for next item...
     $my $item = q->pop();

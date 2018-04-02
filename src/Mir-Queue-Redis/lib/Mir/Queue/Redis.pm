@@ -29,23 +29,17 @@ our $VERSION='0.01';
     # flush queue content...
     $q->flush();
 
-    # push next scalar item in queue...
-    $q->spush('bar');
+    # push next item in queue...
+    $q->push('bar');
 
-    # pop first item in queue as scalar or wait (for timeout)
+    # pop first item in queue or wait (for timeout)
     # for next item...
-    $my $item = q->spop();
-
-    # push next hash item in queue...
-    $q->hpush('bar');
-
-    # pop first item in queue as hash or wait (for timeout)
-    # for next item...
-    $my $item = q->hspop();
+    $my $item = q->pop();
 
 =head1 DESCRIPTION
 
 Refer to base class description.
+
 
 =head1 AUTHOR
 
@@ -68,8 +62,9 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 #========================================================================
 use Moose;
-use Redis ();
-use JSON qw( encode_json decode_json );
+use Redis    ();
+use JSON::XS qw( encode_json decode_json );
+use Try::Tiny();
 
 with 'Mir::Queue';
 
@@ -83,6 +78,23 @@ has 'r' => (
 has 'key'       => (is => 'rw', isa => 'Str', default => 'default_queue' );
 has 'timeout'   => (is => 'rw', isa => 'Int', default => 0 );
 
+#=============================================================
+
+=head2 BUILD
+
+=head3 INPUT
+
+    $params: connection parameters
+
+=head3 OUTPUT
+
+=head3 DESCRIPTION
+
+Connects to Redis and returns a queue object
+
+=cut
+
+#=============================================================
 sub BUILD {
     my ( $self, $params ) = @_;
     $self->r( Redis->new( %{$params->{connect}} ) )
@@ -93,35 +105,88 @@ sub BUILD {
 }
 
 
+#=============================================================
+
+=head2 flush
+
+=head3 INPUT
+
+=head3 OUTPUT
+
+=head3 DESCRIPTION
+
+Deletes all messages in the queue
+
+=cut
+
+#=============================================================
 sub flush {
     my $self = shift;
     $self->r->flushdb();
 }
 
-sub spush {
+#=============================================================
+
+=head2 push
+
+=head3 INPUT
+
+    $item
+
+=head3 OUTPUT
+
+=head3 DESCRIPTION
+
+Add an item to the queue
+
+=cut
+
+#=============================================================
+sub push {
     my ( $self, $item ) = @_;
-    $self->r->lpush( $self->key, $item );
+    my $h = { item => $item };
+    $self->r->lpush( $self->key, encode_json( $h ) );
 }
 
-sub spop {
+#=============================================================
+
+=head2 pop
+
+=head3 INPUT
+
+=head3 OUTPUT
+
+=head3 DESCRIPTION
+
+Pops out the first item in the queue or blocks until one
+is available
+
+=cut
+
+#=============================================================
+sub pop {
     my $self = shift;
+    $DB::single=1;
     my $item = $self->r->brpop( $self->key, $self->timeout );
-    return $item->[1];
+    my $h = decode_json( $item->[1] );
+    return $h->{item};
 }
 
-sub hpush {
-    my ( $self, $item ) = @_;
-    my $s = encode_json( $item );
-    $self->r->lpush( $self->key, $s );
-}
+#=============================================================
 
-sub hpop {
-    my $self = shift;
-    my $item = $self->r->brpop( $self->key, $self->timeout );
-    return decode_json( $item->[1] );
-}
+=head2 count
 
+=head3 INPUT
 
+=head3 OUTPUT
+
+=head3 DESCRIPTION
+
+Returns the number of items in the queue
+
+=cut
+
+#=============================================================
 sub count {
     my $self = shift;
     return $self->r->llen( $self->key );

@@ -1,4 +1,4 @@
-package Mir::Queue;
+package Mir::PubSub;
 use Moose::Role;
 with 'DriverRole';
 
@@ -11,7 +11,7 @@ requires 'count';   # returns the number of elements in queue
 
 =head1 NAME
 
-Mir::Queue - A role for any queue client
+Mir::PubSub - A role for any Publish/Subscribe client
 
 =head1 VERSION
 
@@ -23,36 +23,30 @@ our $VERSION='0.01';
 
 =head1 SYNOPSIS
 
-    use Mir::Queue ();
+    use Mir::PubSub ();
 
-    my $q = Mir::Queue->create(
+    my $c = Mir::PubSub->create(
         driver  => 'Redis',
         params  => {
             connect => { server => '127.0.0.1:6379' }, 
             db      => 1,
-            key     => 'test'
             timeout => 10,
         });
 
-    # flush queue content...
-    $q->flush();
+    # Subscribe for a topic
+    # leave a callback that will be called any time a
+    # message on the topic will be published
+    $c->subscribe( 'topic_1', &callback );
 
-    # push next item in queue...
-    # item can be any scalar
-    # if not a string or a number it gets
-    # JSON-encoded
-    $q->push('bar');
-
-    # pop first item in queue or wait (for timeout)
-    # for next item...
-    $my $item = $q->pop();
-
-    # get the number of items in queue
-    my $count = $q->count();
+    # Publish a message on a channel
+    # a msg can be any scalar, if not a plain string
+    # it gets JSON-encoded
+    $c->publish('topic_1', $msg)
+        or die "Error publishing a message";
 
 =head1 DESCRIPTION
 
-A very simple role to handle a basic queue. 
+A very simple role to handle a basic pubsub channel.. 
 Don't use this role (the interface) but one of the 
 implemented drivers.
 
@@ -63,7 +57,7 @@ Marco Masetti (grubert65 at gmail.com)
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2015 Marco Masetti (marco.masetti at softeco.it). All rights reserved.
+Copyright (c) 2018 Marco Masetti (marco.masetti at softeco.it). All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See perldoc perlartistic.
