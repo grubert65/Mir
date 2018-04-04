@@ -1,5 +1,5 @@
 # Mir
-Mir is a Media Information Retriaval platform.
+Mir is a Media Information Retrieval platform.
 
 MIR is a complete and modular system to fetch, extract, index and retrieve text from an heterogeneous list of sources.
 
