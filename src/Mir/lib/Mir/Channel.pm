@@ -1,15 +1,16 @@
-package Mir::PubSub;
+package Mir::Channel;
 use Moose::Role;
 with 'DriverRole';
 
-requires 'push';    # add a scalar element
-requires 'pop';     # removes and returns the last element as scalar
+requires 'subscribe';
+requires 'unsubscribe';
+requires 'publish';
 
 #============================================================= -*-perl-*-
 
 =head1 NAME
 
-Mir::PubSub - A role for any Publish/Subscribe client
+Mir::Channel - A role for any Publish/Subscribe client
 
 =head1 VERSION
 
@@ -21,9 +22,9 @@ our $VERSION='0.01';
 
 =head1 SYNOPSIS
 
-    use Mir::PubSub ();
+    use Mir::Channel ();
 
-    my $c = Mir::PubSub->create(
+    my $c = Mir::Channel->create(
         driver  => 'Redis',
         params  => {
             connect => { server => '127.0.0.1:6379' }, 
