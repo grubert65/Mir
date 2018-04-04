@@ -11,7 +11,7 @@ requires 'count';   # returns the number of elements in queue
 
 =head1 NAME
 
-Mir::Queue - A role for any queue client
+Mir::Queue - A Mir role to be consumed by any queue driver
 
 =head1 VERSION
 
