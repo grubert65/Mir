@@ -33,7 +33,7 @@ our $VERSION = '0.23';
 
 =item Startup the Mir Acq subsystem
 
-=item Startup the mir-ir.pl (or mir-ir-polling.pl if you don't like queues)
+=item Startup the mir-ir.pl (or mir-ir-polling.pl if you don't like queues...)
 
 =back
 
@@ -58,7 +58,7 @@ None
 
 =head1 AUTHOR
 
-Marco Masetti, C<< <marco.masetti at softeco.it> >>
+Marco Masetti, C<< <grubert65 at gmail.com> >>
 
 =head1 BUGS
 
@@ -71,28 +71,6 @@ automatically be notified of progress on your bug as I make changes.
 You can find documentation for this module with the perldoc command.
 
     perldoc Mir
-
-You can also look for information at:
-
-=over 4
-
-=item * RT: CPAN's request tracker (report bugs here)
-
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Mir>
-
-=item * AnnoCPAN: Annotated CPAN documentation
-
-L<http://annocpan.org/dist/Mir>
-
-=item * CPAN Ratings
-
-L<http://cpanratings.perl.org/d/Mir>
-
-=item * Search CPAN
-
-L<http://search.cpan.org/dist/Mir/>
-
-=back
 
 
 =head1 ACKNOWLEDGEMENTS

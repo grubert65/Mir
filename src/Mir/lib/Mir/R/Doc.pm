@@ -45,28 +45,10 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #========================================================================
 use Moose::Role;
 use namespace::autoclean;
-use Data::GUID;
-use DateTime;
 use MooseX::Storage;
 with 'Mir::R::Doc::Bare', Storage( 'format' => 'JSON' );
 
-# has 'id' => ( 
-#     is => 'rw', 
-#     isa => 'Str',
-#     lazy    => 1,
-#     default => sub {
-#         my $guid = Data::GUID->new();
-#         $guid->as_string;
-#     }
-# );
-
-has 'title'         => ( is => 'rw', isa => 'Str' );
-has 'source'        => ( is => 'rw', isa => 'Str' );
-# has 'creation_date' => ( 
-#     is      => 'ro',
-#     isa     => 'Str',
-#     default => sub { DateTime->now->iso8601() },
-# );
-
+has 'title'  => ( is => 'rw', isa => 'Str' );
+has 'source' => ( is => 'rw', isa => 'Str' );
 
 1;

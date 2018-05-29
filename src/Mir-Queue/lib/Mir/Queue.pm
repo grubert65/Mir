@@ -1,4 +1,15 @@
 package Mir::Queue;
+
+use Moose::Role;
+with 'DriverRole';
+
+requires 'flush';   # deletes all elements in queue
+requires 'push';    # add an element
+requires 'pop';     # removes and returns the last element
+requires 'count';   # returns the number of elements in queue
+
+1;
+
 #============================================================= -*-perl-*-
 
 =head1 NAME
@@ -64,12 +75,3 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 =cut
 
 #========================================================================
-use Moose::Role;
-with 'DriverRole';
-
-requires 'flush';   # deletes all elements in queue
-requires 'push';    # add an element
-requires 'pop';     # removes and returns the last element
-requires 'count';   # returns the number of elements in queue
-
-1;

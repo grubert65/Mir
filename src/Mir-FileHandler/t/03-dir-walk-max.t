@@ -11,7 +11,7 @@ BEGIN {
 }
 
 # get a new FileHandler obj for the passed root directory
-ok( my $o = Mir::FileHandler->new( path => './lib' ), 'new');
+ok( my $o = Mir::FileHandler->new( path => './t' ), 'new');
 
 state $found={};
 my $code = sub { 
@@ -30,9 +30,9 @@ my $code = sub {
 ok( $o->clear_cache(), 'clear_cache' );
 ok( my $count = $o->dir_walk_max( 
     code => $code, 
-    max  => 10 
-), 'dir_walk for max 10 files...' );
-is( $count, 10, 'Got right number of valid files' );
+    max  => 1 
+), 'dir_walk for max 1 files...' );
+is( $count, 1, 'Got right number of valid files' );
 
     # walk a directory and exec code for each file...
     # stops after max success code execution
@@ -43,10 +43,10 @@ $found={};
 # this should restart from root
 ok( $count = $o->dir_walk_max( 
     code => $code,
-    max  => 10,
-), 'dir_walk for max 10 files, restarting from root');
-is( $count, 10, 'Got right number of valid files' );
-# this shoudl start from cache...
+    max  => 1,
+), 'dir_walk for max 1 files, restarting from root');
+is( $count, 1, 'Got right number of valid files' );
+# this should start from cache...
 ok( $count = $o->dir_walk_max( 
     code => $code,
     max  => 50,

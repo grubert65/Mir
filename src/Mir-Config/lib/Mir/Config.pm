@@ -117,15 +117,16 @@ Returns the complete content of the collection
 #=============================================================
 get '/profile/:collection' => sub {
     my $collection = params->{collection};
+    my $ch = $database->get_collection( $collection );
     debug "Collection: $collection";
     $DB::single=1;
-    $cursor = eval{ $database->get_collection( param('collection') )->find(); };
+    $cursor = eval{ $ch->find(); };
     if ( $@ ) {
         error "Error getting entire profile for collection $collection";
         status 500;
     }
     my @data = ();
-    if ( $cursor->count() ) {
+    if ( $ch->count() ) {
         @data = $cursor->all();
     }
     debug "Profile for section $collection:";
@@ -163,13 +164,13 @@ get '/:collection/:tag?/:resource?' => sub {
         } else {
             $cursor = $ch->find({ "tag" => $tag });
         }
-        if ( $cursor->count() ) {
-            $data = $cursor->next();
+        if ( $data = $cursor->next() ) {
+            return $data;
         }
     } else {
         debug "Getting all profiles...";
         $cursor = $ch->find();
-        if ( $cursor->count() ) {
+        if ( $ch->count() ) {
             $data = [ $cursor->all() ];
         }
     }

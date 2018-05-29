@@ -1,8 +1,7 @@
-Mir
+Mir-Queue-Redis
 
-MIR (Media Indexer & Retriever) is a complete and modular system
-to fetch, extract, index and retrieve text from an heterogeneous
-list of sources.
+Redis driver for the Mir::Channel role.
+
 
 INSTALLATION
 
@@ -18,11 +17,12 @@ SUPPORT AND DOCUMENTATION
 After installing, you can find documentation for this module with the
 perldoc command.
 
-    perldoc Mir
+    perldoc Mir::Channel::Redis
+
 
 LICENSE AND COPYRIGHT
 
-Copyright (C) 2015 Marco Masetti
+Copyright (C) Marco Masetti
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a

@@ -1,4 +1,4 @@
-# ABSTRACT: A module to handle files and folders...
+# ABSTRACT: A module to handle files and folders
 package Mir::FileHandler;
 
 use 5.010;
@@ -18,11 +18,11 @@ Mir::FileHandler - An Mir module to handle files and folders...
 
 =head1 VERSION
 
-Version 0.01
+Version 0.03
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 our @rec_files = ();
 our $files_as_hash = {};
 our @types = ();

@@ -5,7 +5,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
     NAME             => 'Mir',
-    AUTHOR           => q{Marco Masetti <marco.masetti@softeco.it>},
+    AUTHOR           => q{Marco Masetti <grubert65@gmail.com>},
     VERSION_FROM     => 'lib/Mir.pm',
     ABSTRACT_FROM    => 'lib/Mir.pm',
     LICENSE          => 'artistic_2',
