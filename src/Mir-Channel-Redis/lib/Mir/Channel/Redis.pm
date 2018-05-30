@@ -22,7 +22,7 @@ has 'log'   => (
 );
 
 has 'r' => (
-    is  => 'rw',
+    is  => 'ro',
     isa => 'Redis',
     lazy=> 1,
     default => sub { 
