@@ -5,6 +5,7 @@ package Mir::Queue::Redis;
 =head1 NAME
 
 Mir::Queue::Redis - Redis driver that implements the interface Mir::Queue.
+
 =head1 VERSION
 
 0.01
