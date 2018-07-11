@@ -1,7 +1,7 @@
 The Channel System
 ------------------
-The Queuing system is managed on separate nodes (an active/active config to
-start with). The channeling nodes should not be used for any other Mir component.
+The Queuing system is managed on separate nodes start with). 
+The channeling nodes should not be used for any other Mir component.
 
 1. Requirements for the queuing system
 --------------------------------------
