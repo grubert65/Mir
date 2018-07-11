@@ -1,5 +1,6 @@
 pipeline {
-    agent { docker { image 'perl:threaded' } }
+#     agent { docker { image 'perl:threaded' } }
+    agent { any }
     stages {
         stage('check') {
             steps {
@@ -7,9 +8,9 @@ pipeline {
             }
         }
 
-        stage('build Makefile') {
+        stage('build Mir') {
             steps {
-                sh 'perl Makefile.PL'
+                sh 'cd src/Mir && perl Makefile.PL && cpan .'
             }
         }
 
