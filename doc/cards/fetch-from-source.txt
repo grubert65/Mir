@@ -1,0 +1,121 @@
+Ogni processore e' implementato da una classe:
+
+Mir::Acq::Fetcher::<Source>  ( o Mir::Acq::Stream::<Source> - per sorgenti stream )
+
+che estende la classe base Mir::Acq::Fetcher che a sua volta consuma il ruolo:
+
+Mir::R::Acq::Fetch
+
+il ruolo definisce le capacita' di un processore, ma rimanda l'implementazione a ruoli/classi 
+che lo consumano.
+
+In particolare il ruolo implementa il metodo:
+
+fetch()
+
+e richiede l'implementazione del metodo:
+
+get_docs()
+
+Workflow script mir_acq
+-----------------------
+# get a Fetcher obj
+my $f = Mir::Acq::Fetcher->create( driver => 'Store' )
+
+# get the list of processors
+$my $processors = $f->get_source_list();
+
+foreach my $proc ( @$processors ) {
+    my $p = eval { $proc->{namespace}->new( $proc->params ) };
+    $p->fetch()
+    if ( $p->ret ) {
+        # se e' andato tutto bene
+        # alla fine ottengo in $p->docs la lista di profili 
+        # da salvare sullo store...
+        # (ed eventualmente url di artifacts da scaricare e
+        # salvare su fs...)
+    }
+}
+
+
+
+Tutti i web crawlers (o spiders) consumano il ruolo:
+
+Mir::R::Acq::Fetcher::Spider
+
+che mette a disposizione tutti gli strumenti per il web crawling.
+Quindi la logica e':
+
+    Mir::R::Acq::Fetcher                : ruolo base per tutti i processori
+        Mir::R::Acq::Fetcher::Spider    : ruolo per implentare un web crawler
+
+Il metodo get_docs() esegue il crawling della sorgente, crea i profili, scarica i documenti e 
+li salva su file system e valorizza:
+
+$self->ret      : come e' andata
+$self->docs     : arrayref profili documenti
+$self->errors   : arrayref errori durante il processamento della fonte
+
+I profili scaricati estendono Mir::Doc e quindi su ognuno si puo' fare:
+
+$doc->store()
+
+Per farlo pero' ogni profilo deve aver configurato:
+- il driver Store
+- i parametri del driver
+
+Se e' il processo fetcher che salva i docs e' meglio (si evitano problemi di concorrenza)
+
+Dove vengono salvati i documenti (artefatti)
+--------------------------------------------
+Gli artefatti, una volta scaricati, sono salvati in:
+$MIR_DOCS_ROOT/yyyy/mm/dd/<source>/<id>/
+
+Sul salvataggio dei documenti su file system
+--------------------------------------------
+in SM2, nella stessa cartella del documento, veniva salvato anche il profilo in formato xml, 
+quindi anche se il filename coincideva con l'id, era sempre possibile risalire al reale
+filename e natura del file. Adesso non sara' + possibile (cioe' il file system sara' pieno 
+di file con nomi poco significativi).
+
+Scenario di uno scaricamento un po' complesso: un numero della Serie Generale della GU
+--------------------------------------------------------------------------------------
+- Scarico pagina principale lista ultimi numeri della serie generale della GU
+- per ogni item della lista:
+    - istanzio oggetto $doc = Mir::Doc->create( 'GU' );
+    - dal testo item valorizzo:
+        $doc->numero()
+        $doc->data_pubblicazione()
+    - get url item
+    - cerco la prima tag "rubrica"
+    - LOOP_SEZIONE: 
+        - $text = get tag text
+        - my $sezione = $doc->create_sezione( $text ); # la sezione punta ad un sottodocumento...
+        - finche c'e' cerco tag successiva
+        - classe "risultato" ?
+            - dal testo del primo href prelevo:
+                - tipo atto
+                - data atto
+                - [numero atto]
+            - my $atto = Mir::Doc->create( "GU::<tipo atto>" );
+            - $atto->data_atto()
+            - [$atto->numero_atto()]
+            - il testo del secondo href e' il titolo:
+            - $atto->titolo()
+            - get url atto
+                - cerco box articoli
+                    - se non lo trovo => $atto->text == tutto il testo che trovo
+                    - se lo trovo:
+                        - per ogni articolo:
+                            - seleziono articolo
+                            - prelevo testo articolo
+                            - my $articolo = Mir::Doc->create( 'GU::Articolo' );
+                            - $articolo->text()
+                            - $atto->add_child( $articolo );
+            - $sezione->add_child( $atto );
+        - classe "rubrica" ?
+            - $doc->add_child( $sezione );
+            - goto LOOP_SEZIONE
+    - add $doc a $self->docs
+
+

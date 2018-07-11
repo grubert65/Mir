@@ -1,0 +1,42 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure("2") do |config|
+
+    config.vm.define "mir-dev" do |mirdev|
+        mirdev.vm.box = "debian/jessie64"
+        mirdev.vm.hostname = "mir-dev"
+    end
+
+    config.vm.define "mongo01" do |mongo01|
+        mongo01.vm.box = "debian/jessie64"
+        mongo01.vm.hostname = "mongo01"
+        #mongo01.vm.network "private_network", ip: "192.168.10.03"
+    end
+
+    config.vm.define "mongo02" do |mongo02|
+        mongo02.vm.box = "debian/jessie64"
+        mongo02.vm.hostname = "mongo02"
+        #mongo02.vm.network "private_network", ip: "192.168.10.04"
+    end
+
+    config.vm.define "elastic01" do |elastic01|
+        elastic01.vm.box = "debian/jessie64"
+        elastic01.vm.hostname = "elastic01"
+    end
+
+    config.vm.define "elastic02" do |elastic02|
+        elastic02.vm.box = "debian/jessie64"
+        elastic02.vm.hostname = "elastic02"
+    end
+
+    config.vm.define "elastic03" do |elastic03|
+        elastic03.vm.box = "debian/jessie64"
+        elastic03.vm.hostname = "elastic03"
+    end
+
+end

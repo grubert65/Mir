@@ -1,0 +1,11 @@
+Fetching and analysing Twitter tweets
+-------------------------------------
+
+This tech note shows how to set up the automatic fetching of tweets that match a given criteria.
+
+API features:
+- we can narrow search by location ("geocode":"latitude,longitude,radius") 
+
+First some requirements:
+- 
+

@@ -1,0 +1,5 @@
+The distributed architecture of Mir
+-----------------------------------
+
+Mir is a microservices oriented platform devoted to IR applications.
+Mir is composed of different services that exchange data on a queuing system.

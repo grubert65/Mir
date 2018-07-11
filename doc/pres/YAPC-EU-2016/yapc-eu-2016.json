@@ -1,0 +1,14 @@
+{
+  "urls":[ "http://us10.campaign-archive2.com/feed?u=d13652c3b977008dc16f7904e&id=ab24707853" ],
+  "storage_io_params":{
+    "io": [ 
+      "MongoDB",
+      {
+          "key_attr": "id",
+          "host":     "localhost",
+          "database": "MIR",
+          "collection":"yapc-eu-feeds"
+      }
+    ]
+  }
+}

@@ -1,0 +1,71 @@
+I documenti
+-----------
+
+I documenti sono di varia natura:
+- file
+- documenti strutturati (es: leggi): in questo caso si puo' ritenere che c'e' sempre un documento padre e N documenti figli
+- i documenti strutturati possono essere formati da documenti di formato diverso (la gazzetta ufficiale e' un insieme di leggi che a loro volta contengono articoli/commi/...)
+- informazioni strutturate (records)
+- tweets
+
+Ogni documento in Mir ha un profilo ed e' identificato da un id univoco. Il profilo dipende dal tipo di documento.
+Quindi un documento e':
+- [maybe] qualcosa di fisico, salvato su file system
+- [for sure] un profilo, salvato o su file system appresso il doc (come in SM2) o su Store (MongoDB)
+
+Un documento ha in realta' una doppia natura: profilo e artefatto
+
+Principali operazioni su un profilo
+-------------------------------------
+[create]    (via DriverRole) Creazione istanza profilo documento specifico (creazione id univoco)
+[add_child] aggiungo profili figli
+[store]     store istanza intero profilo (padre+figli)
+[load]      load intero profilo in nuova istanza
+[add_rel_path]   aggiungo percorso relativo a documento fisico (a partire da $MIR_DOC_ROOT)
+[delete]    cancella profilo (e documento fisico associato)
+
+Principali operazioni su un artefatto
+-------------------------------------
+[save]      salvo documento su file system
+[open]      apro documento
+[get_text]  estraggo testo da documento
+[get_page_text] estraggo testo di una pagina
+[close]     chiudo documento
+
+Tipi di artefatti supportati
+----------------------------
+PDF                 => Mir::Doc::PDF
+Word                => Mir::Doc::Word
+Text                => Mir::Doc::Txt
+GazzettaUfficiale   => Mir::Doc::GU (a sua volta estesa per ogni sezione)
+Tweet               => Mir::Doc::Tweet
+
+Interfacce
+----------
+DriverRole          : Ruolo che implementa il pattern Driver/Interface...
+Mir::R::Doc         : interfaccia base documento (gestione id univoco,...)
+Mir::R::Doc::<...>
+Mir::R::Artifact    : interfaccia base artefatto (manufatto)
+Mir::R::Artifact::<...>
+
+Classi
+------
+Mir::Doc            : classe base documento
+Mir::Doc::Store     : classe per la gestione dello store.
+
+
+UC1: Create a new profile for a PDF artefact
+--------------------------------------------
+use Mir::Doc;
+my $doc = Mir::Doc->create( driver => 'PDF' ); # ritorna un oggetto della classe Mir::Doc::PDF
+$doc->file_path( $file_path );  # dov'e' il documento pdf...
+$doc->store();                  # store metadata...
+$doc->save();                   # salva documento PDF su FS...
+
+UC2: add child to doc
+---------------------
+$doc->add_child( $child );
+
+UC3: add path to real PDF doc
+-----------------------------
+$doc->add_rel_path( $path );

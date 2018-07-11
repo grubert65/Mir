@@ -1,0 +1,68 @@
+Roadmap
+-------
+
+#. Environments
+---------------
+- dev
+- test
+- staging
+- production
+
+#. Development Environment
+--------------------------
+
+Each environment is composed by:
+- Source code
+- Executables
+- Configuration
+- Dependencies (code/libs)
+- Application Data
+- Host environment (OS/...)
+
+If any of these change => app behaviour might be affected
+
+#. Source code 
+--------------
+- It's under source control (git)
+- A repo for each component (to be checked)
+- Master Branch always refers to bleeding-edge (under development) release
+- A branch for each shipped release (see anyhow web articles under technologies/git)
+
+#. Executables
+--------------
+We should not ship code as exec. Any dependency in exec format is treated in the dependencies
+section
+
+#. Configuration
+----------------
+Kept in yaml/json files.
+
+#. Dependencies
+---------------
+
+#. Application Data
+-------------------
+
+#. Host Environment
+-------------------
+
+
+#. continuous integration/continuous delivery
+---------------------------------------------
+[Concourse ?]
+
+The CI overall process
+----------------------
+Anything that changes between environments should be captured as configuration information.
+Any change to an application’s configuration, in whichever environment, should be tested.
+If the environments the application is to be deployed into change, the whole system should be tested with the changes to the environment. 
+This includes changes in the operating system configuration, the software stack that supports the application, the network configuration, and any infrastructure and external systems.
+If the structure of the data changes, this change must also be tested.
+
+- The process of creating the executable code must work. This verifies that the syntax of your source code is valid.
+- The software’s unit tests must pass. This checks that your application’s code behaves as expected.
+- The software should fulfill certain quality criteria such as test coverage and other technology-specific metrics.
+- The software’s functional acceptance tests must pass. This checks that your application conforms to its business acceptance criteria—that it delivers the business value that was intended.
+- The software’s nonfunctional tests must pass. This checks that the applica- tion performs sufficiently well in terms of capacity, availability, security, and so on to meet its users’ needs.
+- The software must go through exploratory testing and a demonstration to the customer and a selection of users. This is typically done from a manual testing environment. In this part of the process, the product owner might decide that there are missing features, or we might find bugs that require fixing and automated tests that need creating to prevent regressions.
+

@@ -1,0 +1,58 @@
+Introduzione
+------------
+Alcuni assiomi fondamentali
+---------------------------
+1.  la logica applicativa per l'acquisizione e storage dell'informazione viene 
+    implementata in classi che usano il ruolo Fercher
+2.  i fetcher possono essere raccolti in campagne di acquisizione, da qualche parte e' tenuta
+    la lista di fetchers associati ad una campagna...
+3.  i fetcher vengono istanziati ed eseguiti da un processore
+4.  un processo di schedulazione (mir-acq-scheduler.pl) schedula i fetcher che devono essere attivati al momento opportuno. I fetchers assieme ai loro parametri vengono accodati in una coda. Esiste una coda per ogni campagna. 
+5.  Un processore (mir-acq-processor.pl) viene attivato e sta in attesa di items in coda. 
+Gli items vengono consumati in chunks di numero configurabile. il processore, per ogni item del chunk, forca un thread che esegue il fetcher ed aspetta che tutti i threads siano finiti.
+
+Schedulazione campagna via crontab
+----------------------------------
+Lo script mir-acq-scheduler.pl viene schedulato via crontab.
+Lo script accetta i seguenti parametri:
+--campaign          : tag della campagna di acquisizione. Alla campagna sono associati diversi fetchers
+--fetcher           : classpath relativo a Mir::Acq::Fetcher del fetcher da istanziare
+--processors        : numero di processori da attivare. Nel caso sia definito un fetcher di default e' 1.
+--fetcher-params    : json-encoded string to be passed to any fetcher...
+--config-file       : file YAML con i parametri di configurazione (sovrascrive i parametri configurati di default)
+
+In questo modo e' possibile trovare un tradeoff tra performance e carico macchina.
+Un esempio di tabella di schedulazione:
+#---------------------------------------------------------------------------
+0 */2 * * *         mir-acq-scheduler.pl --campaign news        --processors 10
+0 */6 * * *         mir-acq-scheduler.pl --campaign weather     --processors 3
+* 0   * * *         mir-acq-scheduler.pl --fetcher Twitter      --params "{channel:@Genova}"
+* 0   * * *         mir-acq-scheduler.pl --fetcher Instagram    --params "{...}"
+# La Serie Generale e' pubblicata tutti i giorni...
+# La prima Serie Speciale e' pubblicata tutti i Mercoledi...
+# La seconda Serie Speciale e' pubblicata il Lunedi' ed il Giovedi'
+# La terza Serie Speciale e' pubblicata il Sabato
+# La quarta Serie Speciale e' pubblicata il Martedi' ed il Venerdi'
+# 5ª Serie Speciale - Contratti Pubblici (pubblicata lunedì, mercoledì e venerdì).
+0 18  * * *         mir-acq-scheduler.pl --fetcher GU::SerieGenerale
+0 18  * * wed       mir-acq-scheduler.pl --fetcher GU::CorteCostituzionale
+0 18  * * mon,thu   mir-acq-scheduler.pl --fetcher GU::UnioneEuropea
+0 18  * * sat       mir-acq-scheduler.pl --fetcher GU::Regioni
+0 18  * * tue,fri   mir-acq-scheduler.pl --fetcher GU::concorsi
+0 18  * * 1,3,5     mir-acq-scheduler.pl --fetcher GU::Contratt
+#---------------------------------------------------------------------------
+
+Nel caso sia definita una campagna, lo script preleva la lista di fetchers associati alla
+campagna, li aggiunge alla coda configurata per la campagna e lancia il numero di processori 
+configurato (passando a loro volta la campaign tag).
+Se il fetcher ha il campo "split" definito, allora alla coda aggiunge tanti fetchers,
+con lo stesso classpath, quanti sono gli items definiti nel campo "params" (nella coda
+il campo params contiene solo l'item corrente).
+
+-----------------------------------------------------------------------------
+NOTE: per il momento non c'e' un controllo sul numero di processori lanciati.
+-----------------------------------------------------------------------------
+
+Il processore accede alla coda di pertinenza (parametri associati alla campagna) e scoda il 
+primo fetcher che trova altrimenti esce.
+

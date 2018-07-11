@@ -1,0 +1,70 @@
+UI Requirements
+---------------
+
+L'interfaccia deve soddisfare i seguenti requisiti:
+
+ID | Status | Priority 
+----------------------------------------------------------------------------
+1  | [todo] | [ must ] Scopo dell'applicazione
+L'interfaccia e' una applicazione web. 
+La logica e' divisa in parte client (Angular/Bootstrap) e parte server (Dancer2).
+La configurazione dell'applicazione e' tenuta in un file JSON parsato lato server.
+
+
+L'applicazione deve servire per:
+--------------------------------
+1.1. Configurare un sistema Mir
+1.2. Monitorare il funzionamento del sistema
+1.3. Browse e ricerca sui risultati trovati
+1.4. Gestione utenti del sistema
+
+Architettura ad alto livello dell'interfaccia UI
+------------------------------------------------
+Visto che MIR e' una piattaforma generica di Media Information Retrieval, l'interfaccia
+deve presentare dei servizi:
+- per la gestione della piattaforma stessa (autenticazione, configurazione, monitoraggio,...)
+- per la fruizione dei dati applicativi (domain dependent)
+
+Ne consegue che l'app. menubar dovra' essere configurato dinamicamente a runtime.
+
+
+
+----------------------------------------------------------------------------
+1.4| [todo] | [ must ] Gestione utenti del sistema
+Gli utenti del sistema appartengono ad una di queste categorie:
+- utente anonimo
+- utente ordinario
+- amministratore
+
+Ogni utente che non si autentica nel sistema e' utente anonimo, con minima (o nulla a seconda del caso d'uso) operativita'.
+Un utente puo' autenticarsi nel sistema per ottenere il ruolo di utente ordinario o amministratore.
+il widget per la gestione dell'autenticazione dovrebbe presentare i bottoni (Login|Register).
+Workflow:
+Login -> Form input username/password -> submit_auth_data
+submit_auth_data:
+- get user profile from username
+- check password
+- validate user
+- provide a unique session id to tag further user requests
+- update app menubar
+
+Register -> Form input dati registrazione utente
+[NOTA]: il fatto che solo un utente admin possa registrare un altro utente o meno deve essere 
+definito in configurazione
+
+
+----------------------------------------------------------------------------
+1.1| [todo] | [ must ] Configurare un sistema Mir
+La configurazione puo' essere tenuta su:
+- file JSON
+- collection su Mongo (default: MIR/system)
+La sezione per la configurazione dovrebbe:
+1.1.1 permettere di definire la sorgente dati di configurazione (JSON/Mongo) e 
+    configurare i parametri per l'accesso
+1.1.2 Visualizzare le sezioni attualmente presenti in configurazione
+1.1.3 Permetterne la modifica
+[Nota]: solo utenti con il ruolo admin possono gestire la configurazione del sistema
+
+
+
+

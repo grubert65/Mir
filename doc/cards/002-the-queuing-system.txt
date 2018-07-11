@@ -1,0 +1,42 @@
+The Channel System
+------------------
+The Queuing system is managed on separate nodes (an active/active config to
+start with). The channeling nodes should not be used for any other Mir component.
+
+1. Requirements for the queuing system
+--------------------------------------
+RCHAN-001:  Channels are the backbone of the whole infrastructure, so they need 
+            to be easy to set up and use, very fast and very reliable.
+RCHAN-010:  Channels need to be persistent, ideally not a single message is lost
+RCHAN-020:  Messages are exchanged in transactions, automatically opened if not 
+            already in place and kept open unless specifically closed by client. 
+            At transaction close another one is automatically opened. 
+            Transaction history needs to be kept by the queuing system and 
+            replayed by a consumer if necessary.
+            A unique transaction id is used to identify a transaction.
+RCHAN-030:  Different producers can publish messages on a channel and different 
+            consumers can take a message at a time from a channel.
+RCHAN-031:  A producer can publish the same msg on differenct channels in a single operation
+RCHAN-032:  A consumer can register to different channels
+RCHAN-040:  Channels are identified by a unique path (as a list of labels). 
+            The label separator can be defined.
+RCHAN-050:  The queuing system knows how many channels are there and keeps track 
+            of the list of producers and consumers connected to a given channel.
+RCHAN-060:  Each single channel operation has to be atomic.
+RCHAN-070:  If the queuing system is centralized, it has to be accessed by any 
+            other node of a Mir system and needs to support HA configurations.
+
+
+Channel System Design
+---------------------
+We started trying to use the shared memory to share a common array and use it
+as a channel so we installed IPC::Shareable and did some tests but it turned
+out that shared memory size is quite small and it is not so easy to tune it
+from the library. Moreover most of the requirements do not come for free using
+this solution, so a lot to implement too. So we discarded the idea.
+
+Another alternative is to use a DBMS. It maybe sounds not the right tool at
+first, but at least the requirement of persistency should be met by day 0 for
+free...
+
+

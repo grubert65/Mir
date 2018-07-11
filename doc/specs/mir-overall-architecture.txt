@@ -1,0 +1,27 @@
+---------------------- config ------------------------------------- 
+scheduler ->|-> processors ->|-> |store|                  <-- UI 
+                                --> indexer --> |index| <--
+                                                        --> reporter
+
+Interfaces (aka Roles)
+----------------------------------------------------------------------
+Roles are defined under the Mir::R namespace. Roles are the following:
+
+- Data (ex Doc)     : role for any data class
+- Queue             : role for all queue mechanism implementations
+- Scheduler         : role for all scheduling mechanisms
+- Processor         : role for all processors
+- Indexer           : role for all indexers
+- Config            : role for all Config drivers
+
+
+Modules
+----------------------------------------------------------------------
+Mir                 : Core package, contains Roles
+Mir::Core           : Core objects
+Mir::Config         : Mir::Config drivers
+Mir::Queue::        : Mir::Queue drivers
+Mir::Scheduler::    : Mir::Scheduler drivers
+Mir::Processor::    : Mir::Processor drivers
+Mir::Indexer::      : Mir::Indexer drivers
+

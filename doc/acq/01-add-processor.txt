@@ -1,0 +1,4 @@
+Add processor
+-------------
+- installo il processore (namespace: Mir::Acq::<Source>)
+- aggiungo processore a campagna acquisizione ( mir-acq-add-source-to-campaign <Source name space> <campaign>
