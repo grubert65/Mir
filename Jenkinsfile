@@ -1,7 +1,8 @@
 pipeline {
-//   agent { docker { image 'perl:threaded' } }
-    agent { any }
+    agent { docker { image 'perl:threaded' } }
+
     stages {
+
         stage('check') {
             steps {
                 sh 'perl -V'
