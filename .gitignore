@@ -25,3 +25,4 @@ src/Plugins/Mir-Plugin-RescaleImage/
 src/Plugins/how-plugins-works.txt
 src/specs/
 src/tags
+environments/development/.vagrant/*

@@ -18,10 +18,18 @@ Roles are defined under the Mir::R namespace. Roles are the following:
 Modules
 ----------------------------------------------------------------------
 Mir                 : Core package, contains Roles
-Mir::Core           : Core objects
+Mir::Core           : Core Classes
 Mir::Config         : Mir::Config drivers
-Mir::Queue::        : Mir::Queue drivers
-Mir::Scheduler::    : Mir::Scheduler drivers
-Mir::Processor::    : Mir::Processor drivers
-Mir::Indexer::      : Mir::Indexer drivers
+Mir::Queue          : Mir::Queue drivers
+Mir::Scheduler      : Mir::Scheduler drivers
+Mir::Processor      : Mir::Processor drivers
+Mir::Indexer        : Mir::Indexer drivers
+Mir::Store          : Mir::Store drivers
 
+Services
+----------------------------------------------------------------------
+Mir::Srv            : Core service class
+Mir::Srv::Scheduler : Scheduler service
+Mir::Srv::Store     : Store service
+Mir::Srv::IR        : IR Service
+Mir::Srv::UI        : UI Service
