@@ -167,7 +167,6 @@ is available
 #=============================================================
 sub pop {
     my $self = shift;
-    $DB::single=1;
     my $item = $self->r->brpop( $self->key, $self->timeout );
     my $h = decode_json( $item->[1] );
     return $h->{item};
