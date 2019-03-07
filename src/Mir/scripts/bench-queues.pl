@@ -44,7 +44,7 @@ sub mq_str_producer {
             }
     ) or die "Error creating a queue Mir::Queue\n";
 
-    $q->spush( $scalar_item );
+    $q->push( $scalar_item );
 }
 
 sub mq_hash_producer {

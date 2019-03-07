@@ -17,9 +17,9 @@ ok( my $q = Mir::Queue->create(
 is( ref $q, 'Mir::Queue::Redis', 'Got right object class back');
 ok( $q->flush(), 'Queue flushed');
 is( $q->count(), 0, 'Got right number of items' );
-ok( $q->spush('foo'), 'Item pushed');
+ok( $q->push('foo'), 'Item pushed');
 is( $q->count(), 1, 'Got right number of items' );
-ok( $q->spush('bar'), 'Item pushed');
+ok( $q->push('bar'), 'Item pushed');
 is( $q->count(), 2, 'Got right number of items' );
 is( $q->spop(), 'foo', 'Got right data from queue' );
 is( $q->count(), 1, 'Got right number of items' );
