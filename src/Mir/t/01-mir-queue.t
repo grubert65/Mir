@@ -21,12 +21,13 @@ ok( $q->push('foo'), 'Item pushed');
 is( $q->count(), 1, 'Got right number of items' );
 ok( $q->push('bar'), 'Item pushed');
 is( $q->count(), 2, 'Got right number of items' );
-is( $q->spop(), 'foo', 'Got right data from queue' );
+is( $q->pop(), 'foo', 'Got right data from queue' );
 is( $q->count(), 1, 'Got right number of items' );
-is( $q->spop(), 'bar', 'Got right data from queue' );
+is( $q->pop(), 'bar', 'Got right data from queue' );
 is( $q->count(), 0, 'Got right number of items' );
-ok( $q->hpush({ key => 'value' }), 'Item pushed');
-is( $q->count(), 1, 'Got right number of items' );
-is_deeply( $q->hpop(), { key => 'value' }, 'Got right data from queue' );
+# why we introduced hashed keys in queues, where does this req come from ?
+# ok( $q->hpush({ key => 'value' }), 'Item pushed');
+# is( $q->count(), 1, 'Got right number of items' );
+# is_deeply( $q->hpop(), { key => 'value' }, 'Got right data from queue' );
 
 done_testing();

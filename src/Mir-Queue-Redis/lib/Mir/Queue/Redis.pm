@@ -32,7 +32,7 @@ our $VERSION='0.01';
     # push next item in queue...
     $q->push('bar');
 
-    # pop first item in queue or wait (for timeout)
+    # pop first item in queue or wait (till timeout)
     # for next item...
     $my $item = q->pop();
 
@@ -72,7 +72,11 @@ has 'r' => (
     is  => 'rw',
     isa => 'Redis',
     lazy=> 1,
-    default => sub { Redis->new }
+    default => sub { Redis->new(
+        cnx_timeout     => 2,
+        read_timeout    => 0.4,
+        write_timeout   => 0.8
+    )}
 );
 
 has 'key'       => (is => 'rw', isa => 'Str', default => 'default_queue' );
