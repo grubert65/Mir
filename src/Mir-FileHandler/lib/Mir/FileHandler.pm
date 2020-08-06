@@ -37,7 +37,6 @@ our @types = ();
         path => $path, # root folder to start with 
     );
 
-
     # get plain files list inside the root directory
     my $list = $o->plainfiles(); # or pass a path in input
 
