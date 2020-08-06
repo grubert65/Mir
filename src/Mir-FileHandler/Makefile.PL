@@ -23,7 +23,7 @@ WriteMakefile(
         'File::Basename'    => 0,
         'Log::Log4perl'     => 0,
         'Moose'             => 0,
-        'Redis'             => 0,
+        'Cache::Cache'      => 0,
         'Digest::MD5'       => 0,
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
