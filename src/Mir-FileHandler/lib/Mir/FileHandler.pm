@@ -9,8 +9,8 @@ use DirHandle;
 use File::Find;
 use File::Basename qw( dirname );
 use Log::Log4perl;
-use Redis;
 use Digest::MD5 'md5_base64';
+use Cache::FileCache;
 
 =head1 NAME
 
@@ -90,12 +90,11 @@ has 'cache_key' => (
 
 has 'cache' => (
     is  => 'ro',
-    isa => 'Redis',
+    isa => 'Cache::FileCache',
     lazy    => 1,
     default => sub {
         my $self = shift;
-        my $o = Redis->new();
-        $o->select(11);
+        my $o = Cache::FileCache->new();
         return $o;
     }
 );
@@ -204,7 +203,7 @@ sub _set_path_in_cache {
 
 sub clear_cache {
     my $self = shift;
-    $self->cache->del( $self->cache_key );
+    $self->cache->remove( $self->cache_key );
     return 1;
 }
 
