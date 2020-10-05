@@ -1,10 +1,8 @@
 # ABSTRACT: A module to handle files and folders
 package Mir::FileHandler;
 
-use 5.010;
+use 5.026;
 use Moose;
-no warnings 'experimental::smartmatch';
-use feature 'state';
 use DirHandle;
 use File::Find;
 use File::Basename qw( dirname );

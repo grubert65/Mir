@@ -8,7 +8,7 @@ WriteMakefile(
     AUTHOR           => q{Marco Masetti <grubert65@gmail.com>},
     VERSION_FROM     => 'lib/Mir/FileHandler.pm',
     ABSTRACT_FROM    => 'lib/Mir/FileHandler.pm',
-    LICENSE          => 'artistic_2',
+    LICENSE          => 'BSD 3-clause',
     PL_FILES         => {},
     MIN_PERL_VERSION => '5.006',
     CONFIGURE_REQUIRES => {
