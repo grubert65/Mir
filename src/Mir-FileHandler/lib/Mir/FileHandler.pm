@@ -3,6 +3,7 @@ package Mir::FileHandler;
 
 use 5.026;
 use Moose;
+no warnings 'experimental::smartmatch';
 use DirHandle;
 use File::Find;
 use File::Basename qw( dirname );
@@ -16,11 +17,11 @@ Mir::FileHandler - An Mir module to handle files and folders...
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 our @rec_files = ();
 our $files_as_hash = {};
 our @types = ();
