@@ -1,7 +1,7 @@
 # ABSTRACT: A module to handle files and folders
 package Mir::FileHandler;
 
-use 5.026;
+use 5.018;
 use Moose;
 no warnings 'experimental::smartmatch';
 use DirHandle;
@@ -17,11 +17,11 @@ Mir::FileHandler - An Mir module to handle files and folders...
 
 =head1 VERSION
 
-Version 0.04
+Version 0.05
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 our @rec_files = ();
 our $files_as_hash = {};
 our @types = ();
